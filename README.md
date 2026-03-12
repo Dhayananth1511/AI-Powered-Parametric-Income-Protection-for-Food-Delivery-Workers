@@ -1,7 +1,7 @@
 # GigShield 🛡️
 ### AI-Powered Parametric Income Protection for Food Delivery Workers
 
-> *"A delivery worker is stuck during a Chennai thunderstorm. They didn't file a claim. They didn't call anyone. Their phone just buzzed — ₹400 credited. GigShield works so they don't have to."*
+> *"Ravi is stuck at home during a Chennai thunderstorm. He didn't file a claim. He didn't call anyone. His phone just buzzed — ₹400 credited. GigShield works so he doesn't have to."*
 
 ---
 
@@ -27,7 +27,7 @@
 
 India's food delivery ecosystem runs on the backs of hundreds of thousands of gig workers delivering for platforms like **Zomato** and **Swiggy**. These workers are entirely dependent on daily deliveries for their income — there is no salary, no paid leave, and no safety net.
 
-External disruptions — heavy monsoon rain, extreme heat, cyclone alerts, air quality emergencies, government-declared curfews — can bring delivery activity to a complete halt. When that happens, a delivery worker loses **₹300–₹500 in a single evening**, with no recourse and no compensation.
+External disruptions — heavy monsoon rain, extreme heat, cyclone alerts, air quality emergencies, government-declared curfews — can bring delivery activity to a complete halt. When that happens, a worker like Ravi loses **₹300–₹500 in a single evening**, with no recourse and no compensation.
 
 **The gap:** Traditional insurance products do not cover short-term income disruption for gig workers. Filing a manual claim is too complex, too slow, and too uncertain for someone who needs money today, not next month.
 
@@ -58,11 +58,11 @@ The worker's only job is to subscribe to a weekly plan. Everything else is autom
 
 ## Delivery Worker Persona
 
-### Illustrative Persona — Swiggy Delivery Partner, Chennai
+### Ravi — Swiggy Delivery Partner, Chennai
 
 | Attribute | Detail |
 |---|---|
-| Age | Mid-20s |
+| Age | 26 |
 | City | Chennai (operates across Velachery, Adyar, T. Nagar zones) |
 | Daily Hours | 9am – 9pm |
 | Daily Deliveries | 20–28 |
@@ -71,15 +71,13 @@ The worker's only job is to subscribe to a weekly plan. Everything else is autom
 | Peak Vulnerability | Evening hours (7–10pm) — Chennai's heaviest rainfall window |
 | Financial Buffer | None. One disrupted week = missed EMI or skipped meals. |
 
-> Note: This persona is representative of the thousands of food delivery partners GigShield is designed to protect. GigShield serves all Zomato and Swiggy delivery workers regardless of city or background.
+### Ravi's Disruption Scenario
 
-### Disruption Scenario
+It's a Tuesday evening in August. Ravi is midway through his shift in Velachery. Rainfall crosses 40mm in 2 hours. Restaurants begin closing. The Swiggy app goes quiet. Ravi pulls over under a shelter.
 
-It's a Tuesday evening in August. A delivery partner is midway through their shift in Velachery. Rainfall crosses 40mm in 2 hours. Restaurants begin closing. The Swiggy app goes quiet. They pull over under a shelter.
+In the old world: Ravi loses ₹400 and has no way to recover it.
 
-In the old world: ₹400 lost with no way to recover it.
-
-With GigShield: Phone buzzes. *"🌧️ Heavy rain detected in your zone. ₹400 credited to your account. Stay safe."* They didn't do anything. GigShield did.
+With GigShield: Ravi's phone buzzes. *"🌧️ Heavy rain detected in your zone. ₹400 credited to your account. Stay safe."* He didn't do anything. GigShield did.
 
 ---
 
@@ -135,7 +133,7 @@ GigShield's premium model is grounded in 10 years of IMD historical weather data
 
 ### Why Weekly Pricing
 
-Gig workers on Zomato/Swiggy operate on a weekly earnings and payout cycle. Daily premiums create friction. Monthly premiums are too large a commitment for workers with variable income. Weekly pricing — small enough to feel negligible (less than one order's earnings), meaningful enough to provide real coverage — matches how delivery workers actually think about money.
+Gig workers on Zomato/Swiggy operate on a weekly earnings and payout cycle. Daily premiums create friction. Monthly premiums are too large a commitment for workers with variable income. Weekly pricing — small enough to feel negligible (less than one order's earnings), meaningful enough to provide real coverage — matches how Ravi actually thinks about money.
 
 ---
 
@@ -170,7 +168,7 @@ GigShield integrates three purpose-built ML models. Each is described below with
 
 **Output:** Risk score 0.0–1.0 → mapped to Green (< 0.35) / Yellow (0.35–0.65) / Red (> 0.65) → weekly premium assigned
 
-**Why Random Forest:** Handles mixed numerical and categorical features well, produces interpretable feature importance scores, and does not require large datasets to perform reliably.
+**Why Random Forest:** Handles mixed numerical and categorical features well, produces interpretable feature importance scores, and does not require large datasets to perform reliably — suitable for zone-level historical data volumes.
 
 ---
 
@@ -190,11 +188,13 @@ GigShield integrates three purpose-built ML models. Each is described below with
 
 #### Anomaly Scoring (Isolation Forest — Applied After Hard Rules Pass)
 
+**Behavioral features fed to the model:**
+
 | Feature | Fraud Signal |
 |---|---|
-| GPS velocity during claimed disruption window | High speed during disruption = actively working, not disrupted |
+| GPS velocity during claimed disruption window | Speed > 5 km/h during disruption = actively working, not disrupted |
 | Claim frequency (last 4 weeks) | 4 consecutive weekly claims with no variation = anomalous |
-| Claim timing relative to trigger | Claim filed before trigger threshold crossed = suspicious |
+| Claim timing relative to trigger | Claim filed > 2 hours before trigger threshold crossed = suspicious |
 | Device fingerprint | Multiple accounts on same device = duplicate registration fraud |
 | Historical claim approval rate | Consistent 100% approval rate over months = flag for review |
 
@@ -223,46 +223,49 @@ GigShield integrates three purpose-built ML models. Each is described below with
 **Output:** Disruption probability score (0–100%) per zone per day
 
 **Worker-facing UX:**
-> *"⚡ Storm likely in your delivery zone tomorrow 6–9pm. Probability: 78%. Your ₹400 coverage is active."*
+> *"⚡ Storm likely in your Velachery zone tomorrow 6–9pm. Probability: 78%. Your ₹400 coverage is active."*
 
 **Admin-facing UX:** City-wide heatmap showing predicted disruption risk for the next 48 hours, enabling the insurer to pre-position liquidity for expected payouts.
 
-This model transforms GigShield from **reactive insurance** into **proactive financial protection**.
+This model transforms GigShield from **reactive insurance** into **proactive financial protection** — a meaningful product innovation.
 
 ---
 
 ## Zero-Touch Claim Flow
 
 ```
-Worker purchases weekly plan on GigShield mobile app
-           |
-           v
+Ravi purchases ₹25 weekly plan on GigShield mobile app
+           │
+           ▼
 GigShield backend polls OpenWeatherMap + IMD every 15 minutes
-           |
-           v
-Rainfall crosses 35mm threshold in worker's pincode
-           |
-           v
-+--------------------------------------+
-|         Automated Verification       |
-|  [✓] Worker GPS in affected zone?    |
-|  [✓] First claim today? (not a dup)  |
-|  [✓] Fraud score: clean              |
-|  [✓] Weekly claim cap not reached?   |
-+--------------------------------------+
-           |
-           v
+           │
+           ▼
+7:23pm — Rainfall crosses 35mm threshold in Velachery pincode
+           │
+           ▼
+┌──────────────────────────────────────┐
+│         Automated Verification       │
+│  ✅ Ravi's GPS in Velachery zone?    │
+│  ✅ First claim today? (not a dup)   │
+│  ✅ Fraud score: 12/100 (clean)      │
+│  ✅ Weekly claim cap not reached?    │
+└──────────────────────────────────────┘
+           │
+           ▼
    Claim auto-approved in < 30 seconds
-           |
-           v
-   Razorpay sandbox triggers payout
-           |
-           v
+           │
+           ▼
+   Razorpay sandbox triggers ₹400 transfer
+           │
+           ▼
    Firebase push notification sent:
-   "🌧️ Heavy rain in your zone. ₹400 credited. Stay safe."
+   "🌧️ Heavy rain in your zone. ₹400 credited. Stay safe, Ravi."
+           │
+           ▼
+   Ravi is home. Dry. Paid. Without filing a single form.
 ```
 
-**Total time from disruption detection to payout: under 30 seconds. Zero human intervention. Zero forms.**
+**Total time from disruption detection to payout: under 30 seconds.**
 
 ---
 
@@ -277,7 +280,7 @@ GigShield is built on two platforms sharing a single backend:
 | **Mobile App (React Native)** | Delivery Workers | Onboarding, plan purchase, disruption alerts, payout tracking |
 | **Web App (React.js)** | Insurer / Admin | Zone heatmap, policy portfolio, fraud queue, loss ratio analytics, predictive disruption map |
 
-A shared **FastAPI backend** serves both platforms through a unified REST API.
+A shared **FastAPI backend** serves both platforms through a unified REST API. This architecture avoids duplication and ensures ML model outputs are consistent across both interfaces.
 
 ### Full Tech Stack
 
@@ -291,7 +294,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API.
 | Weather API | OpenWeatherMap (free tier) + IMD public data | Real-time conditions + historical training data |
 | AQI API | CPCB AQI API / OpenAQ (free public APIs) | Government-verified pollution data |
 | Location | Google Maps API | GPS zone verification, delivery area mapping |
-| Payments | Razorpay Sandbox (test mode) | Simulated instant payout |
+| Payments | Razorpay Sandbox (test mode) | Simulated instant payout — no real money required for demo |
 | Push Notifications | Firebase Cloud Messaging | Real-time worker alerts on mobile |
 | Hosting | Railway / Render (free tier) | Fast deployment for hackathon demo |
 
@@ -300,52 +303,52 @@ A shared **FastAPI backend** serves both platforms through a unified REST API.
 ## System Architecture
 
 ```
-+---------------------+        +---------------------+
-|   Worker Mobile App  |        |   Admin Web App      |
-|   (React Native)     |        |   (React.js)         |
-+--------+------------+        +----------+----------+
-         |                                |
-         +--------------+-----------------+
-                        |
-                        v
-            +-----------------------+
-            |   FastAPI Backend     |
-            |   (Python)            |
-            +----------+------------+
-                       |
-          +------------+------------+
-          v            v            v
-   +----------+  +----------+  +--------------+
-   |PostgreSQL|  | ML Engine|  |Disruption    |
-   |(Workers, |  |(Risk,    |  |Monitor       |
-   |Policies, |  |Fraud,    |  |(Polls APIs   |
-   |Claims)   |  |Predict)  |  |every 15 min) |
-   +----------+  +----------+  +------+-------+
-                                       |
-                    +------------------+------------------+
-                    v                  v                   v
-           +--------------+  +--------------+  +------------------+
-           |OpenWeatherMap|  |  CPCB AQI    |  |  IMD Disaster    |
-           |+ IMD Weather |  |  API         |  |  Alert Feed      |
-           +--------------+  +--------------+  +------------------+
-                                       |
-                                       v
-                            +---------------------+
-                            |  Claim Trigger &     |
-                            |  Fraud Check Engine  |
-                            +----------+----------+
-                                       |
-                                       v
-                            +---------------------+
-                            |  Razorpay Sandbox    |
-                            |  (Payout Processing) |
-                            +----------+----------+
-                                       |
-                                       v
-                            +---------------------+
-                            |  Firebase FCM        |
-                            |  (Worker Alert)      |
-                            +---------------------+
+┌─────────────────────┐        ┌─────────────────────┐
+│   Worker Mobile App  │        │   Admin Web App      │
+│   (React Native)     │        │   (React.js)         │
+└────────┬────────────┘        └──────────┬──────────┘
+         │                                │
+         └──────────────┬─────────────────┘
+                        │
+                        ▼
+            ┌───────────────────────┐
+            │   FastAPI Backend     │
+            │   (Python)            │
+            └──────────┬────────────┘
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+   ┌──────────┐  ┌──────────┐  ┌──────────────┐
+   │PostgreSQL│  │ ML Engine│  │Disruption    │
+   │(Workers, │  │(Risk,    │  │Monitor       │
+   │Policies, │  │Fraud,    │  │(Polls APIs   │
+   │Claims)   │  │Predict)  │  │every 15 min) │
+   └──────────┘  └──────────┘  └──────┬───────┘
+                                       │
+                    ┌──────────────────┼──────────────────┐
+                    ▼                  ▼                   ▼
+           ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+           │OpenWeatherMap│  │  CPCB AQI    │  │  IMD Disaster    │
+           │+ IMD Weather │  │  API         │  │  Alert Feed      │
+           └──────────────┘  └──────────────┘  └──────────────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │  Claim Trigger &     │
+                            │  Fraud Check Engine  │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │  Razorpay Sandbox    │
+                            │  (Payout Processing) │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │  Firebase FCM        │
+                            │  (Worker Alert)      │
+                            └─────────────────────┘
 ```
 
 ---
@@ -358,7 +361,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API.
 - **This Week's Disruptions** — Events detected in your delivery zone
 - **Payouts Received** — Timeline of all credited amounts
 - **Predictive Alert Panel** — "Heavy rain likely tomorrow 6–9pm in your zone"
-- **Earnings Protected Counter** — "You've saved ₹1,600 this month with GigShield"
+- **Earnings Protected Counter** — "You've saved ₹1,600 this month with GigShield" *(retention metric)*
 - **Renew Plan** — One-tap weekly renewal before plan expires
 
 ### Admin / Insurer Web Dashboard
@@ -367,7 +370,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API.
 - **Active Policies** — Count, premium collected, zone breakdown
 - **Claims Today** — Auto-approved / In review / Auto-rejected
 - **Loss Ratio by Zone** — Real-time financial health of the portfolio
-- **Fraud Review Queue** — Claims in the 30–70 score band with evidence summary
+- **Fraud Review Queue** — Claims in the 30–70 score band, with evidence summary
 - **ML Model Health** — Confidence scores, feature drift indicators
 - **Predicted Payout Exposure** — Expected payouts for next 48 hours based on disruption forecast
 
@@ -384,6 +387,8 @@ GigShield covers **income lost by food delivery workers during verified external
 > GigShield strictly excludes coverage for: vehicle repairs, bike maintenance, fuel costs, medical expenses, accident compensation, health insurance, life insurance, platform-side demand fluctuations, traffic congestion, technical issues with the delivery app, and any event not independently verifiable through a government or accredited third-party data source.
 >
 > All coverage is limited exclusively to verified external environmental and government-declared civic disruptions that directly prevent outdoor delivery work and cause loss of income.
+
+This exclusion boundary is by design — it keeps GigShield compliant, financially sustainable, and operationally simple.
 
 ---
 
@@ -446,4 +451,4 @@ Built for the **Guidewire DEVTrails 2026 Pan-India University Hackathon**.
 
 ---
 
-*Build fast. Spend smart. Protect every delivery worker. 🛡️*
+*Build fast. Spend smart. Protect Ravi. 🛡️*
