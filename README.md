@@ -165,6 +165,35 @@ GigShield's premium model is grounded in 10 years of IMD historical weather data
 Gig workers on Zomato/Swiggy operate on a weekly earnings and payout cycle. Daily premiums create friction. Monthly premiums are too large a commitment for workers with variable income. Weekly pricing — small enough to feel negligible (less than the earnings from 1–2 deliveries), meaningful enough to provide real coverage — matches how delivery workers actually think about money.
 
 ---
+## Demo Scenario
+
+Example demonstration of GigShield in action.
+
+1. Ravi subscribes to the **Standard Plan (₹55/week)** using the GigShield mobile app.
+2. GigShield continuously monitors weather data using **OpenWeatherMap and IMD APIs**.
+3. Rainfall in Ravi's delivery zone crosses the **35mm disruption threshold**.
+4. The platform verifies Ravi's **GPS location and active insurance plan**.
+5. Fraud detection model evaluates the claim and confirms eligibility.
+6. The claim is automatically approved by the GigShield system.
+7. The insurer partner releases the payout through the payment gateway.
+
+Demo payout simulation:
+
+-Disruption Event: Heavy Rain
+-Location: Velachery, Chennai
+-Disruption Duration: 5 Hours
+-Coverage Plan: Standard
+-Payout: ₹500
+-Status: SUCCESS
+-Transaction: Razorpay Sandbox
+
+
+Worker receives notification:
+-🌧 Heavy rain detected in your zone.
+-₹500 credited to your account.
+-Stay safe.
+
+---
 
 ## Financial & Business Model
 
@@ -523,6 +552,18 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 🎥 *2-minute strategy video link will be added here upon submission.*
 
 ---
+
+## Hackathon Prototype Disclaimer
+
+This project is a prototype built for the **Guidewire DEVTrails 2026 Hackathon**.
+
+For demonstration purposes:
+
+- Insurance payouts are simulated using **Razorpay Sandbox**
+- Worker identity verification is mocked
+- External data sources are integrated using publicly available APIs
+
+In a real deployment, GigShield would integrate with a **licensed IRDAI insurance partner** to underwrite policies and process real claim payouts.
 
 ## About This Project
 
