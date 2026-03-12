@@ -3,6 +3,7 @@
 ### Team ZenVyte | Guidewire DEVTrails 2026
 
 > GigShield is an AI‑powered parametric micro‑insurance platform that automatically compensates food delivery workers when external disruptions such as heavy rain, extreme heat, pollution, or government restrictions prevent them from earning income.
+<br><br>
 > *"A delivery worker is stuck during a Chennai thunderstorm. They didn't file a claim. They didn't call anyone. Their phone just buzzed — ₹500 credited. GigShield works so they don't have to."*
 
 ---
