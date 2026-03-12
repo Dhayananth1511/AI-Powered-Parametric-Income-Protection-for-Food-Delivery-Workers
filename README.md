@@ -67,6 +67,23 @@ The worker's only job is to subscribe to a weekly plan. Everything else is autom
 
 ---
 
+## Why GigShield Is Innovative
+
+GigShield introduces a new insurance model tailored specifically for gig economy workers.
+
+Key innovations include:
+
+- **Parametric Insurance Model** – payouts triggered by objective external data instead of manual claims
+- **Zero‑Touch Claims** – workers never need to file forms or upload documents
+- **AI‑Driven Risk Pricing** – machine learning assigns optimal plan tiers based on zone risk
+- **Predictive Disruption Alerts** – workers receive warnings 24–48 hours before disruptions
+- **Fraud Detection Engine** – anomaly detection protects insurers from fraudulent claims
+- **Instant Micro‑Payouts** – automated payouts delivered in under 30 seconds
+
+This transforms insurance from **reactive claims processing** into **proactive financial protection**.
+
+---
+
 ## Delivery Worker Persona
 
 ### Illustrative Persona — Swiggy Delivery Partner, Chennai
