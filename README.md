@@ -565,6 +565,8 @@ For demonstration purposes:
 
 In a real deployment, GigShield would integrate with a **licensed IRDAI insurance partner** to underwrite policies and process real claim payouts.
 
+---
+
 ## About This Project
 
 Built for the **Guidewire DEVTrails 2026 Pan-India University Hackathon**.
