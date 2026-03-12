@@ -1,7 +1,8 @@
 # GigShield 🛡️
 ### AI-Powered Parametric Income Protection for Food Delivery Workers
+### Team ZenVyte | Guidewire DEVTrails 2026
 
-> *"Ravi is stuck at home during a Chennai thunderstorm. He didn't file a claim. He didn't call anyone. His phone just buzzed — ₹400 credited. GigShield works so he doesn't have to."*
+> *"A delivery worker is stuck during a Chennai thunderstorm. They didn't file a claim. They didn't call anyone. Their phone just buzzed — ₹500 credited. GigShield works so they don't have to."*
 
 ---
 
@@ -18,8 +19,9 @@
 9. [System Architecture](#system-architecture)
 10. [Dashboards](#dashboards)
 11. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
-12. [45-Day Development Roadmap](#45-day-development-roadmap)
-13. [Strategy Video](#strategy-video)
+12. [Financial & Business Model](#financial--business-model)
+13. [45-Day Development Roadmap](#45-day-development-roadmap)
+14. [Strategy Video](#strategy-video)
 
 ---
 
@@ -27,7 +29,13 @@
 
 India's food delivery ecosystem runs on the backs of hundreds of thousands of gig workers delivering for platforms like **Zomato** and **Swiggy**. These workers are entirely dependent on daily deliveries for their income — there is no salary, no paid leave, and no safety net.
 
-External disruptions — heavy monsoon rain, extreme heat, cyclone alerts, air quality emergencies, government-declared curfews — can bring delivery activity to a complete halt. When that happens, a worker like Ravi loses **₹300–₹500 in a single evening**, with no recourse and no compensation.
+External disruptions — heavy monsoon rain, extreme heat, cyclone alerts, air quality emergencies, government-declared curfews — can bring delivery activity to a complete halt. When that happens, a food delivery worker loses **₹300–₹650 in a single evening**, with no recourse and no compensation.
+
+**The numbers:**
+- **5 crore+** gig workers in India with zero income protection
+- **₹300–₹650** lost per disruption event per worker
+- **0** traditional insurance products covering short-term gig income loss
+- **Weeks** to process a manual insurance claim today
 
 **The gap:** Traditional insurance products do not cover short-term income disruption for gig workers. Filing a manual claim is too complex, too slow, and too uncertain for someone who needs money today, not next month.
 
@@ -53,31 +61,35 @@ The worker's only job is to subscribe to a weekly plan. Everything else is autom
 - ML-driven dynamic zone-based pricing makes the model financially sustainable
 - Predictive disruption alerts warn workers 24–48 hours before an event
 - Zero-touch claim experience — no forms, no uploads, no waiting
+- GigShield operates as a technology platform — all policies underwritten by a licensed IRDAI insurer partner
 
 ---
 
 ## Delivery Worker Persona
 
-### Ravi — Swiggy Delivery Partner, Chennai
+### Illustrative Persona — Swiggy Delivery Partner, Chennai
 
 | Attribute | Detail |
 |---|---|
-| Age | 26 |
+| Age | Mid-20s |
 | City | Chennai (operates across Velachery, Adyar, T. Nagar zones) |
 | Daily Hours | 9am – 9pm |
 | Daily Deliveries | 20–28 |
 | Daily Earnings | ₹900 – ₹1,300 |
 | Weekly Earnings | ₹6,500 – ₹9,000 |
+| Hourly Earnings | ₹112 – ₹162/hour |
 | Peak Vulnerability | Evening hours (7–10pm) — Chennai's heaviest rainfall window |
 | Financial Buffer | None. One disrupted week = missed EMI or skipped meals. |
 
-### Ravi's Disruption Scenario
+> Note: This persona is representative of the food delivery partners GigShield is designed to protect across Zomato and Swiggy.
 
-It's a Tuesday evening in August. Ravi is midway through his shift in Velachery. Rainfall crosses 40mm in 2 hours. Restaurants begin closing. The Swiggy app goes quiet. Ravi pulls over under a shelter.
+### Disruption Scenario
 
-In the old world: Ravi loses ₹400 and has no way to recover it.
+It's a Tuesday evening in August. A delivery partner is midway through their shift in Velachery. Rainfall crosses 40mm in 2 hours. Restaurants begin closing. The Swiggy app goes quiet. They pull over under a shelter.
 
-With GigShield: Ravi's phone buzzes. *"🌧️ Heavy rain detected in your zone. ₹400 credited to your account. Stay safe."* He didn't do anything. GigShield did.
+**In the old world:** ₹500 lost with no way to recover it.
+
+**With GigShield:** Phone buzzes. *"🌧️ Heavy rain detected in your zone. ₹500 credited to your account. Stay safe."* They didn't do anything. GigShield did.
 
 ---
 
@@ -87,13 +99,13 @@ With GigShield: Ravi's phone buzzes. *"🌧️ Heavy rain detected in your zone.
 
 ### Trigger Table
 
-| # | Disruption Event | Data Source | Threshold | Payout |
+| # | Disruption Event | Data Source | Threshold | Payout Trigger |
 |---|---|---|---|---|
-| 1 | Heavy Rainfall | OpenWeatherMap API + IMD | Rainfall > 35mm within 3 hours in worker's pincode | Full disruption day payout |
-| 2 | Extreme Heat | IMD API | Sustained temperature > 43°C for 2+ hours | Full payout (health advisory conditions) |
-| 3 | Severe Air Pollution | CPCB AQI API (free public API) | AQI > 300 (Hazardous category) | Full payout |
-| 4 | Cyclone / Flood Alert | IMD Disaster Alert Feed | Orange or Red alert issued for worker's district | Full payout + coverage auto-extended 24 hours |
-| 5 | Government Curfew / Hartal | Verified news API + admin-confirmed flag | Section 144 order or state-declared shutdown in worker's zone | Full payout |
+| 1 | Heavy Rainfall | OpenWeatherMap API + IMD | Rainfall > 35mm within 3 hours in worker's pincode | Per disruption hour |
+| 2 | Extreme Heat | IMD API | Sustained temperature > 43°C for 2+ hours | Per disruption hour |
+| 3 | Severe Air Pollution | CPCB AQI API (free public API) | AQI > 300 (Hazardous category) | Per disruption hour |
+| 4 | Cyclone / Flood Alert | IMD Disaster Alert Feed | Orange or Red alert issued for worker's district | Full plan cap + 24hr extension |
+| 5 | Government Curfew / Hartal | Verified news API + admin-confirmed flag | Section 144 order or state-declared shutdown in worker's zone | Full plan cap |
 
 ### Why These Triggers Are Compliant
 
@@ -101,51 +113,105 @@ Each trigger above satisfies all three compliance requirements:
 
 1. **Externally verifiable** — sourced from IMD, CPCB, or a government-issued order. Not derived from platform data.
 2. **Parametric** — defined by a measurable threshold that is either crossed or not. No subjective assessment.
-3. **Causally linked to income loss** — each event directly prevents outdoor delivery work, causing lost wages.
+3. **Causally linked to income loss** — each event directly prevents outdoor delivery work, causing loss of hourly wages.
 
 ---
 
 ## Weekly Premium Model
+
+### How GigShield Pays — Hourly Micro-Payout Model
+
+GigShield compensates workers based on **disruption hours**, not full days. This is fairer to workers (most disruptions last 2–4 hours, not a full day) and financially sustainable for the platform.
+
+```
+Worker earns: ₹900/day ÷ 8 working hours = ₹112/hour average
+Typical disruption duration: 2–4 hours (evening peak)
+Realistic income lost per event: ₹224 – ₹448
+```
+
+### The 5 Plans
+
+| Plan | Weekly Premium | Hourly Payout Rate | Max Hours/Week | Max Weekly Payout | Best For |
+|---|---|---|---|---|---|
+| 🌱 Starter | ₹25/week | ₹75/hour | 2 hours | ₹150 | New workers, low-risk zones |
+| 🔵 Basic | ₹40/week | ₹75/hour | 4 hours | ₹300 | Part-time delivery partners |
+| 🟡 Standard | ₹55/week | ₹100/hour | 5 hours | ₹500 | Full-time workers, urban zones |
+| 🟠 Premium | ₹75/week | ₹125/hour | 6 hours | ₹750 | High-earning full-time partners |
+| 🔴 Elite | ₹99/week | ₹125/hour | 8 hours | ₹1,000 | Coastal/flood-prone high-risk zones |
 
 ### The Actuarial Basis
 
 GigShield's premium model is grounded in 10 years of IMD historical weather data for Chennai urban delivery zones.
 
 **Base assumptions (Chennai):**
-- Average disruption days per month during monsoon season (June–November): ~4 days
-- Average disruption days per month during off-season: ~1 day
-- Annual average disruption days: ~30 days/year (~2.5 per month)
-- Average income loss per disruption day: ₹400
+- Average disruption events per month during monsoon season (June–November): ~4 events
+- Average disruption events per month during off-season: ~1 event
+- Annual average disruption events: ~30/year
+- Average disruption duration per event: ~3 hours
+- Average hourly income loss: ₹112/hour
 
-**Expected annual payout per worker:** 30 days × ₹400 = **₹12,000/year**
+**Expected annual disruption hours per worker:** 30 events × 3 hours = **90 hours/year**
 
-**Weekly expected payout:** ₹12,000 ÷ 52 = **~₹231/week**
+**Expected annual income loss per worker:** 90 hours × ₹112 = **₹10,080/year**
 
-### Premium Tiers (ML-Assigned at Onboarding)
+**Standard plan (₹55/week) annual premium collected:** ₹55 × 52 = **₹2,860/year**
 
-| Zone Tier | Weekly Premium | Payout per Disruption Day | Max Claims per Week | Target Loss Ratio |
-|---|---|---|---|---|
-| 🟢 Green — Low Risk (inland, historically < 1 disruption/month) | ₹18/week | ₹350 | 2 days | 65% |
-| 🟡 Yellow — Medium Risk (urban core, 2–3 disruptions/month avg) | ₹25/week | ₹400 | 3 days | 68% |
-| 🔴 Red — High Risk (coastal / flood-prone, 4+ disruptions/month) | ₹35/week | ₹500 | 3 days | 70% |
-
-**Target loss ratio: 65–70%**, consistent with sustainable micro-insurance operations globally. Premium tiers are assigned by our Zone Risk Classifier ML model at the point of worker onboarding, based on the worker's declared primary delivery zone.
+> The premium gap between collected premium and expected payout is covered by the underwriting insurer partner. GigShield earns a platform distribution fee of ₹8 per active policy per week, with zero claims liability.
 
 ### Why Weekly Pricing
 
-Gig workers on Zomato/Swiggy operate on a weekly earnings and payout cycle. Daily premiums create friction. Monthly premiums are too large a commitment for workers with variable income. Weekly pricing — small enough to feel negligible (less than one order's earnings), meaningful enough to provide real coverage — matches how Ravi actually thinks about money.
+Gig workers on Zomato/Swiggy operate on a weekly earnings and payout cycle. Daily premiums create friction. Monthly premiums are too large a commitment for workers with variable income. Weekly pricing — small enough to feel negligible (less than the earnings from 1–2 deliveries), meaningful enough to provide real coverage — matches how delivery workers actually think about money.
+
+---
+
+## Financial & Business Model
+
+### GigShield is a Technology Platform — Not an Insurer
+
+GigShield operates as an **insurance technology distribution platform**, not as the underwriter. This is the same model used by Toffee Insurance, Riskcovry, and Plum in India.
+
+```
+Worker pays weekly premium
+         ↓
+Licensed IRDAI Insurer Partner (e.g., Digit Insurance / Acko)
+holds all premium capital and pays all claims
+         ↓
+GigShield earns a platform distribution fee per active policy
+         ↓
+GigShield's claims liability: ₹0
+```
+
+### GigShield Revenue Per Policy Per Week
+
+| Plan | Weekly Premium | GigShield Platform Fee | Insurer Keeps |
+|---|---|---|---|
+| 🌱 Starter | ₹25 | ₹4 | ₹21 |
+| 🔵 Basic | ₹40 | ₹6 | ₹34 |
+| 🟡 Standard | ₹55 | ₹8 | ₹47 |
+| 🟠 Premium | ₹75 | ₹10 | ₹65 |
+| 🔴 Elite | ₹99 | ₹13 | ₹86 |
+
+### Revenue at Scale
+
+| Active Workers | Avg Plan | Weekly Platform Revenue | Annual Revenue |
+|---|---|---|---|
+| 1,000 | Standard | ₹8,000/week | ₹41,60,000/year |
+| 10,000 | Standard | ₹80,000/week | ₹4,16,00,000/year |
+| 1,00,000 | Standard | ₹8,00,000/week | ₹41,60,00,000/year |
+
+**GigShield cannot go bankrupt from claims — because GigShield never pays claims.**
 
 ---
 
 ## AI/ML Architecture
 
-GigShield integrates three purpose-built ML models. Each is described below with its algorithm, features, training data, and output.
+GigShield integrates three purpose-built ML models.
 
 ---
 
 ### Model 1 — Zone Risk Classifier
 
-**Purpose:** Assign each delivery zone a risk tier (Green / Yellow / Red) to determine the worker's weekly premium at onboarding.
+**Purpose:** Recommend the most appropriate plan tier to each worker at onboarding based on their delivery zone's historical disruption risk.
 
 **Algorithm:** Random Forest Classifier
 
@@ -160,15 +226,19 @@ GigShield integrates three purpose-built ML models. Each is described below with
 | Feature | Description |
 |---|---|
 | Zone latitude / longitude | Geographic position of delivery zone centroid |
-| Historical disruption days/month (12-month rolling) | Frequency of past disruption events in that zone |
+| Historical disruption events/month (12-month rolling) | Frequency of past disruption events in that zone |
 | Proximity to water bodies | Distance to nearest river, lake, or coastline (flood proxy) |
 | Zone elevation | Low elevation = poor drainage = higher flood risk |
 | Month of year | Monsoon seasonality weighting |
 | Historical AQI exceedance days | Pollution risk profile for the zone |
 
-**Output:** Risk score 0.0–1.0 → mapped to Green (< 0.35) / Yellow (0.35–0.65) / Red (> 0.65) → weekly premium assigned
+**Output:** Risk score 0.0–1.0 → plan recommendation
+- Score < 0.25 → Recommend Starter / Basic
+- Score 0.25–0.55 → Recommend Standard
+- Score 0.55–0.75 → Recommend Premium
+- Score > 0.75 → Recommend Elite
 
-**Why Random Forest:** Handles mixed numerical and categorical features well, produces interpretable feature importance scores, and does not require large datasets to perform reliably — suitable for zone-level historical data volumes.
+**Why Random Forest:** Handles mixed numerical and categorical features well, produces interpretable feature importance scores, and does not require large datasets — suitable for zone-level historical data volumes.
 
 ---
 
@@ -184,17 +254,16 @@ GigShield integrates three purpose-built ML models. Each is described below with
 |---|---|
 | No verified trigger event | If no IMD/CPCB threshold breach recorded in worker's pincode on claim day → automatic rejection |
 | GPS pincode mismatch | If worker's GPS location at trigger time does not overlap with disruption event pincode → automatic rejection |
-| Claim cap exceeded | If worker has already reached max claims for the week → automatic rejection |
+| Claim cap exceeded | If worker has already reached max hours for the week → automatic rejection |
+| Plan not active | If worker's weekly plan has expired → automatic rejection |
 
 #### Anomaly Scoring (Isolation Forest — Applied After Hard Rules Pass)
-
-**Behavioral features fed to the model:**
 
 | Feature | Fraud Signal |
 |---|---|
 | GPS velocity during claimed disruption window | Speed > 5 km/h during disruption = actively working, not disrupted |
 | Claim frequency (last 4 weeks) | 4 consecutive weekly claims with no variation = anomalous |
-| Claim timing relative to trigger | Claim filed > 2 hours before trigger threshold crossed = suspicious |
+| Claim timing relative to trigger | Claim initiated before trigger threshold crossed = suspicious |
 | Device fingerprint | Multiple accounts on same device = duplicate registration fraud |
 | Historical claim approval rate | Consistent 100% approval rate over months = flag for review |
 
@@ -223,9 +292,9 @@ GigShield integrates three purpose-built ML models. Each is described below with
 **Output:** Disruption probability score (0–100%) per zone per day
 
 **Worker-facing UX:**
-> *"⚡ Storm likely in your Velachery zone tomorrow 6–9pm. Probability: 78%. Your ₹400 coverage is active."*
+> *"⚡ Storm likely in your delivery zone tomorrow 6–9pm. Probability: 78%. Your ₹500 coverage is active."*
 
-**Admin-facing UX:** City-wide heatmap showing predicted disruption risk for the next 48 hours, enabling the insurer to pre-position liquidity for expected payouts.
+**Admin-facing UX:** City-wide heatmap showing predicted disruption risk for the next 48 hours, enabling the insurer partner to pre-position liquidity for expected payouts.
 
 This model transforms GigShield from **reactive insurance** into **proactive financial protection** — a meaningful product innovation.
 
@@ -234,38 +303,43 @@ This model transforms GigShield from **reactive insurance** into **proactive fin
 ## Zero-Touch Claim Flow
 
 ```
-Ravi purchases ₹25 weekly plan on GigShield mobile app
+Worker subscribes to ₹55 Standard weekly plan on GigShield mobile app
            │
            ▼
 GigShield backend polls OpenWeatherMap + IMD every 15 minutes
            │
            ▼
-7:23pm — Rainfall crosses 35mm threshold in Velachery pincode
+7:23pm — Rainfall crosses 35mm threshold in worker's pincode
            │
            ▼
-┌──────────────────────────────────────┐
-│         Automated Verification       │
-│  ✅ Ravi's GPS in Velachery zone?    │
-│  ✅ First claim today? (not a dup)   │
-│  ✅ Fraud score: 12/100 (clean)      │
-│  ✅ Weekly claim cap not reached?    │
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│           Automated Verification         │
+│  ✅ Worker GPS in affected zone?         │
+│  ✅ Plan active this week?               │
+│  ✅ Hourly cap not yet reached?          │
+│  ✅ Fraud score: 12/100 (clean)          │
+│  ✅ No duplicate claim today?            │
+└──────────────────────────────────────────┘
            │
            ▼
    Claim auto-approved in < 30 seconds
            │
            ▼
-   Razorpay sandbox triggers ₹400 transfer
+   Insurer partner releases ₹100/hour payout
+   (Standard plan — disruption duration: 5 hours = ₹500 max)
+           │
+           ▼
+   Razorpay sandbox triggers transfer
            │
            ▼
    Firebase push notification sent:
-   "🌧️ Heavy rain in your zone. ₹400 credited. Stay safe, Ravi."
+   "🌧️ Heavy rain in your zone. ₹500 credited. Stay safe."
            │
            ▼
-   Ravi is home. Dry. Paid. Without filing a single form.
+   Worker is home. Dry. Paid. Without filing a single form.
 ```
 
-**Total time from disruption detection to payout: under 30 seconds.**
+**Total time from disruption detection to payout: under 30 seconds. Zero human intervention. Zero forms.**
 
 ---
 
@@ -277,7 +351,7 @@ GigShield is built on two platforms sharing a single backend:
 
 | Platform | Target User | Purpose |
 |---|---|---|
-| **Mobile App (React Native)** | Delivery Workers | Onboarding, plan purchase, disruption alerts, payout tracking |
+| **Mobile App (React Native)** | Delivery Workers | Onboarding, plan selection, disruption alerts, payout tracking |
 | **Web App (React.js)** | Insurer / Admin | Zone heatmap, policy portfolio, fraud queue, loss ratio analytics, predictive disruption map |
 
 A shared **FastAPI backend** serves both platforms through a unified REST API. This architecture avoids duplication and ensures ML model outputs are consistent across both interfaces.
@@ -294,7 +368,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 | Weather API | OpenWeatherMap (free tier) + IMD public data | Real-time conditions + historical training data |
 | AQI API | CPCB AQI API / OpenAQ (free public APIs) | Government-verified pollution data |
 | Location | Google Maps API | GPS zone verification, delivery area mapping |
-| Payments | Razorpay Sandbox (test mode) | Simulated instant payout — no real money required for demo |
+| Payments | Razorpay Sandbox (test mode) | Simulated instant payout |
 | Push Notifications | Firebase Cloud Messaging | Real-time worker alerts on mobile |
 | Hosting | Railway / Render (free tier) | Fast deployment for hackathon demo |
 
@@ -340,6 +414,12 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
                                        │
                                        ▼
                             ┌─────────────────────┐
+                            │  IRDAI Insurer       │
+                            │  Partner Payout API  │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
                             │  Razorpay Sandbox    │
                             │  (Payout Processing) │
                             └──────────┬──────────┘
@@ -357,20 +437,23 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 ### Worker Mobile Dashboard
 
-- **Coverage Status Badge** — Active (🟢) / Expired (🔴) / Disruption in Progress (⚡)
+- **Plan Status Badge** — Active (🟢) / Expired (🔴) / Disruption in Progress (⚡)
+- **Current Plan Card** — Plan name, weekly premium, hourly rate, hours remaining this week
 - **This Week's Disruptions** — Events detected in your delivery zone
-- **Payouts Received** — Timeline of all credited amounts
+- **Payouts Received** — Timeline of all credited amounts with disruption type
 - **Predictive Alert Panel** — "Heavy rain likely tomorrow 6–9pm in your zone"
-- **Earnings Protected Counter** — "You've saved ₹1,600 this month with GigShield" *(retention metric)*
+- **Earnings Protected Counter** — "You've saved ₹1,600 this month with GigShield"
+- **Upgrade Plan** — One-tap upgrade to higher tier before next week
 - **Renew Plan** — One-tap weekly renewal before plan expires
 
 ### Admin / Insurer Web Dashboard
 
 - **City Zone Risk Heatmap** — Live + 48-hour predictive disruption risk by zone
-- **Active Policies** — Count, premium collected, zone breakdown
-- **Claims Today** — Auto-approved / In review / Auto-rejected
+- **Active Policies by Plan** — Breakdown across all 5 plan tiers
+- **Premium Collected This Week** — Total across all plans
+- **Claims Today** — Auto-approved / In review / Auto-rejected with hourly breakdown
 - **Loss Ratio by Zone** — Real-time financial health of the portfolio
-- **Fraud Review Queue** — Claims in the 30–70 score band, with evidence summary
+- **Fraud Review Queue** — Claims in the 30–70 score band with evidence summary
 - **ML Model Health** — Confidence scores, feature drift indicators
 - **Predicted Payout Exposure** — Expected payouts for next 48 hours based on disruption forecast
 
@@ -380,7 +463,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 ### What GigShield Covers
 
-GigShield covers **income lost by food delivery workers during verified external disruptions** that prevent delivery activity. Coverage is parametric — payouts are triggered by objective data thresholds, not manual claim assessment.
+GigShield covers **income lost by food delivery workers during verified external disruptions** that prevent delivery activity. Coverage is parametric — payouts are triggered by objective data thresholds, not manual claim assessment. Payouts are calculated on a per-hour basis up to the plan's weekly maximum.
 
 ### What GigShield Explicitly Does NOT Cover
 
@@ -398,21 +481,23 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 *Theme: Ideate & Know Your Delivery Worker*
 
 - [x] Problem research and gig worker persona analysis
-- [x] Insurance model design (parametric triggers, premium tiers, loss ratio)
+- [x] Insurance model design (5 plan tiers, hourly payout model, loss ratio)
 - [x] ML model architecture planning (Zone Risk, Fraud, Predictive)
 - [x] Tech stack selection and platform strategy
 - [x] System architecture design
 - [x] GitHub repository setup with full README
-- [ ] Minimal prototype: Worker onboarding screen + weekly plan selection UI
+- [x] Financial & business model — partner insurer structure defined
+- [ ] Minimal prototype: Worker onboarding screen + plan selection UI
 - [ ] Strategy video (2 minutes)
 
 ### Phase 2 — Automation & Protection (Weeks 3–4 | March 21–April 4)
 *Theme: Protect Your Worker*
 
 - [ ] Worker registration and KYC flow (simulated Aadhaar verification)
-- [ ] Insurance policy management (create, view, renew weekly plan)
-- [ ] Dynamic premium calculation (Zone Risk Classifier model deployed)
+- [ ] Insurance policy management (create, view, renew, upgrade weekly plan)
+- [ ] Zone Risk Classifier model deployed — plan recommendation at onboarding
 - [ ] Weather + AQI API integration and disruption detection engine
+- [ ] Hourly payout calculation engine
 - [ ] Claims management system (auto-trigger + fraud check pipeline)
 - [ ] Razorpay sandbox payout integration
 - [ ] Firebase push notification setup
@@ -424,9 +509,9 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 - [ ] Advanced fraud detection (Isolation Forest model trained and deployed)
 - [ ] Predictive disruption alert engine (XGBoost model, 48-hour forecast)
 - [ ] Intelligent admin dashboard (heatmap, loss ratio, fraud queue, predictive map)
-- [ ] Worker dashboard — earnings protected counter + predictive alert panel
+- [ ] Worker dashboard — all 5 plan cards, earnings protected counter, upgrade flow
 - [ ] Full system integration testing
-- [ ] 5-minute demo video (simulated rainstorm → auto-claim → payout walkthrough)
+- [ ] 5-minute demo video (simulated rainstorm → auto-claim → hourly payout walkthrough)
 - [ ] Final pitch deck (PDF)
 
 ---
@@ -441,6 +526,15 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 
 Built for the **Guidewire DEVTrails 2026 Pan-India University Hackathon**.
 
+**Team Name:** ZenVyte
+
+**Team Members:**
+- Dhayananth N *(Team Lead)*
+- Mowlieswaran G
+- Arun Kumar S
+- Karthick V
+- Hardik Muthusamy
+
 **Problem Statement:** AI-Powered Insurance for India's Gig Economy
 
 **Team Persona Focus:** Food Delivery Workers (Zomato / Swiggy)
@@ -451,4 +545,5 @@ Built for the **Guidewire DEVTrails 2026 Pan-India University Hackathon**.
 
 ---
 
-*Build fast. Spend smart. Protect Ravi. 🛡️*
+*Build fast. Spend smart. Protect every delivery worker. 🛡️*
+*Team ZenVyte — DEVTrails 2026*
