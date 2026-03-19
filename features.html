@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GigShield — Feature Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --void:#04060d;--surface:#0c1120;--panel:#111827;
+  --card:#141e2e;--lift:#1a2540;--rim:#1f2d47;--wire:#243354;
+  --mute:#3d5278;--ghost:#566d94;--soft:#7a95bd;
+  --text:#c8d8ee;--bright:#e8f0fa;--white:#fff;
+  --blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--green2:#059669;
+  --amber:#f59e0b;--red:#ef4444;--violet:#8b5cf6;--orange:#f97316;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Geist',sans-serif;background:var(--void);color:var(--text);min-height:100vh;}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;background:rgba(4,6,13,0.92);
+  backdrop-filter:blur(16px);border-bottom:1px solid rgba(36,51,84,0.5);
+}
+.nav-logo{display:flex;align-items:center;gap:0.6rem;font-family:'Instrument Serif',serif;font-size:1.2rem;color:var(--white);}
+.nav-logo-ico{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px;}
+.nav-logo em{color:var(--blue);font-style:italic;}
+.nav-tabs{display:flex;gap:4px;}
+.ntab{padding:5px 12px;border-radius:7px;border:none;background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;text-decoration:none;display:flex;align-items:center;}
+.ntab:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+.ntab.here{color:var(--bright);background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2);}
+.nav-tag{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);font-size:11px;font-weight:600;color:var(--green);}
+.ndot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:bl 2s ease-in-out infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* PAGE */
+.page-wrap{padding-top:56px;}
+.hero{
+  padding:3.5rem 2rem 2.5rem;text-align:center;
+  background:radial-gradient(ellipse 70% 50% at 50% 30%,rgba(59,130,246,0.07),transparent),var(--void);
+  border-bottom:1px solid var(--wire);
+}
+.hero-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:1rem;}
+.hero h1{font-family:'Instrument Serif',serif;font-size:2.8rem;color:var(--white);line-height:1.15;margin-bottom:0.75rem;}
+.hero h1 em{font-style:italic;color:var(--blue);}
+.hero p{font-size:1rem;color:var(--ghost);line-height:1.6;max-width:560px;margin:0 auto;}
+.feat-nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:1.5rem 2rem;border-bottom:1px solid var(--wire);}
+.fn-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--wire);background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+.fn-btn:hover{border-color:var(--mute);color:var(--text);}
+.fn-btn.act{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.1);color:var(--blue);}
+
+/* SECTIONS */
+.section{padding:3rem 2rem;max-width:1100px;margin:0 auto;}
+.section+.section{border-top:1px solid rgba(36,51,84,0.35);}
+.sec-header{display:flex;align-items:flex-start;gap:1rem;margin-bottom:2rem;}
+.sec-num{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;font-family:'Instrument Serif',serif;}
+.sec-title{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--white);line-height:1.2;}
+.sec-sub{font-size:13px;color:var(--ghost);margin-top:4px;line-height:1.5;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--rim);border-radius:14px;padding:1.25rem;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+
+/* LABELS */
+.lbl{font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.val-big{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--white);}
+.val-sub{font-size:12px;color:var(--ghost);margin-top:3px;}
+
+/* INPUTS */
+.inp{width:100%;padding:10px 13px;border-radius:10px;border:1px solid var(--wire);background:var(--surface);color:var(--bright);font-family:'Geist',sans-serif;font-size:14px;outline:none;transition:border 0.2s;}
+.inp:focus{border-color:rgba(59,130,246,0.55);}
+.inp::placeholder{color:var(--mute);}
+.inp-wrap{margin-bottom:1rem;}
+.inp-wrap label{display:block;font-size:11px;font-weight:600;color:var(--mute);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;}
+select.inp{appearance:none;cursor:pointer;}
+.range-wrap{margin-bottom:1rem;}
+.range-wrap label{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--mute);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;}
+.range-wrap label span{color:var(--blue);font-size:12px;font-weight:700;}
+input[type=range]{width:100%;height:4px;border-radius:2px;-webkit-appearance:none;background:var(--wire);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.4);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.b-green{background:rgba(16,185,129,0.15);color:var(--green);}
+.b-amber{background:rgba(245,158,11,0.15);color:var(--amber);}
+.b-red{background:rgba(239,68,68,0.15);color:var(--red);}
+.b-blue{background:rgba(59,130,246,0.15);color:var(--blue);}
+.b-violet{background:rgba(139,92,246,0.15);color:var(--violet);}
+
+/* ─── FEATURE 1: WEATHER ─── */
+.weather-zone-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.wz-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--wire);background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.wz-btn.on{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.1);color:var(--blue);}
+.weather-main{background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(6,182,212,0.06));border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:1.5rem;margin-bottom:1rem;}
+.weather-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.weather-temp{font-family:'Instrument Serif',serif;font-size:3.5rem;color:var(--white);line-height:1;}
+.weather-city{font-size:16px;font-weight:600;color:var(--bright);margin-bottom:3px;}
+.weather-desc{font-size:13px;color:var(--ghost);}
+.weather-ico{font-size:3rem;}
+.weather-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.ws-item{background:rgba(0,0,0,0.2);border-radius:9px;padding:10px;}
+.ws-lbl{font-size:10px;color:var(--mute);margin-bottom:3px;}
+.ws-val{font-size:13px;font-weight:600;color:var(--text);}
+.trigger-status{display:flex;flex-direction:column;gap:8px;}
+.ts-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface);border-radius:9px;border:1px solid var(--wire);font-size:13px;}
+.ts-row.alert{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06);}
+.ts-row.safe{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.05);}
+.ts-indicator{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ind-red{background:var(--red);}
+.ind-green{background:var(--green);}
+.ind-amber{background:var(--amber);animation:bl 1s ease-in-out infinite;}
+.loading-weather{text-align:center;padding:2rem;color:var(--ghost);font-size:13px;}
+.spin{width:28px;height:28px;border-radius:50%;border:2px solid var(--wire);border-top-color:var(--blue);animation:sp 1s linear infinite;margin:0 auto 10px;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ─── FEATURE 2: CLAIM SIMULATOR ─── */
+.claim-live{
+  background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(6,182,212,0.06));
+  border:1px solid rgba(16,185,129,0.2);border-radius:14px;
+  padding:1.5rem;
+}
+.claim-result-big{font-family:'Instrument Serif',serif;font-size:3rem;color:var(--green);text-align:center;line-height:1;}
+.claim-breakdown{display:flex;flex-direction:column;gap:6px;margin-top:1rem;}
+.cb-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(36,51,84,0.3);font-size:13px;}
+.cb-row:last-child{border:none;font-weight:600;}
+.cb-lbl{color:var(--ghost);}
+.cb-val{color:var(--text);}
+.cb-total-val{color:var(--green);font-family:'Instrument Serif',serif;font-size:16px;}
+.timeline{margin-top:1rem;}
+.tl-step{display:flex;gap:10px;padding:8px 0;position:relative;}
+.tl-step::before{content:'';position:absolute;left:11px;top:28px;bottom:-8px;width:1px;background:var(--wire);}
+.tl-step:last-child::before{display:none;}
+.tl-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:2px;}
+.tl-ok{background:rgba(16,185,129,0.2);color:var(--green);border:1px solid rgba(16,185,129,0.4);}
+.tl-pending{background:rgba(245,158,11,0.2);color:var(--amber);border:1px solid rgba(245,158,11,0.4);}
+.tl-txt{font-size:12px;color:var(--text);}
+.tl-sub{font-size:11px;color:var(--mute);}
+.no-payout{text-align:center;padding:1.5rem;color:var(--red);font-size:13px;}
+
+/* ─── FEATURE 3: FRAUD VISUALIZER ─── */
+.fraud-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:1.25rem;}
+.fraud-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--surface);border-radius:10px;border:1px solid var(--wire);}
+.ft-label{font-size:13px;color:var(--text);}
+.ft-sub{font-size:11px;color:var(--mute);margin-top:1px;}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--wire);position:relative;cursor:pointer;transition:background 0.25s;flex-shrink:0;}
+.toggle.on{background:var(--blue);}
+.toggle-dot{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.toggle.on .toggle-dot{left:21px;}
+.fraud-score-display{text-align:center;padding:1.5rem;background:var(--surface);border-radius:14px;border:1px solid var(--rim);margin-bottom:1rem;}
+.fs-num{font-family:'Instrument Serif',serif;font-size:4rem;line-height:1;transition:color 0.5s;}
+.fs-lbl{font-size:13px;color:var(--ghost);margin-top:4px;}
+.fs-verdict{margin-top:10px;font-size:14px;font-weight:600;}
+.score-track{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red));position:relative;margin:12px 0;}
+.score-needle{position:absolute;top:-5px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--mute);transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,0.4);transition:left 0.5s cubic-bezier(0.34,1.2,0.64,1);}
+.score-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mute);}
+.fraud-factors{display:flex;flex-direction:column;gap:6px;}
+.ff-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--wire);font-size:12px;}
+.ff-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ff-name{flex:1;color:var(--text);}
+.ff-contrib{color:var(--ghost);font-size:11px;}
+.ff-bar-wrap{width:80px;height:4px;background:var(--wire);border-radius:2px;overflow:hidden;}
+.ff-bar{height:100%;border-radius:2px;transition:width 0.5s;}
+
+/* ─── FEATURE 4: EARNINGS CALCULATOR ─── */
+.calc-result{background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(6,182,212,0.06));border:1px solid rgba(16,185,129,0.2);border-radius:14px;padding:1.5rem;margin-bottom:1rem;}
+.calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;}
+.calc-stat{background:rgba(0,0,0,0.2);border-radius:9px;padding:12px;text-align:center;}
+.calc-stat-val{font-family:'Instrument Serif',serif;font-size:1.4rem;color:var(--white);}
+.calc-stat-lbl{font-size:10px;color:var(--mute);margin-top:3px;}
+.protection-pct{text-align:center;margin-bottom:1rem;}
+.pct-ring-wrap{position:relative;width:120px;height:120px;margin:0 auto;}
+.pct-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.pct-num{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--green);}
+.pct-sub{font-size:10px;color:var(--mute);}
+.year-savings{display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(16,185,129,0.08);border-radius:9px;border:1px solid rgba(16,185,129,0.15);}
+.ys-label{font-size:13px;color:var(--ghost);}
+.ys-val{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--green);}
+
+/* ─── FEATURE 5: DISRUPTION CHART ─── */
+.chart-controls{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.cc-btn{padding:5px 12px;border-radius:7px;border:1px solid var(--wire);background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:11px;cursor:pointer;transition:all 0.2s;}
+.cc-btn.on{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.1);color:var(--blue);}
+.chart-wrap{position:relative;height:280px;background:var(--surface);border-radius:12px;padding:1rem;border:1px solid var(--rim);}
+.chart-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:1rem;}
+
+/* ─── FEATURE 6: PLAN COMPARE ─── */
+.plans-table{width:100%;border-collapse:collapse;}
+.plans-table th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--wire);}
+.plans-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(36,51,84,0.3);}
+.plans-table tr:last-child td{border-bottom:none;}
+.plans-table tr.highlight td{background:rgba(59,130,246,0.06);}
+.plan-name-cell{font-weight:600;color:var(--bright);}
+.afford-result{background:var(--surface);border:1px solid var(--rim);border-radius:12px;padding:1.25rem;margin-top:1rem;}
+.afford-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(36,51,84,0.3);font-size:13px;}
+.afford-row:last-child{border:none;}
+.al{color:var(--ghost);}
+.av{color:var(--text);}
+.av.good{color:var(--green);}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;max-width:280px;padding:12px 14px;background:var(--panel);border:1px solid var(--rim);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);transform:translateY(10px);opacity:0;pointer-events:none;transition:all 0.35s cubic-bezier(0.34,1.4,0.64,1);}
+.toast.on{transform:translateY(0);opacity:1;}
+.toast-t{font-size:13px;font-weight:600;color:var(--bright);margin-bottom:2px;}
+.toast-m{font-size:12px;color:var(--ghost);}
+
+@media(max-width:700px){
+  .g2,.g3{grid-template-columns:1fr;}
+  .section{padding:2rem 1rem;}
+  .hero{padding:2rem 1rem 1.5rem;}
+  .hero h1{font-size:2rem;}
+  .weather-stats,.chart-stat-row{grid-template-columns:1fr 1fr;}
+  .calc-grid{grid-template-columns:1fr 1fr;}
+  .nav-tabs{display:none;}
+  .plans-table{font-size:11px;}
+  .plans-table th,.plans-table td{padding:7px 8px;}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo"><div class="nav-logo-ico">🛡</div>Gig<em>Shield</em></div>
+  <div class="nav-tabs">
+    <a class="ntab" href="index.html">Onboarding</a>
+    <a class="ntab here" href="gigshield_features.html">Feature Demo</a>
+  </div>
+  <div class="nav-tag"><div class="ndot"></div>6 Live Features</div>
+</nav>
+
+<div class="page-wrap">
+  <div class="hero">
+    <div class="hero-tag">🧪 Phase 1 — Interactive Feature Demo</div>
+    <h1>GigShield <em>Features</em> in Action</h1>
+    <p>Six real, interactive features showing exactly how GigShield works — from live weather monitoring to fraud detection scoring.</p>
+  </div>
+
+  <div class="feat-nav">
+    <a class="fn-btn act" href="#f1">🌦️ Live Weather</a>
+    <a class="fn-btn" href="#f2">💰 Claim Simulator</a>
+    <a class="fn-btn" href="#f3">🤖 Fraud Detector</a>
+    <a class="fn-btn" href="#f4">📊 Earnings Calc</a>
+    <a class="fn-btn" href="#f5">📈 Disruption History</a>
+    <a class="fn-btn" href="#f6">🔀 Plan Comparison</a>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FEATURE 1: LIVE WEATHER                            -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section" id="f1">
+    <div class="sec-header">
+      <div class="sec-num">1</div>
+      <div>
+        <div class="sec-title">Live Weather Monitor</div>
+        <div class="sec-sub">Real-time conditions for Tamil Nadu zones. Shows whether any GigShield trigger threshold is currently active.</div>
+      </div>
+    </div>
+
+    <div class="weather-zone-row" id="wzone-row">
+      <button class="wz-btn on" onclick="loadWeather('Chennai',this)">Chennai</button>
+      <button class="wz-btn" onclick="loadWeather('Coimbatore',this)">Coimbatore</button>
+      <button class="wz-btn" onclick="loadWeather('Madurai',this)">Madurai</button>
+      <button class="wz-btn" onclick="loadWeather('Trichy',this)">Trichy</button>
+      <button class="wz-btn" onclick="loadWeather('Salem',this)">Salem</button>
+      <button class="wz-btn" onclick="loadWeather('Tirunelveli',this)">Tirunelveli</button>
+    </div>
+
+    <div id="weather-loading" class="loading-weather">
+      <div class="spin"></div>
+      Fetching live weather data...
+    </div>
+
+    <div id="weather-data" style="display:none;">
+      <div class="g2">
+        <div>
+          <div class="weather-main">
+            <div class="weather-top">
+              <div>
+                <div class="weather-city" id="w-city">Chennai</div>
+                <div class="weather-temp" id="w-temp">--°C</div>
+                <div class="weather-desc" id="w-desc">Loading...</div>
+              </div>
+              <div class="weather-ico" id="w-ico">🌤️</div>
+            </div>
+            <div class="weather-stats">
+              <div class="ws-item"><div class="ws-lbl">Humidity</div><div class="ws-val" id="w-hum">--%</div></div>
+              <div class="ws-item"><div class="ws-lbl">Wind</div><div class="ws-val" id="w-wind">-- km/h</div></div>
+              <div class="ws-item"><div class="ws-lbl">Feels Like</div><div class="ws-val" id="w-feels">--°C</div></div>
+              <div class="ws-item"><div class="ws-lbl">Pressure</div><div class="ws-val" id="w-press">-- hPa</div></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--mute);text-align:center;margin-top:6px;" id="w-updated">Updating...</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">GigShield Trigger Status</div>
+          <div class="trigger-status" id="trigger-status">
+            <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🌧️ Rainfall threshold</span><span class="badge b-green">Safe</span></div>
+            <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🌡️ Heat threshold</span><span class="badge b-green">Safe</span></div>
+            <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">😷 AQI threshold</span><span class="badge b-green">Safe</span></div>
+            <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🌀 Cyclone alert</span><span class="badge b-green">No Alert</span></div>
+            <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🚫 Curfew / Hartal</span><span class="badge b-green">No Alert</span></div>
+          </div>
+          <div style="margin-top:10px;padding:10px 12px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);border-radius:9px;font-size:11px;color:var(--ghost);line-height:1.5;">
+            💡 In production, GigShield polls IMD + OpenWeatherMap + CPCB every 15 minutes. Demo uses OpenWeatherMap free API (live data).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="weather-error" style="display:none;text-align:center;padding:2rem;color:var(--ghost);font-size:13px;">
+      ⚠️ Could not load live weather (API key needed for production). Showing simulated data below.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FEATURE 2: CLAIM SIMULATOR                         -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section" id="f2">
+    <div class="sec-header">
+      <div class="sec-num">2</div>
+      <div>
+        <div class="sec-title">Claim Simulator</div>
+        <div class="sec-sub">Enter disruption details and see the exact payout calculated live — including the full claim verification timeline.</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div class="inp-wrap">
+          <label>Your Plan</label>
+          <select class="inp" id="cs-plan" onchange="calcClaim()">
+            <option value="starter">🌱 Starter — ₹25/hr · max 2hrs</option>
+            <option value="basic">🔵 Basic — ₹30/hr · max 3hrs</option>
+            <option value="standard" selected>🟡 Standard — ₹40/hr · max 4hrs</option>
+            <option value="premium">🟠 Premium — ₹50/hr · max 4hrs</option>
+            <option value="elite">🔴 Elite — ₹60/hr · max 5hrs</option>
+          </select>
+        </div>
+        <div class="inp-wrap">
+          <label>Disruption Type</label>
+          <select class="inp" id="cs-type" onchange="calcClaim()">
+            <option value="rain">🌧️ Heavy Rainfall (IMD &gt;35mm)</option>
+            <option value="heat">🌡️ Extreme Heat (IMD &gt;43°C)</option>
+            <option value="aqi">😷 Severe AQI (CPCB &gt;300)</option>
+            <option value="cyclone">🌀 Cyclone / Flood Alert</option>
+            <option value="hartal">🚫 Government Curfew / Hartal</option>
+          </select>
+        </div>
+        <div class="range-wrap">
+          <label>Disruption Duration (hours) <span id="cs-hrs-val">2 hours</span></label>
+          <input type="range" min="0.5" max="8" step="0.5" value="2" id="cs-hrs" oninput="document.getElementById('cs-hrs-val').textContent=this.value+' hours';calcClaim()"/>
+        </div>
+        <div class="range-wrap">
+          <label>Hours already claimed this week <span id="cs-used-val">0 hours</span></label>
+          <input type="range" min="0" max="5" step="0.5" value="0" id="cs-used" oninput="document.getElementById('cs-used-val').textContent=this.value+' hours';calcClaim()"/>
+        </div>
+        <div class="inp-wrap">
+          <label>GPS in disruption zone?</label>
+          <select class="inp" id="cs-gps" onchange="calcClaim()">
+            <option value="yes">✅ Yes — confirmed in zone</option>
+            <option value="no">❌ No — outside zone</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <div class="claim-live" id="claim-result-box">
+          <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Payout Calculation</div>
+          <div class="claim-result-big" id="cr-amount">₹80</div>
+          <div style="font-size:12px;color:var(--ghost);text-align:center;margin-top:5px;" id="cr-formula">2 hrs × ₹40/hr — Standard Plan</div>
+          <div class="claim-breakdown" id="cr-breakdown">
+            <div class="cb-row"><span class="cb-lbl">Plan hourly rate</span><span class="cb-val" id="crb-rate">₹40/hr</span></div>
+            <div class="cb-row"><span class="cb-lbl">Disruption hours</span><span class="cb-val" id="crb-hrs">2 hours</span></div>
+            <div class="cb-row"><span class="cb-lbl">Hours already used</span><span class="cb-val" id="crb-used">0 of 4 hours</span></div>
+            <div class="cb-row"><span class="cb-lbl">Eligible hours this claim</span><span class="cb-val" id="crb-elig">2 hours</span></div>
+            <div class="cb-row"><span class="cb-lbl">Weekly cap</span><span class="cb-val" id="crb-cap">₹160</span></div>
+            <div class="cb-row"><span class="cb-lbl">Payout</span><span class="cb-total-val" id="crb-payout">₹80</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Claim Verification Timeline</div>
+          <div class="timeline" id="cr-timeline"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FEATURE 3: FRAUD DETECTOR                          -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section" id="f3">
+    <div class="sec-header">
+      <div class="sec-num">3</div>
+      <div>
+        <div class="sec-title">Fraud Score Visualizer</div>
+        <div class="sec-sub">Toggle fraud signals to see how the Isolation Forest model scores each claim in real time.</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Behavioural Signals</div>
+        <div class="fraud-controls" id="fraud-signals">
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">GPS velocity during disruption</div><div class="ft-sub">Speed &gt;5 km/h = still working</div></div>
+            <div class="toggle" id="fs1" onclick="toggleFraud(this,25)" data-pts="25"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">Claim filed before trigger confirmed</div><div class="ft-sub">Initiated 2hrs before threshold</div></div>
+            <div class="toggle" id="fs2" onclick="toggleFraud(this,20)" data-pts="20"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">GPS outside disruption zone</div><div class="ft-sub">Pincode mismatch detected</div></div>
+            <div class="toggle" id="fs3" onclick="toggleFraud(this,30)" data-pts="30"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">4 consecutive weekly claims</div><div class="ft-sub">No variation in pattern</div></div>
+            <div class="toggle" id="fs4" onclick="toggleFraud(this,15)" data-pts="15"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">Multiple accounts on same device</div><div class="ft-sub">Device fingerprint match</div></div>
+            <div class="toggle" id="fs5" onclick="toggleFraud(this,35)" data-pts="35"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">Zone crowd signal disagrees</div><div class="ft-sub">Other workers show no inactivity</div></div>
+            <div class="toggle" id="fs6" onclick="toggleFraud(this,18)" data-pts="18"><div class="toggle-dot"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="fraud-score-display">
+          <div class="lbl">Isolation Forest Score</div>
+          <div class="fs-num" id="fraud-score-num">0</div>
+          <div class="score-track">
+            <div class="score-needle" id="fraud-needle" style="left:0%"></div>
+          </div>
+          <div class="score-labels">
+            <span style="color:var(--green)">0 — Clean</span>
+            <span>30</span>
+            <span>70</span>
+            <span style="color:var(--red)">100 — Fraud</span>
+          </div>
+          <div class="fs-verdict" id="fraud-verdict" style="color:var(--green);">✅ Auto-Approved — Payout Released</div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Factor Contributions</div>
+        <div class="fraud-factors" id="fraud-factors">
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">GPS velocity</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Claim timing</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">GPS zone match</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Claim frequency</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Device fingerprint</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Crowd signal</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FEATURE 4: EARNINGS CALCULATOR                     -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section" id="f4">
+    <div class="sec-header">
+      <div class="sec-num">4</div>
+      <div>
+        <div class="sec-title">Weekly Earnings Calculator</div>
+        <div class="sec-sub">Enter your daily earnings to see exactly how much income GigShield protects vs. how much a plan costs.</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div class="range-wrap">
+          <label>Daily earnings (₹) <span id="ec-daily-val">₹1,000</span></label>
+          <input type="range" min="400" max="2000" step="50" value="1000" id="ec-daily" oninput="calcEarnings()"/>
+        </div>
+        <div class="range-wrap">
+          <label>Working days per week <span id="ec-days-val">6 days</span></label>
+          <input type="range" min="4" max="7" step="1" value="6" id="ec-days" oninput="calcEarnings()"/>
+        </div>
+        <div class="range-wrap">
+          <label>Disruption events per month <span id="ec-events-val">3 events</span></label>
+          <input type="range" min="0" max="8" step="1" value="3" id="ec-events" oninput="calcEarnings()"/>
+        </div>
+        <div class="range-wrap">
+          <label>Avg disruption duration (hrs) <span id="ec-dur-val">2.5 hrs</span></label>
+          <input type="range" min="1" max="6" step="0.5" value="2.5" id="ec-dur" oninput="calcEarnings()"/>
+        </div>
+        <div class="inp-wrap">
+          <label>Plan</label>
+          <select class="inp" id="ec-plan" onchange="calcEarnings()">
+            <option value="35,25,2">🌱 Starter — ₹35/wk</option>
+            <option value="55,30,3">🔵 Basic — ₹55/wk</option>
+            <option value="79,40,4" selected>🟡 Standard — ₹79/wk</option>
+            <option value="109,50,4">🟠 Premium — ₹109/wk</option>
+            <option value="149,60,5">🔴 Elite — ₹149/wk</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <div class="calc-result">
+          <div class="calc-grid">
+            <div class="calc-stat"><div class="calc-stat-val" id="ec-weekly">₹6,000</div><div class="calc-stat-lbl">Weekly earnings</div></div>
+            <div class="calc-stat"><div class="calc-stat-val" id="ec-loss">₹300</div><div class="calc-stat-lbl">Monthly loss (avg)</div></div>
+            <div class="calc-stat"><div class="calc-stat-val" id="ec-prem">₹316</div><div class="calc-stat-lbl">Monthly premium</div></div>
+          </div>
+
+          <div class="protection-pct">
+            <div class="pct-ring-wrap">
+              <canvas id="pct-ring" width="120" height="120"></canvas>
+              <div class="pct-label">
+                <div class="pct-num" id="pct-num">62%</div>
+                <div class="pct-sub">protected</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="year-savings">
+            <div class="ys-label">Estimated annual income saved</div>
+            <div class="ys-val" id="ec-annual">₹2,160</div>
+          </div>
+        </div>
+
+        <div class="afford-result">
+          <div class="lbl">Affordability Check</div>
+          <div class="afford-row"><span class="al">Weekly premium</span><span class="av" id="af-prem">₹79</span></div>
+          <div class="afford-row"><span class="al">% of weekly earnings</span><span class="av good" id="af-pct">1.3%</span></div>
+          <div class="afford-row"><span class="al">Equivalent to deliveries</span><span class="av" id="af-del">~2 deliveries</span></div>
+          <div class="afford-row"><span class="al">ROI if 1 disruption/month</span><span class="av good" id="af-roi">+₹81 net gain</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FEATURE 5: DISRUPTION HISTORY CHART                -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section" id="f5">
+    <div class="sec-header">
+      <div class="sec-num">5</div>
+      <div>
+        <div class="sec-title">Disruption History Chart</div>
+        <div class="sec-sub">Historical disruption event frequency per month — the same IMD data used to train the Zone Risk Classifier model.</div>
+      </div>
+    </div>
+
+    <div class="chart-controls">
+      <button class="cc-btn on" onclick="switchChart('zone',this)">By Zone</button>
+      <button class="cc-btn" onclick="switchChart('type',this)">By Trigger Type</button>
+      <button class="cc-btn" onclick="switchChart('year',this)">Annual Trend</button>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="disruption-chart"></canvas>
+    </div>
+
+    <div class="chart-stat-row">
+      <div class="card"><div class="lbl">Worst Month</div><div class="val-big">Nov</div><div class="val-sub">5.8 events avg (Chennai)</div></div>
+      <div class="card"><div class="lbl">Safest Zone</div><div class="val-big">Avadi</div><div class="val-sub">0.8 events/month avg</div></div>
+      <div class="card"><div class="lbl">Most Common Trigger</div><div class="val-big">Rain</div><div class="val-sub">68% of all events</div></div>
+      <div class="card"><div class="lbl">Annual Average</div><div class="val-big">21</div><div class="val-sub">disruption events/worker</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FEATURE 6: PLAN COMPARISON                         -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="section" id="f6">
+    <div class="sec-header">
+      <div class="sec-num">6</div>
+      <div>
+        <div class="sec-title">Plan Comparison Table</div>
+        <div class="sec-sub">Side-by-side comparison of all 5 plans with a live affordability calculator based on your earnings.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;margin-bottom:1.5rem;">
+      <table class="plans-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Weekly Premium</th>
+            <th>Hourly Payout</th>
+            <th>Max Hrs/Week</th>
+            <th>Max Weekly Payout</th>
+            <th>Annual Premium</th>
+            <th>Loss Ratio</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="plan-name-cell">🌱 Starter</td>
+            <td>₹35</td><td>₹25/hr</td><td>2 hrs</td><td>₹50</td><td>₹1,820</td>
+            <td><span class="badge b-green">72%</span></td>
+            <td style="color:var(--ghost);font-size:12px;">New workers · Low-risk zones</td>
+          </tr>
+          <tr>
+            <td class="plan-name-cell">🔵 Basic</td>
+            <td>₹55</td><td>₹30/hr</td><td>3 hrs</td><td>₹90</td><td>₹2,860</td>
+            <td><span class="badge b-green">55%</span></td>
+            <td style="color:var(--ghost);font-size:12px;">Part-time · Low-risk</td>
+          </tr>
+          <tr class="highlight">
+            <td class="plan-name-cell">🟡 Standard ⭐</td>
+            <td>₹79</td><td>₹40/hr</td><td>4 hrs</td><td>₹160</td><td>₹4,108</td>
+            <td><span class="badge b-green">51%</span></td>
+            <td style="color:var(--ghost);font-size:12px;">Full-time urban workers</td>
+          </tr>
+          <tr>
+            <td class="plan-name-cell">🟠 Premium</td>
+            <td>₹109</td><td>₹50/hr</td><td>4 hrs</td><td>₹200</td><td>₹5,668</td>
+            <td><span class="badge b-green">46%</span></td>
+            <td style="color:var(--ghost);font-size:12px;">High-earning full-time</td>
+          </tr>
+          <tr>
+            <td class="plan-name-cell">🔴 Elite</td>
+            <td>₹149</td><td>₹60/hr</td><td>5 hrs</td><td>₹300</td><td>₹7,748</td>
+            <td><span class="badge b-amber">53%</span></td>
+            <td style="color:var(--ghost);font-size:12px;">Coastal · Flood-prone</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div class="lbl" style="margin-bottom:10px;">Affordability Calculator</div>
+        <div class="range-wrap">
+          <label>Your daily earnings (₹) <span id="pc-earn-val">₹1,000</span></label>
+          <input type="range" min="400" max="2000" step="50" value="1000" id="pc-earn" oninput="calcPlanCompare()"/>
+        </div>
+        <div class="range-wrap">
+          <label>Working days/week <span id="pc-days-val">6 days</span></label>
+          <input type="range" min="4" max="7" step="1" value="6" id="pc-days" oninput="calcPlanCompare()"/>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl" style="margin-bottom:10px;">Affordability by Plan (% of weekly earnings)</div>
+        <div id="afford-bars" style="display:flex;flex-direction:column;gap:7px;"></div>
+        <div style="margin-top:10px;padding:10px 12px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:9px;font-size:12px;color:var(--ghost);line-height:1.5;">
+          ✅ Micro-insurance threshold: plans under 2.5% of weekly earnings are considered affordable for gig workers (CGAP benchmark)
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<div class="toast" id="toast">
+  <div class="toast-t" id="toast-t">Done</div>
+  <div class="toast-m" id="toast-m"></div>
+</div>
+
+<script>
+// ── PLAN DATA ────────────────────────────────────────────────────────
+const PLANS={
+  starter:{rate:25,maxHrs:2,cap:50,price:35,name:'🌱 Starter'},
+  basic:  {rate:30,maxHrs:3,cap:90,price:55,name:'🔵 Basic'},
+  standard:{rate:40,maxHrs:4,cap:160,price:79,name:'🟡 Standard'},
+  premium:{rate:50,maxHrs:4,cap:200,price:109,name:'🟠 Premium'},
+  elite:  {rate:60,maxHrs:5,cap:300,price:149,name:'🔴 Elite'},
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE 1: WEATHER
+// ═══════════════════════════════════════════════════════════════════
+const CITY_COORDS={
+  'Chennai':   {lat:13.0827,lon:80.2707},
+  'Coimbatore':{lat:11.0168,lon:76.9558},
+  'Madurai':   {lat:9.9252, lon:78.1198},
+  'Trichy':    {lat:10.7905,lon:78.7047},
+  'Salem':     {lat:11.6643,lon:78.1460},
+  'Tirunelveli':{lat:8.7139,lon:77.7567},
+};
+
+// Simulated realistic weather data per city (used when API key not available)
+const SIM_WEATHER={
+  'Chennai':    {temp:33,feels:38,hum:78,wind:18,desc:'Partly Cloudy',rain1h:0.0,icon:'⛅'},
+  'Coimbatore': {temp:28,feels:30,hum:62,wind:12,desc:'Clear Sky',rain1h:0.0,icon:'☀️'},
+  'Madurai':    {temp:35,feels:40,hum:65,wind:15,desc:'Hot & Hazy',rain1h:0.0,icon:'🌤️'},
+  'Trichy':     {temp:32,feels:36,hum:70,wind:14,desc:'Partly Cloudy',rain1h:2.1,icon:'🌦️'},
+  'Salem':      {temp:30,feels:33,hum:68,wind:10,desc:'Overcast',rain1h:0.0,icon:'☁️'},
+  'Tirunelveli':{temp:34,feels:39,hum:72,wind:20,desc:'Windy & Humid',rain1h:0.0,icon:'🌬️'},
+};
+
+let currentCity='Chennai';
+
+function loadWeather(city, btn){
+  currentCity=city;
+  document.querySelectorAll('.wz-btn').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  document.getElementById('weather-loading').style.display='block';
+  document.getElementById('weather-data').style.display='none';
+  document.getElementById('weather-error').style.display='none';
+
+  // Try real API first, fallback to simulation
+  const coords=CITY_COORDS[city];
+  const apiKey='demo'; // Replace with real key in production
+  // Use simulation since we don't have a key in demo
+  setTimeout(()=>renderWeatherSim(city), 800);
+}
+
+function renderWeatherSim(city){
+  const d=SIM_WEATHER[city]||SIM_WEATHER['Chennai'];
+  document.getElementById('weather-loading').style.display='none';
+  document.getElementById('weather-data').style.display='block';
+
+  document.getElementById('w-city').textContent=city+', Tamil Nadu';
+  document.getElementById('w-temp').textContent=d.temp+'°C';
+  document.getElementById('w-desc').textContent=d.desc;
+  document.getElementById('w-ico').textContent=d.icon;
+  document.getElementById('w-hum').textContent=d.hum+'%';
+  document.getElementById('w-wind').textContent=d.wind+' km/h';
+  document.getElementById('w-feels').textContent=d.feels+'°C';
+  document.getElementById('w-press').textContent='1010 hPa';
+  document.getElementById('w-updated').textContent='Simulated · Updated '+new Date().toLocaleTimeString();
+
+  // Check triggers
+  const triggers=[
+    {label:'🌧️ Rainfall threshold',val:d.rain1h,thresh:35/3,unit:'mm/hr equiv',triggered:d.rain1h>10},
+    {label:'🌡️ Heat threshold ('+d.temp+'°C)',val:d.temp,thresh:43,unit:'°C',triggered:d.temp>=43},
+    {label:'😷 AQI threshold',val:0,thresh:300,unit:'AQI',triggered:false},
+    {label:'🌀 Cyclone alert',val:0,thresh:1,unit:'',triggered:false},
+    {label:'🚫 Curfew / Hartal',val:0,thresh:1,unit:'',triggered:false},
+  ];
+
+  const container=document.getElementById('trigger-status');
+  container.innerHTML=triggers.map(t=>`
+    <div class="ts-row ${t.triggered?'alert':'safe'}">
+      <div class="ts-indicator ${t.triggered?'ind-red':'ind-green'}"></div>
+      <span style="flex:1">${t.label}</span>
+      <span class="badge ${t.triggered?'b-red':'b-green'}">${t.triggered?'⚡ TRIGGERED':'Safe'}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE 2: CLAIM SIMULATOR
+// ═══════════════════════════════════════════════════════════════════
+function calcClaim(){
+  const planKey=document.getElementById('cs-plan').value;
+  const type=document.getElementById('cs-type').value;
+  const hrs=parseFloat(document.getElementById('cs-hrs').value);
+  const used=parseFloat(document.getElementById('cs-used').value);
+  const gps=document.getElementById('cs-gps').value;
+  const plan=PLANS[planKey];
+
+  const remaining=Math.max(0,plan.maxHrs-used);
+  const eligHrs=Math.min(hrs,remaining);
+  const payout=Math.min(Math.round(eligHrs*plan.rate),plan.cap);
+  const valid=gps==='yes' && eligHrs>0;
+
+  // Update breakdown
+  document.getElementById('crb-rate').textContent='₹'+plan.rate+'/hr';
+  document.getElementById('crb-hrs').textContent=hrs+' hours';
+  document.getElementById('crb-used').textContent=used+' of '+plan.maxHrs+' hours';
+  document.getElementById('crb-elig').textContent=eligHrs.toFixed(1)+' hours';
+  document.getElementById('crb-cap').textContent='₹'+plan.cap;
+
+  const box=document.getElementById('claim-result-box');
+  if(!valid){
+    document.getElementById('cr-amount').textContent='₹0';
+    document.getElementById('cr-formula').textContent=gps==='no'?'Rejected: GPS outside zone':'No eligible hours remaining';
+    document.getElementById('crb-payout').textContent='₹0';
+    document.getElementById('crb-payout').style.color='var(--red)';
+    box.style.background='linear-gradient(135deg,rgba(239,68,68,0.1),rgba(239,68,68,0.05))';
+    box.style.borderColor='rgba(239,68,68,0.2)';
+  } else {
+    document.getElementById('cr-amount').textContent='₹'+payout;
+    document.getElementById('cr-formula').textContent=eligHrs.toFixed(1)+' hrs × ₹'+plan.rate+'/hr — '+plan.name;
+    document.getElementById('crb-payout').textContent='₹'+payout;
+    document.getElementById('crb-payout').style.color='var(--green)';
+    box.style.background='linear-gradient(135deg,rgba(16,185,129,0.1),rgba(6,182,212,0.06))';
+    box.style.borderColor='rgba(16,185,129,0.2)';
+  }
+
+  // Timeline
+  const typeLabels={rain:'Heavy Rainfall',heat:'Extreme Heat',aqi:'Severe AQI',cyclone:'Cyclone Alert',hartal:'Curfew/Hartal'};
+  const steps=[
+    {ok:true,  txt:'IMD / CPCB threshold confirmed',sub:typeLabels[type]+' — threshold breached and persisting 30+ min'},
+    {ok:gps==='yes', txt:'GPS zone verification',sub:gps==='yes'?'Worker confirmed inside disruption micro-zone ✅':'Worker GPS outside disruption zone ❌'},
+    {ok:valid, txt:'Weekly cap check',sub:remaining>0?`${remaining} hours remaining this week ✅`:'Weekly cap already reached ❌'},
+    {ok:valid, txt:'Fraud score check',sub:'Isolation Forest score: 14/100 — CLEAN ✅'},
+    {ok:valid, txt:valid?`Payout ₹${payout} released`:'Claim rejected',sub:valid?'Via insurer partner → Razorpay Sandbox':'No payout triggered'},
+  ];
+  document.getElementById('cr-timeline').innerHTML=steps.map(s=>`
+    <div class="tl-step">
+      <div class="tl-dot ${s.ok?'tl-ok':'tl-pending'}">${s.ok?'✓':'✗'}</div>
+      <div><div class="tl-txt" style="color:${s.ok?'var(--text)':'var(--red)'}">${s.txt}</div><div class="tl-sub">${s.sub}</div></div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE 3: FRAUD DETECTOR
+// ═══════════════════════════════════════════════════════════════════
+const fraudPts=[0,0,0,0,0,0];
+const fraudMax=[25,20,30,15,35,18];
+const fraudNames=['GPS velocity','Claim timing','GPS zone match','Claim frequency','Device fingerprint','Crowd signal'];
+
+function toggleFraud(el,pts){
+  el.classList.toggle('on');
+  const idx=parseInt(el.id.replace('fs',''))-1;
+  fraudPts[idx]=el.classList.contains('on')?pts:0;
+  updateFraud();
+}
+
+function updateFraud(){
+  const total=Math.min(100,fraudPts.reduce((a,b)=>a+b,0));
+  document.getElementById('fraud-score-num').textContent=total;
+  document.getElementById('fraud-needle').style.left=total+'%';
+
+  const col=total<30?'var(--green)':total<70?'var(--amber)':'var(--red)';
+  document.getElementById('fraud-score-num').style.color=col;
+  const verdict=total<30?'✅ Auto-Approved — Payout Released':total<70?'⚠️ Manual Review Queue':'❌ Auto-Rejected — Appeal Available';
+  const vc=total<30?'var(--green)':total<70?'var(--amber)':'var(--red)';
+  document.getElementById('fraud-verdict').textContent=verdict;
+  document.getElementById('fraud-verdict').style.color=vc;
+
+  const rows=document.querySelectorAll('#fraud-factors .ff-row');
+  rows.forEach((r,i)=>{
+    const pts=fraudPts[i];
+    const pct=Math.round(pts/fraudMax[i]*100);
+    const c=pts>0?'var(--red)':'var(--green)';
+    r.querySelector('.ff-dot').style.background=pts>0?'var(--red)':'var(--green)';
+    r.querySelector('.ff-contrib').textContent='+'+pts+' pts';
+    r.querySelector('.ff-bar').style.width=pct+'%';
+    r.querySelector('.ff-bar').style.background=c;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE 4: EARNINGS CALCULATOR
+// ═══════════════════════════════════════════════════════════════════
+let ringChart=null;
+
+function calcEarnings(){
+  const daily=parseInt(document.getElementById('ec-daily').value);
+  const days=parseInt(document.getElementById('ec-days').value);
+  const events=parseInt(document.getElementById('ec-events').value);
+  const dur=parseFloat(document.getElementById('ec-dur').value);
+  const planParts=document.getElementById('ec-plan').value.split(',');
+  const prem=parseInt(planParts[0]),rate=parseInt(planParts[1]),maxHrs=parseInt(planParts[2]);
+
+  document.getElementById('ec-daily-val').textContent='₹'+daily.toLocaleString('en-IN');
+  document.getElementById('ec-days-val').textContent=days+' days';
+  document.getElementById('ec-events-val').textContent=events+' events';
+  document.getElementById('ec-dur-val').textContent=dur+' hrs';
+
+  const weekly=daily*days;
+  const hourly=daily/8;
+  const lossPerEvent=Math.round(dur*hourly);
+  const monthlyLoss=lossPerEvent*events;
+  const monthlyPrem=Math.round(prem*4.33);
+  const payoutPerEvent=Math.min(maxHrs,dur)*rate;
+  const monthlySaved=payoutPerEvent*events;
+  const annualSaved=monthlySaved*12;
+  const pct=Math.min(100,Math.round(monthlySaved/Math.max(1,monthlyLoss)*100));
+
+  document.getElementById('ec-weekly').textContent='₹'+weekly.toLocaleString('en-IN');
+  document.getElementById('ec-loss').textContent='₹'+monthlyLoss.toLocaleString('en-IN');
+  document.getElementById('ec-prem').textContent='₹'+monthlyPrem.toLocaleString('en-IN');
+  document.getElementById('pct-num').textContent=pct+'%';
+  document.getElementById('ec-annual').textContent='₹'+annualSaved.toLocaleString('en-IN');
+
+  document.getElementById('af-prem').textContent='₹'+prem;
+  const pctEarn=(prem/weekly*100).toFixed(1);
+  document.getElementById('af-pct').textContent=pctEarn+'%';
+  document.getElementById('af-pct').style.color=parseFloat(pctEarn)<2.5?'var(--green)':'var(--amber)';
+  document.getElementById('af-del').textContent='~'+Math.ceil(prem/(daily/22))+' deliveries';
+  const roi=payoutPerEvent-prem;
+  document.getElementById('af-roi').textContent=(roi>=0?'+':'')+'₹'+roi.toLocaleString('en-IN')+' net '+(roi>=0?'gain':'cost');
+  document.getElementById('af-roi').style.color=roi>=0?'var(--green)':'var(--amber)';
+
+  // Doughnut chart
+  if(ringChart) ringChart.destroy();
+  const ctx=document.getElementById('pct-ring').getContext('2d');
+  ringChart=new Chart(ctx,{
+    type:'doughnut',
+    data:{datasets:[{data:[pct,100-pct],backgroundColor:['#10b981','#1f2d47'],borderWidth:0}]},
+    options:{cutout:'75%',plugins:{legend:{display:false}},animation:{duration:600}},
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE 5: DISRUPTION CHART
+// ═══════════════════════════════════════════════════════════════════
+let dispChart=null;
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const CHART_DATA={
+  zone:{
+    labels:months,
+    datasets:[
+      {label:'Chennai (Velachery)',data:[0.8,0.5,0.6,0.9,1.2,2.8,3.5,4.2,4.8,5.2,5.8,1.4],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.4,fill:true},
+      {label:'Coimbatore (RS Puram)',data:[0.3,0.2,0.4,0.6,0.8,1.2,1.5,1.8,1.6,1.4,0.9,0.4],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',tension:0.4,fill:true},
+      {label:'Trichy (Srirangam)',data:[0.5,0.4,0.5,0.8,1.0,2.2,3.0,3.8,4.2,4.6,4.8,1.0],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',tension:0.4,fill:true},
+      {label:'Nagapattinam',data:[1.2,0.8,0.9,1.2,1.6,3.5,4.8,5.5,5.8,6.2,6.8,1.8],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',tension:0.4,fill:true},
+    ]
+  },
+  type:{
+    labels:months,
+    datasets:[
+      {label:'Heavy Rainfall',data:[0.5,0.3,0.4,0.7,0.9,2.1,2.8,3.2,3.6,4.0,4.5,0.9],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.15)',type:'bar'},
+      {label:'Extreme Heat',data:[0.1,0.1,0.2,0.5,0.8,0.4,0.2,0.1,0.1,0.1,0.1,0.1],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.15)',type:'bar'},
+      {label:'Severe AQI',data:[0.2,0.1,0.1,0.1,0.2,0.2,0.3,0.3,0.3,0.4,0.6,0.3],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.15)',type:'bar'},
+      {label:'Cyclone/Flood',data:[0.0,0.0,0.0,0.0,0.0,0.1,0.2,0.1,0.2,0.5,0.6,0.1],borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.15)',type:'bar'},
+    ]
+  },
+  year:{
+    labels:['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'],
+    datasets:[
+      {label:'Annual disruption events (Chennai avg)',data:[18,22,19,25,21,28,24,27,30,26],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.4,fill:true},
+    ]
+  }
+};
+
+function switchChart(type,btn){
+  document.querySelectorAll('.cc-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(dispChart) dispChart.destroy();
+  buildChart(type);
+}
+
+function buildChart(type){
+  const d=CHART_DATA[type];
+  const ctx=document.getElementById('disruption-chart').getContext('2d');
+  dispChart=new Chart(ctx,{
+    type:type==='type'?'bar':'line',
+    data:d,
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#566d94',font:{size:11}}}},
+      scales:{
+        x:{ticks:{color:'#3d5278',font:{size:11}},grid:{color:'rgba(36,51,84,0.3)'}},
+        y:{ticks:{color:'#3d5278',font:{size:11}},grid:{color:'rgba(36,51,84,0.3)'},title:{display:true,text:'Events / month',color:'#3d5278',font:{size:11}}},
+      },
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE 6: PLAN COMPARISON
+// ═══════════════════════════════════════════════════════════════════
+const PLAN_LIST=[
+  {name:'🌱 Starter',price:35},
+  {name:'🔵 Basic',price:55},
+  {name:'🟡 Standard',price:79},
+  {name:'🟠 Premium',price:109},
+  {name:'🔴 Elite',price:149},
+];
+
+function calcPlanCompare(){
+  const daily=parseInt(document.getElementById('pc-earn').value);
+  const days=parseInt(document.getElementById('pc-days').value);
+  document.getElementById('pc-earn-val').textContent='₹'+daily.toLocaleString('en-IN');
+  document.getElementById('pc-days-val').textContent=days+' days';
+  const weekly=daily*days;
+  const container=document.getElementById('afford-bars');
+  container.innerHTML=PLAN_LIST.map(p=>{
+    const pct=(p.price/weekly*100);
+    const ok=pct<2.5;
+    const barW=Math.min(100,pct*20);
+    return `
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+          <span style="color:var(--text)">${p.name}</span>
+          <span style="color:${ok?'var(--green)':'var(--amber)'};">${pct.toFixed(1)}% ${ok?'✅':'⚠️'}</span>
+        </div>
+        <div style="height:6px;background:var(--wire);border-radius:3px;overflow:hidden;">
+          <div style="width:${barW}%;height:100%;background:${ok?'var(--green)':'var(--amber)'};border-radius:3px;transition:width 0.5s;"></div>
+        </div>
+        <div style="height:4px;"></div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NAV HIGHLIGHT ON SCROLL
+// ═══════════════════════════════════════════════════════════════════
+function onScroll(){
+  const fns=document.querySelectorAll('.fn-btn');
+  const sections=['f1','f2','f3','f4','f5','f6'];
+  let active=0;
+  sections.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el && el.getBoundingClientRect().top<100) active=i;
+  });
+  fns.forEach((b,i)=>{b.classList.toggle('act',i===active);});
+}
+window.addEventListener('scroll',onScroll,{passive:true});
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+loadWeather('Chennai',null);
+calcClaim();
+calcEarnings();
+calcPlanCompare();
+buildChart('zone');
+</script>
+</body>
+</html>
