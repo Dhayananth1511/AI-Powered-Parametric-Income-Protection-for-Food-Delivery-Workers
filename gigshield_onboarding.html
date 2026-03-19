@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GigShield — Register</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--void:#04060d;--surface:#0c1120;--panel:#111827;--card:#141e2e;--rim:#1f2d47;--wire:#243354;--mute:#3d5278;--ghost:#566d94;--text:#c8d8ee;--bright:#e8f0fa;--white:#fff;--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--violet:#8b5cf6;}
+body{font-family:'Geist',sans-serif;background:var(--void);color:var(--text);min-height:100vh;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;background:rgba(4,6,13,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--wire);}
+.nl{display:flex;align-items:center;gap:8px;font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--white);text-decoration:none;}
+.ni{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:13px;}
+.nl em{color:var(--blue);font-style:italic;}
+.nsteps{display:flex;align-items:center;gap:5px;}
+.ns{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--wire);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--mute);background:transparent;font-family:'Geist',sans-serif;transition:all 0.3s;}
+.ns.on{border-color:var(--blue);background:rgba(59,130,246,0.15);color:var(--blue);}
+.ns.done{border-color:var(--green);background:rgba(16,185,129,0.12);color:var(--green);}
+.nl2{width:18px;height:1px;background:var(--wire);transition:background 0.3s;}
+.nl2.done{background:var(--green);}
+.prog-wrap{position:fixed;top:54px;left:0;right:0;height:3px;background:var(--wire);z-index:99;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width 0.5s ease;}
+.screen{display:none;min-height:100vh;padding-top:57px;}
+.screen.on{display:block;}
+.body{max-width:520px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+.wbody{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+.sh{font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--white);margin-bottom:5px;}
+.ss{font-size:13px;color:var(--ghost);line-height:1.5;margin-bottom:1.75rem;}
+.back{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ghost);cursor:pointer;background:none;border:none;font-family:'Geist',sans-serif;margin-bottom:1.25rem;padding:0;}
+.sec{font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.09em;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.sec::after{content:'';flex:1;height:1px;background:var(--rim);}
+.fld{margin-bottom:12px;}
+.fld label{display:block;font-size:10px;font-weight:700;color:var(--mute);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.06em;}
+.inp{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--wire);background:var(--surface);color:var(--bright);font-family:'Geist',sans-serif;font-size:13px;outline:none;transition:border 0.2s;}
+.inp:focus{border-color:rgba(59,130,246,0.5);box-shadow:0 0 0 3px rgba(59,130,246,0.07);}
+.inp::placeholder{color:var(--mute);}
+select.inp{appearance:none;cursor:pointer;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pbrow{display:flex;gap:7px;margin-bottom:12px;}
+.pb{flex:1;padding:10px;border-radius:9px;border:1px solid var(--wire);background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.pb.on{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.09);color:var(--blue);}
+.info{padding:9px 12px;border-radius:8px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);font-size:11px;color:var(--ghost);line-height:1.55;margin-bottom:12px;}
+.info b{color:#7a95bd;}
+.info.success{background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.2);color:var(--green);}
+.btn-f{width:100%;padding:13px;border-radius:11px;border:none;cursor:pointer;color:#fff;font-family:'Geist',sans-serif;font-size:14px;font-weight:600;transition:opacity 0.2s,transform 0.1s;margin-top:6px;}
+.btn-f:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-f:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.btn-blue{background:linear-gradient(135deg,var(--blue),var(--cyan));box-shadow:0 4px 16px rgba(59,130,246,0.25);}
+.btn-violet{background:linear-gradient(135deg,var(--violet),var(--blue));box-shadow:0 4px 16px rgba(139,92,246,0.25);}
+.btn-green{background:linear-gradient(135deg,var(--green),var(--cyan));box-shadow:0 4px 16px rgba(16,185,129,0.25);}
+.btn-g{width:100%;padding:11px;border-radius:11px;border:1px solid var(--wire);background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:13px;cursor:pointer;margin-top:7px;transition:all 0.2s;}
+.btn-g:hover{border-color:var(--mute);color:var(--text);}
+
+/* ROLE PICK */
+.rpick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.rpc{padding:1.5rem;border-radius:14px;border:2px solid var(--rim);background:var(--surface);cursor:pointer;transition:all 0.2s;text-align:center;}
+.rpc:hover{border-color:var(--mute);transform:translateY(-2px);}
+.rpc.sel{border-color:rgba(59,130,246,0.6);background:rgba(59,130,246,0.08);}
+.rpc.sel.ac{border-color:rgba(139,92,246,0.6);background:rgba(139,92,246,0.08);}
+.rp-i{font-size:2.5rem;margin-bottom:10px;}
+.rp-n{font-size:15px;font-weight:600;color:var(--bright);margin-bottom:4px;}
+.rp-d{font-size:12px;color:var(--ghost);}
+
+/* ZONE DROPDOWN */
+#zdd{display:none;background:var(--panel);border:1px solid var(--wire);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);margin-top:-8px;margin-bottom:10px;position:relative;z-index:50;}
+.zo{padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--rim);font-size:12px;transition:background 0.15s;}
+.zo:last-child{border-bottom:none;}
+.zo:hover{background:var(--surface);}
+
+/* ZONE RISK */
+.risk-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.ml-run{display:flex;flex-direction:column;align-items:center;padding:2rem 0;text-align:center;}
+.spin{width:56px;height:56px;border-radius:50%;border:3px solid var(--wire);border-top-color:var(--blue);animation:sp 1s linear infinite;margin-bottom:1rem;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.mls{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;background:var(--surface);margin-bottom:5px;font-size:12px;color:var(--ghost);opacity:0;transform:translateX(-6px);transition:all 0.3s;text-align:left;width:100%;max-width:340px;}
+.mls.vis{opacity:1;transform:translateX(0);}
+.mls.done{color:var(--green);}
+.msd{width:16px;height:16px;border-radius:50%;background:var(--rim);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;}
+.mls.done .msd{background:var(--green);color:#fff;}
+.rhero{background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(6,182,212,0.05));border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:1.5rem;margin-bottom:1rem;}
+.rscore{font-family:'Instrument Serif',serif;font-size:2.5rem;line-height:1;}
+.meter{height:9px;border-radius:5px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red));position:relative;margin:10px 0 5px;}
+.mptr{position:absolute;top:-5px;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--amber);transform:translateX(-50%);box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:left 1.2s cubic-bezier(0.34,1.2,0.64,1);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;}
+.fc{background:var(--card);border:1px solid var(--rim);border-radius:10px;padding:11px;}
+.fcl{font-size:10px;color:var(--mute);margin-bottom:3px;}
+.fcv{font-size:12px;font-weight:600;color:var(--text);}
+.fcb{height:4px;background:var(--wire);border-radius:2px;overflow:hidden;margin-top:5px;}
+.fcf{height:100%;border-radius:2px;}
+.recbox{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:14px;margin-bottom:1rem;}
+.recl{font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
+.recn{font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;}
+.recw{font-size:12px;color:var(--ghost);line-height:1.5;}
+
+/* PLANS */
+.plan-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;}
+.plc{border-radius:12px;padding:13px 14px;border:1.5px solid var(--rim);background:var(--surface);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:space-between;position:relative;}
+.plc:hover{border-color:var(--mute);}
+.plc.sel{border-color:rgba(59,130,246,0.55);background:rgba(59,130,246,0.06);}
+.plc.rec{border-color:rgba(245,158,11,0.45);}
+.plc.rec.sel{border-color:rgba(59,130,246,0.55);background:rgba(59,130,246,0.06);}
+.rec-tag{position:absolute;top:-1px;right:12px;padding:1px 8px;border-radius:0 0 6px 6px;background:var(--amber);color:#fff;font-size:9px;font-weight:700;}
+.pn{font-size:13px;font-weight:600;color:var(--bright);}
+.pt{font-size:11px;color:var(--ghost);margin-top:1px;}
+.ps{display:flex;gap:10px;margin-top:6px;}
+.pst{font-size:11px;color:var(--ghost);}
+.pst b{color:var(--cyan);font-weight:600;}
+.ppr{font-family:'Instrument Serif',serif;font-size:1.2rem;color:var(--blue);flex-shrink:0;margin-right:8px;}
+.radio{width:17px;height:17px;border-radius:50%;border:2px solid var(--wire);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.plc.sel .radio{border-color:var(--blue);background:var(--blue);}
+.rdot{width:6px;height:6px;border-radius:50%;background:#fff;display:none;}
+.plc.sel .rdot{display:block;}
+
+/* PAYMENT */
+.obox{background:var(--card);border:1px solid var(--rim);border-radius:14px;padding:1.25rem;margin-bottom:1rem;}
+.or{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(36,51,84,0.3);font-size:13px;}
+.or:last-child{border:none;}
+.ol{color:var(--ghost);}
+.ov{color:var(--text);}
+.otot{font-family:'Instrument Serif',serif;font-size:1.2rem;color:var(--green);}
+.pms{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;}
+.pm{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--rim);background:var(--surface);cursor:pointer;transition:all 0.2s;}
+.pm.on{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.07);}
+.pmi{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.pmn{font-size:13px;font-weight:500;color:var(--text);}
+.pmsub{font-size:11px;color:var(--mute);}
+.pmsel{margin-left:auto;width:15px;height:15px;border-radius:50%;border:1.5px solid var(--wire);display:flex;align-items:center;justify-content:center;font-size:9px;transition:all 0.2s;}
+.pm.on .pmsel{background:var(--blue);border-color:var(--blue);color:#fff;}
+
+/* SUCCESS */
+.swrap{min-height:calc(100vh - 57px);display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 4rem;text-align:center;background:radial-gradient(ellipse 60% 40% at 50% 20%,rgba(16,185,129,0.07),transparent),var(--void);}
+.sring{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:1.25rem;animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.25)}50%{box-shadow:0 0 0 14px rgba(16,185,129,0)}}
+.sring.w{background:rgba(16,185,129,0.12);border:2px solid rgba(16,185,129,0.35);}
+.sring.a{background:rgba(139,92,246,0.12);border:2px solid rgba(139,92,246,0.35);}
+.sti{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--white);margin-bottom:8px;}
+.ssu{font-size:13px;color:var(--ghost);line-height:1.6;max-width:400px;margin-bottom:1.5rem;}
+.scov{width:100%;max-width:420px;border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;text-align:left;}
+.scov.w{background:linear-gradient(135deg,rgba(16,185,129,0.09),rgba(6,182,212,0.05));border:1px solid rgba(16,185,129,0.22);}
+.scov.a{background:linear-gradient(135deg,rgba(139,92,246,0.09),rgba(59,130,246,0.05));border:1px solid rgba(139,92,246,0.22);}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.scs{background:rgba(0,0,0,0.2);border-radius:8px;padding:9px 11px;}
+.scv{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--bright);}
+.scl{font-size:10px;color:var(--mute);margin-top:1px;}
+.dbtn{padding:13px 32px;border-radius:11px;border:none;cursor:pointer;color:#fff;font-family:'Geist',sans-serif;font-size:14px;font-weight:600;transition:opacity 0.2s;}
+.dbtn.w{background:linear-gradient(135deg,var(--blue),var(--cyan));box-shadow:0 4px 16px rgba(59,130,246,0.27);}
+.dbtn.a{background:linear-gradient(135deg,var(--violet),var(--blue));box-shadow:0 4px 16px rgba(139,92,246,0.27);}
+
+/* ADMIN REG FEATURES */
+.feat-check{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;}
+.fchk{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border-radius:8px;border:1px solid var(--rim);font-size:12px;color:var(--ghost);}
+.fchk span{color:var(--green);}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;max-width:270px;padding:11px 14px;background:var(--panel);border:1px solid var(--rim);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);transform:translateY(10px);opacity:0;pointer-events:none;transition:all 0.35s cubic-bezier(0.34,1.4,0.64,1);}
+.toast.on{transform:translateY(0);opacity:1;}
+.toast-t{font-size:12px;font-weight:600;color:var(--bright);margin-bottom:2px;}
+.toast-m{font-size:11px;color:var(--ghost);}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0.3}}
+@media(max-width:600px){.g2,.rpick,.fgrid,.sgrid,.risk-wrap{grid-template-columns:1fr;}.body,.wbody{padding:1.5rem 1rem 3rem;}nav{padding:0 1rem;}.nsteps{display:none;}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nl" href="gigshield_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
+  <div class="nsteps" id="nsteps">
+    <div class="ns on" id="ns1">1</div><div class="nl2" id="nl1"></div>
+    <div class="ns" id="ns2">2</div><div class="nl2" id="nl2"></div>
+    <div class="ns" id="ns3">3</div><div class="nl2" id="nl3"></div>
+    <div class="ns" id="ns4">4</div><div class="nl2" id="nl4"></div>
+    <div class="ns" id="ns5">5</div><div class="nl2" id="nl5"></div>
+    <div class="ns" id="ns6">6</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;"><a href="gigshield_features.html" style="font-size:12px;color:var(--ghost);text-decoration:none;">🧪 Features</a><a href="gigshield_login.html" style="font-size:12px;color:var(--ghost);text-decoration:none;">← Login</a></div>
+</nav>
+<div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+
+<!-- SC1: ROLE CHOOSER -->
+<div class="screen on" id="sc1">
+  <div class="body">
+    <h2 class="sh">Create your account</h2>
+    <p class="ss">Choose your role to get started</p>
+    <div class="rpick">
+      <button class="rpc sel" id="rp-w" onclick="pickRole('worker',this)">
+        <div class="rp-i">🚴</div>
+        <div class="rp-n">Delivery Worker</div>
+        <div class="rp-d">Zomato · Swiggy<br/>Get income protection</div>
+      </button>
+      <button class="rpc" id="rp-a" onclick="pickRole('admin',this)">
+        <div class="rp-i">🏦</div>
+        <div class="rp-n">Admin / Insurer</div>
+        <div class="rp-d">Digit Insurance · Acko<br/>Manage policies & payouts</div>
+      </button>
+    </div>
+    <button class="btn-f btn-blue" onclick="go(2)">Continue →</button>
+    <button class="btn-g" onclick="window.location.href='gigshield_login.html'">Already have an account? Sign in</button>
+  </div>
+</div>
+
+<!-- SC2: WORKER DETAILS / ADMIN DETAILS -->
+<div class="screen" id="sc2">
+  <div class="body">
+    <button class="back" onclick="go(1)">← Back</button>
+    <!-- WORKER FORM -->
+    <!-- WORKER FORM -->
+    <div id="w-reg">
+      <h2 class="sh">Worker Details</h2>
+      <p class="ss">Step 1 of 5 — Tell us about yourself and your delivery zone</p>
+      <div class="sec">Personal Info</div>
+      <div class="fld"><label>Full Name</label><input class="inp" id="w-name" placeholder="Ravi Kumar"/></div>
+      <div class="g2">
+        <div class="fld"><label>Age</label><input class="inp" id="w-age" placeholder="26" type="number"/></div>
+        <div class="fld"><label>Phone</label><input class="inp" id="w-phone" placeholder="+91 98765 43210"/></div>
+      </div>
+      <div class="fld"><label>Email (optional)</label><input class="inp" id="w-email" placeholder="ravi@email.com"/></div>
+      <div class="sec">Delivery Platform</div>
+      <div class="pbrow">
+        <button class="pb on" onclick="selP(this)">🟠 Swiggy</button>
+        <button class="pb" onclick="selP(this)">🔴 Zomato</button>
+        <button class="pb" onclick="selP(this)">🔵 Other</button>
+      </div>
+      <div class="fld"><label>Partner ID</label><input class="inp" id="w-pid" placeholder="SWG-CHN-48291"/></div>
+      <div class="sec">Location</div>
+      <div class="g2">
+        <div class="fld"><label>Delivery Zone</label><input class="inp" id="w-zone" placeholder="Velachery, Chennai" oninput="onZone(this)"/></div>
+        <div class="fld"><label>Pincode</label><input class="inp" id="w-pin" placeholder="600042"/></div>
+      </div>
+      <div id="zdd"></div>
+      <div class="sec">Set Password</div>
+      <div class="fld"><label>Password</label><input class="inp" type="password" id="w-pwd" placeholder="Create a password (min 6 chars)"/></div>
+    </div>
+
+    <!-- ADMIN FORM — completely different from worker -->
+    <div id="a-reg" style="display:none;">
+      <h2 class="sh">Admin Account Setup</h2>
+      <p class="ss">Step 1 of 2 — Create your insurer admin account to manage GigShield policies</p>
+
+      <div class="sec">Admin Identity</div>
+      <div class="fld"><label>Full Name</label><input class="inp" id="a-name" placeholder="Karthik Sundaram"/></div>
+      <div class="g2">
+        <div class="fld"><label>Designation / Role</label><input class="inp" id="a-desig" placeholder="Portfolio Manager"/></div>
+        <div class="fld"><label>Work Phone</label><input class="inp" id="a-phone" placeholder="+91 80000 00003"/></div>
+      </div>
+
+      <div class="sec">Organisation</div>
+      <div class="fld"><label>Company / Insurer Name</label><input class="inp" id="a-org" placeholder="Digit Insurance Pvt Ltd"/></div>
+      <div class="fld"><label>Registered Office City</label><input class="inp" id="a-city" placeholder="Chennai / Mumbai / Bengaluru"/></div>
+
+      <div class="sec">Login Credentials</div>
+      <div class="fld"><label>Admin Email (used to sign in)</label><input class="inp" id="a-email" placeholder="admin@yourcompany.com"/></div>
+      <div class="fld"><label>Create Password</label><input class="inp" type="password" id="a-pwd" placeholder="Min 6 characters"/></div>
+
+      <div class="sec">Access Verification</div>
+      <div class="fld"><label>GigShield Admin Access Code</label><input class="inp" id="a-code" placeholder="GS-ADMIN-2026"/></div>
+      <div class="info"><b>Access code</b> is issued by the GigShield platform team to verified insurer partners. Demo code: <b>GS-ADMIN-2026</b></div>
+
+      <div class="sec">Admin Dashboard Access Includes</div>
+      <div class="feat-check">
+        <div class="fchk"><span>✓</span> Full registered policy list with worker details</div>
+        <div class="fchk"><span>✓</span> Per-worker payout simulation with 5-step claim flow</div>
+        <div class="fchk"><span>✓</span> Live KPIs — premium collected, payouts released, loss ratio</div>
+        <div class="fchk"><span>✓</span> Plan distribution breakdown and fee analytics</div>
+        <div class="fchk"><span>✓</span> New registration alerts and real-time policy updates</div>
+      </div>
+    </div>
+
+    <button class="btn-f btn-blue" id="sc2-btn" onclick="submitSc2()">Continue →</button>
+  </div>
+</div>
+
+<!-- SC3: ZONE RISK (worker only) -->
+<div class="screen" id="sc3">
+  <div class="wbody">
+    <button class="back" onclick="go(2)">← Back</button>
+    <h2 class="sh">Zone Risk Assessment</h2>
+    <p class="ss">Step 2 of 5 — Random Forest ML model analyses your delivery zone</p>
+    <div id="ml-run">
+      <div class="ml-run">
+        <div class="spin"></div>
+        <div style="font-size:14px;color:var(--ghost);">Analysing zone...</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:3px;" id="ml-lbl">Loading...</div>
+        <div style="width:100%;max-width:340px;margin-top:1rem;">
+          <div class="mls" id="ms1"><div class="msd">→</div>Loading IMD 10-year rainfall records</div>
+          <div class="mls" id="ms2"><div class="msd">→</div>Fetching CPCB AQI historical data</div>
+          <div class="mls" id="ms3"><div class="msd">→</div>Checking NDMA flood zone maps</div>
+          <div class="mls" id="ms4"><div class="msd">→</div>Running Random Forest Classifier</div>
+          <div class="mls" id="ms5"><div class="msd">→</div>Generating plan recommendation</div>
+        </div>
+      </div>
+    </div>
+    <div id="ml-res" style="display:none;">
+      <div class="risk-wrap">
+        <div>
+          <div class="rhero">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:var(--violet);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">🤖 Random Forest · Zone Risk Classifier</div>
+                <div style="font-size:13px;font-weight:600;color:var(--bright);" id="r-zone">Velachery Micro-Zone</div>
+                <div style="font-size:11px;color:var(--ghost);" id="r-pin">Pincode 600042</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:'Instrument Serif',serif;font-size:2.5rem;line-height:1;" id="r-score">0.58</div>
+                <div style="font-size:11px;color:var(--ghost);" id="r-label">Medium-High Risk</div>
+              </div>
+            </div>
+            <div class="meter"><div class="mptr" id="mptr" style="left:5%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mute);"><span style="color:var(--green)">Low</span><span>Medium</span><span style="color:var(--red)">High</span></div>
+            <div style="font-size:11px;color:var(--ghost);margin-top:8px;" id="r-flood"></div>
+          </div>
+          <div class="fgrid">
+            <div class="fc"><div class="fcl">Disruptions/month</div><div class="fcv" id="f1v"></div><div class="fcb"><div class="fcf" id="f1b"></div></div></div>
+            <div class="fc"><div class="fcl">Nearest water body</div><div class="fcv" id="f2v"></div><div class="fcb"><div class="fcf" id="f2b"></div></div></div>
+            <div class="fc"><div class="fcl">AQI days/year</div><div class="fcv" id="f3v"></div><div class="fcb"><div class="fcf" id="f3b"></div></div></div>
+            <div class="fc"><div class="fcl">Zone elevation</div><div class="fcv" id="f4v"></div><div class="fcb"><div class="fcf" id="f4b"></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="recbox">
+            <div class="recl">⭐ ML Recommendation</div>
+            <div class="recn" id="r-rec-name"></div>
+            <div class="recw" id="r-rec-why"></div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--rim);border-radius:12px;padding:1.1rem;margin-bottom:1rem;">
+            <div class="sec" style="margin-bottom:8px;">Confidence Breakdown</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--ghost)">Rainfall exposure</span><span id="cb1l">High</span></div><div style="height:4px;background:var(--wire);border-radius:2px;overflow:hidden;"><div id="cb1" style="height:100%;border-radius:2px;"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--ghost)">Flood proximity</span><span id="cb2l">High</span></div><div style="height:4px;background:var(--wire);border-radius:2px;overflow:hidden;"><div id="cb2" style="height:100%;border-radius:2px;"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--ghost)">AQI exposure</span><span style="color:var(--green)">Medium</span></div><div style="height:4px;background:var(--wire);border-radius:2px;overflow:hidden;"><div id="cb3" style="height:100%;background:var(--green);border-radius:2px;"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--ghost)">Cyclone weighting</span><span style="color:var(--amber)">Medium</span></div><div style="height:4px;background:var(--wire);border-radius:2px;overflow:hidden;"><div id="cb4" style="height:100%;background:var(--amber);border-radius:2px;"></div></div></div>
+            </div>
+          </div>
+          <button class="btn-f btn-blue" onclick="go(4)">View All Plans →</button>
+          <button class="btn-g" onclick="go(4)">I'll choose my own plan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SC4: PLAN SELECTION -->
+<div class="screen" id="sc4">
+  <div class="wbody">
+    <button class="back" onclick="go(3)">← Back</button>
+    <h2 class="sh">Choose Your Plan</h2>
+    <p class="ss">Step 3 of 5 — Underwritten by IRDAI-licensed insurer partner</p>
+    <div style="padding:9px 13px;border-radius:9px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);font-size:12px;color:var(--amber);margin-bottom:1rem;" id="plan-alert">⭐ ML recommends <b>Shield Premium</b> based on your zone.</div>
+    <div class="plan-list">
+      <div class="plc" onclick="selPlan(this,'starter')"><div><div class="pn">🌱 Shield Starter</div><div class="pt">New workers · Low-risk zones</div><div class="ps"><span class="pst">₹25/hr</span><span class="pst">Max 2hrs</span><span class="pst">Cap ₹50</span></div></div><div class="ppr">₹35<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'basic')"><div><div class="pn">🔵 Shield Basic</div><div class="pt">Part-time · Low-risk zones</div><div class="ps"><span class="pst">₹30/hr</span><span class="pst">Max 3hrs</span><span class="pst">Cap ₹90</span></div></div><div class="ppr">₹55<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'standard')"><div><div class="pn">🟡 Shield Standard</div><div class="pt">Full-time · Urban zones</div><div class="ps"><span class="pst">₹40/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹160</span></div></div><div class="ppr">₹79<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc rec sel" id="plc-premium" onclick="selPlan(this,'premium')"><div class="rec-tag">ML Recommended</div><div style="margin-top:8px;"><div class="pn">🟠 Shield Premium</div><div class="pt">High-earning full-time</div><div class="ps"><span class="pst">₹50/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹200</span></div></div><div class="ppr">₹109<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'elite')"><div><div class="pn">🔴 Shield Elite</div><div class="pt">Coastal · Flood-prone zones</div><div class="ps"><span class="pst">₹60/hr</span><span class="pst">Max 5hrs</span><span class="pst">Cap ₹300</span></div></div><div class="ppr">₹149<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+    </div>
+    <button class="btn-f btn-blue" onclick="go(5)">Continue →</button>
+  </div>
+</div>
+
+<!-- SC5: PAYMENT -->
+<div class="screen" id="sc5">
+  <div class="body">
+    <button class="back" onclick="go(4)">← Back</button>
+    <h2 class="sh">Confirm & Pay</h2>
+    <p class="ss">Step 4 of 5 — Weekly subscription · Auto-renews every Monday</p>
+    <div class="obox">
+      <div style="font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Order Summary</div>
+      <div class="or"><span class="ol">Plan</span><span class="ov" id="o-plan">🟠 Shield Premium</span></div>
+      <div class="or"><span class="ol">Coverage</span><span class="ov">7 days (Mon–Sun)</span></div>
+      <div class="or"><span class="ol">Payout rate</span><span class="ov" id="o-rate">₹50/hr</span></div>
+      <div class="or"><span class="ol">Weekly cap</span><span class="ov" id="o-cap">₹200</span></div>
+      <div class="or"><span class="ol">Underwriter</span><span class="ov">IRDAI Insurer Partner</span></div>
+      <div class="or" style="border-top:1px solid var(--wire);padding-top:10px;margin-top:4px;">
+        <span style="font-weight:600;color:var(--bright);">Total Due</span>
+        <span class="otot" id="o-total">₹109</span>
+      </div>
+    </div>
+    <div class="sec">Payment Method</div>
+    <div class="pms">
+      <div class="pm on" onclick="selPay(this)"><div class="pmi" style="background:rgba(59,130,246,0.15);">💳</div><div><div class="pmn">UPI</div><div class="pmsub">Instant · ravi@paytm</div></div><div class="pmsel">✓</div></div>
+      <div class="pm" onclick="selPay(this)"><div class="pmi" style="background:rgba(16,185,129,0.15);">🏦</div><div><div class="pmn">Net Banking</div><div class="pmsub">All major banks</div></div><div class="pmsel"></div></div>
+      <div class="pm" onclick="selPay(this)"><div class="pmi" style="background:rgba(245,158,11,0.15);">💵</div><div><div class="pmn">Debit / Credit Card</div><div class="pmsub">Visa · Mastercard · RuPay</div></div><div class="pmsel"></div></div>
+    </div>
+    <div class="info">🔒 Payments via <b>Razorpay Sandbox</b> (demo). No real money transacted.</div>
+    <button class="btn-f btn-blue" id="pay-btn" onclick="doPay()">Pay ₹109 — Activate Coverage</button>
+  </div>
+</div>
+
+<!-- SC6: SUCCESS -->
+<div class="screen" id="sc6">
+  <div class="swrap">
+    <div class="sring w" id="sring">✓</div>
+    <div class="sti" id="s-ti">You're protected!</div>
+    <p class="ssu" id="s-su">Your coverage is now active.</p>
+    <div class="scov w" id="s-cov">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:bl 2s ease-in-out infinite;"></div>
+        <div style="font-size:13px;font-weight:600;" id="s-status">Coverage Active</div>
+      </div>
+      <div class="sgrid" id="s-grid">
+        <div class="scs"><div class="scv" id="sv1">₹50/hr</div><div class="scl">Payout rate</div></div>
+        <div class="scs"><div class="scv" id="sv2">4 hrs</div><div class="scl">Weekly max</div></div>
+        <div class="scs"><div class="scv" id="sv3">₹200</div><div class="scl">Weekly cap</div></div>
+        <div class="scs"><div class="scv">Monday</div><div class="scl">Auto-renews</div></div>
+      </div>
+    </div>
+    <button class="dbtn w" id="s-dbtn" onclick="goDash()">Go to My Dashboard →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-t" id="tt"></div><div class="toast-m" id="tm"></div></div>
+
+<script src="gs_shared.js"></script>
+<script>
+// ── ZONE DATA ─────────────────────────────────────────────────────
+const ZONES={
+  'Velachery':     {pin:'600042',score:0.58,disp:3.2,water:'1.8 km (Adyar River)',elev:'Low — 8m',aqi:12,label:'Medium-High',plan:'premium',flood:'Moderate flood risk near Adyar river basin'},
+  'Marina Beach':  {pin:'600005',score:0.85,disp:5.2,water:'0.1 km (Bay of Bengal)',elev:'Sea level — 2m',aqi:8,label:'Very High',plan:'elite',flood:'Extreme coastal and cyclone exposure'},
+  'Adyar':         {pin:'600020',score:0.72,disp:4.1,water:'0.4 km (Adyar River)',elev:'Very Low — 4m',aqi:10,label:'High',plan:'elite',flood:'High — adjacent to Adyar river'},
+  'T. Nagar':      {pin:'600017',score:0.45,disp:2.6,water:'3.2 km',elev:'Medium — 14m',aqi:18,label:'Medium',plan:'standard',flood:'Moderate — drainage issues during heavy rain'},
+  'Anna Nagar':    {pin:'600040',score:0.38,disp:2.1,water:'5.1 km',elev:'Medium — 16m',aqi:15,label:'Low-Medium',plan:'standard',flood:'Low-moderate risk'},
+  'Ambattur':      {pin:'600053',score:0.22,disp:1.2,water:'7.4 km',elev:'High — 24m',aqi:22,label:'Low',plan:'basic',flood:'Low flood risk — high elevation'},
+  'Tambaram':      {pin:'600045',score:0.19,disp:1.0,water:'8.2 km',elev:'High — 28m',aqi:19,label:'Low',plan:'basic',flood:'Very low risk'},
+  'Porur':         {pin:'600116',score:0.28,disp:1.5,water:'4.8 km',elev:'Medium — 18m',aqi:16,label:'Low-Medium',plan:'standard',flood:'Low-moderate risk'},
+  'Mylapore':      {pin:'600004',score:0.52,disp:2.9,water:'1.2 km (Buckingham Canal)',elev:'Low — 7m',aqi:11,label:'Medium-High',plan:'premium',flood:'Moderate-high — Buckingham Canal flooding'},
+  'Guindy':        {pin:'600032',score:0.41,disp:2.3,water:'2.8 km',elev:'Medium — 12m',aqi:21,label:'Medium',plan:'standard',flood:'Moderate — industrial zone'},
+  'Royapuram':     {pin:'600013',score:0.81,disp:4.8,water:'0.3 km (Cooum River)',elev:'Very Low — 3m',aqi:14,label:'High',plan:'elite',flood:'High — Cooum river, coastal zone'},
+  'RS Puram':      {pin:'641002',score:0.28,disp:1.4,water:'3.1 km (Noyyal)',elev:'Medium — 410m',aqi:8,label:'Low-Medium',plan:'standard',flood:'Low-moderate near Noyyal river'},
+  'Gandhipuram':   {pin:'641012',score:0.32,disp:1.7,water:'2.8 km',elev:'Medium — 408m',aqi:12,label:'Low-Medium',plan:'standard',flood:'Moderate waterlogging history'},
+  'Srirangam':     {pin:'620006',score:0.75,disp:4.3,water:'0.2 km (Cauvery)',elev:'Very Low — 75m',aqi:6,label:'High',plan:'elite',flood:'Very high — island zone in Cauvery'},
+  'Nagapattinam':  {pin:'611001',score:0.82,disp:5.0,water:'0.2 km (Bay of Bengal)',elev:'Sea level — 2m',aqi:5,label:'Very High',plan:'elite',flood:'Extreme — coastal, cyclone-prone'},
+  'Erode Town':    {pin:'638001',score:0.55,disp:3.0,water:'0.5 km (Cauvery)',elev:'Low — 174m',aqi:13,label:'Medium-High',plan:'premium',flood:'High — Cauvery river proximity'},
+  'Thanjavur':     {pin:'613001',score:0.60,disp:3.4,water:'0.9 km (Cauvery canal)',elev:'Very Low — 56m',aqi:5,label:'High',plan:'elite',flood:'High — Cauvery delta zone'},
+};
+function onZone(inp){
+  const q=inp.value.trim().toLowerCase();const dd=document.getElementById('zdd');
+  if(q.length<2){dd.style.display='none';return;}
+  const m=Object.keys(ZONES).filter(z=>z.toLowerCase().includes(q)).slice(0,6);
+  if(!m.length){dd.style.display='none';return;}
+  const col=s=>s>0.65?'var(--red)':s>0.4?'var(--amber)':'var(--green)';
+  dd.style.display='block';
+  dd.innerHTML=m.map(z=>`<div class="zo" onclick="pickZone('${z}')">
+    <span style="color:var(--bright);font-weight:500">${z}</span>
+    <span style="color:var(--mute);font-size:11px;margin-left:8px">${ZONES[z].pin}</span>
+    <span style="float:right;font-size:11px;color:${col(ZONES[z].score)}">${ZONES[z].label}</span>
+  </div>`).join('');
+}
+function pickZone(n){
+  document.getElementById('w-zone').value=n;
+  document.getElementById('w-pin').value=ZONES[n]?.pin||'';
+  document.getElementById('zdd').style.display='none';
+  selZone=n; selZD=ZONES[n];
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#zdd')&&!e.target.closest('#w-zone'))document.getElementById('zdd').style.display='none';});
+
+// ── STATE ─────────────────────────────────────────────────────────
+let cur=1, regRole='worker', mlDone=false;
+let selZone='Velachery', selZD=ZONES['Velachery'];
+let selPlanKey='premium';
+const PM={1:0,2:16.6,3:33.2,4:49.8,5:66.4,6:100};
+
+// Check if directed from login
+window.addEventListener('DOMContentLoaded',()=>{
+  const fl=sessionStorage.getItem('gs_flow');
+  if(fl==='admin') pickRole('admin',document.getElementById('rp-a'));
+  sessionStorage.removeItem('gs_flow');
+});
+
+function go(n){
+  document.getElementById('sc'+cur).classList.remove('on');
+  document.getElementById('sc'+n).classList.add('on');
+  window.scrollTo(0,0);
+  document.getElementById('prog').style.width=PM[n]+'%';
+  for(let i=1;i<=6;i++){
+    const el=document.getElementById('ns'+i);if(!el)continue;
+    el.classList.remove('on','done');
+    if(i<n){el.classList.add('done');el.textContent='✓';}
+    else if(i===n){el.classList.add('on');el.textContent=i;}
+    else el.textContent=i;
+    const ln=document.getElementById('nl'+i);
+    if(ln)ln.classList.toggle('done',i<n);
+  }
+  cur=n;
+  if(n===2) showRegForm();
+  if(n===3&&!mlDone) runML();
+}
+
+function pickRole(r,btn){
+  regRole=r;
+  document.getElementById('rp-w').classList.toggle('sel',r==='worker');
+  document.getElementById('rp-a').classList.toggle('sel',r==='admin');
+  document.getElementById('rp-a').classList.toggle('ac',r==='admin');
+  // update step count text and show/hide correct form on sc2
+  const sc2btn=document.getElementById('sc2-btn');
+  if(r==='admin'){
+    sc2btn&&(sc2btn.textContent='Create Admin Account →');
+    // hide worker-only steps in nav
+    [3,4,5].forEach(n=>{
+      const e=document.getElementById('ns'+n);if(e){e.style.opacity='0.25';e.style.pointerEvents='none';}
+      const l=document.getElementById('nl'+n);if(l)l.style.opacity='0.25';
+    });
+  } else {
+    sc2btn&&(sc2btn.textContent='Continue →');
+    [3,4,5].forEach(n=>{
+      const e=document.getElementById('ns'+n);if(e){e.style.opacity='';e.style.pointerEvents='';}
+      const l=document.getElementById('nl'+n);if(l)l.style.opacity='';
+    });
+  }
+}
+
+function showRegForm(){
+  // called when entering sc2
+  document.getElementById('w-reg').style.display=regRole==='worker'?'block':'none';
+  document.getElementById('a-reg').style.display=regRole==='admin'?'block':'none';
+}
+
+function submitSc2(){
+  if(regRole==='worker'){
+    const name=document.getElementById('w-name').value.trim();
+    if(!name){toast('Missing info','Please enter your full name');return;}
+    const pwd=document.getElementById('w-pwd').value.trim();
+    if(pwd.length<6){toast('Weak password','Password must be at least 6 characters');return;}
+    const zv=document.getElementById('w-zone').value.trim();
+    const pin=document.getElementById('w-pin').value.trim();
+    if(zv){
+      const match=Object.keys(ZONES).find(z=>z.toLowerCase()===zv.toLowerCase())||Object.keys(ZONES).find(z=>z.toLowerCase().includes(zv.toLowerCase()));
+      if(match){selZone=match;selZD=ZONES[match];}
+      else{selZone=zv;selZD={pin:pin||'000000',score:0.45,disp:2.5,water:'4 km',elev:'Medium',aqi:12,label:'Medium',plan:'standard',flood:'Moderate risk'};}
+    }
+    document.getElementById('ml-lbl').textContent='Pincode '+selZD.pin+' · '+selZone;
+    go(3);
+  } else {
+    // ── ADMIN REGISTRATION ──────────────────────────────────────
+    const code=document.getElementById('a-code').value.trim();
+    if(code!=='GS-ADMIN-2026'){toast('Invalid access code','Demo code: GS-ADMIN-2026');return;}
+    const name=document.getElementById('a-name').value.trim();
+    const email=document.getElementById('a-email').value.trim();
+    const pwd=document.getElementById('a-pwd').value.trim();
+    if(!name){toast('Missing info','Please enter your full name');return;}
+    if(!email){toast('Missing info','Please enter your admin email');return;}
+    if(pwd.length<6){toast('Weak password','Password must be at least 6 characters');return;}
+    const org=document.getElementById('a-org').value.trim()||'Unknown Organisation';
+    const desig=document.getElementById('a-desig').value.trim()||'Admin';
+    const phone=document.getElementById('a-phone').value.trim();
+    const city=document.getElementById('a-city').value.trim()||'Chennai';
+    const insType='Insurer Partner';
+    const adminId='ADM-'+Math.floor(100+Math.random()*900);
+    const newA={
+      id:adminId,name,email,password:pwd,role:'admin',
+      org,designation:desig,phone,irdai,insType,city,
+      joined:new Date().toISOString().slice(0,10),
+    };
+    GS.addAdmin(newA);
+    GS.setCurrent(newA);
+    // Setup admin success screen
+    document.getElementById('sring').className='sring a';
+    document.getElementById('sring').textContent='🏦';
+    document.getElementById('s-ti').textContent='Admin account created!';
+    document.getElementById('s-su').textContent='Welcome, '+name.split(' ')[0]+'. Your GigShield admin account is live.';
+    document.getElementById('s-cov').className='scov a';
+    document.getElementById('s-status').textContent='Account Active · '+org;
+    document.getElementById('s-status').style.color='var(--violet)';
+    document.getElementById('s-grid').innerHTML=
+      '<div class="scs"><div class="scv">'+adminId+'</div><div class="scl">Admin ID</div></div>'+
+      '<div class="scs"><div class="scv">'+desig+'</div><div class="scl">Designation</div></div>'+
+      '<div class="scs"><div class="scv">'+insType+'</div><div class="scl">Insurer Type</div></div>'+
+      '<div class="scs"><div class="scv">'+city+'</div><div class="scl">Office City</div></div>';
+    document.getElementById('s-dbtn').className='dbtn a';
+    document.getElementById('s-dbtn').textContent='Go to Admin Dashboard →';
+    // Jump directly to success — admin skips zone/plan/payment
+    goAdmin();
+  }
+}
+
+// Admin goes straight to screen 6 without step indicators 2-5
+function goAdmin(){
+  // hide worker-only step indicators
+  [3,4,5].forEach(n=>{
+    const e=document.getElementById('ns'+n);
+    if(e){e.style.opacity='0.2';e.style.pointerEvents='none';}
+    const l=document.getElementById('nl'+n);
+    if(l) l.style.opacity='0.2';
+  });
+  go(6);
+}
+
+// ── ML ANIMATION ─────────────────────────────────────────────────
+function runML(){
+  ['ms1','ms2','ms3','ms4','ms5'].forEach(id=>{const e=document.getElementById(id);e.classList.remove('vis','done');e.querySelector('.msd').textContent='→';});
+  document.getElementById('ml-run').style.display='block';
+  document.getElementById('ml-res').style.display='none';
+  let i=0; const steps=['ms1','ms2','ms3','ms4','ms5'];
+  function tick(){
+    if(i<steps.length){
+      document.getElementById(steps[i]).classList.add('vis');
+      if(i>0){const p=document.getElementById(steps[i-1]);p.classList.add('done');p.querySelector('.msd').textContent='✓';}
+      i++;setTimeout(tick,750);
+    } else {
+      setTimeout(()=>{document.getElementById('ml-run').style.display='none';document.getElementById('ml-res').style.display='block';mlDone=true;renderRisk();},400);
+    }
+  }
+  tick();
+}
+
+function renderRisk(){
+  const z=selZD,s=z.score;
+  const col=s>0.65?'var(--red)':s>0.4?'var(--amber)':'var(--green)';
+  const p=Math.round(s*100);
+  set('r-zone',selZone+' Micro-Zone (3 km)');
+  set('r-pin','Pincode '+z.pin+' · Tamil Nadu');
+  set('r-score',s.toFixed(2));
+  document.getElementById('r-score').style.color=col;
+  set('r-label',z.label+' Risk');
+  set('r-flood',z.flood);
+  setTimeout(()=>document.getElementById('mptr').style.left=p+'%',200);
+  set('f1v',z.disp+' events');set('f2v',z.water);set('f3v',z.aqi+' days/yr');set('f4v',z.elev);
+  bar('f1b',Math.min(95,Math.round(z.disp/6*100)),s>0.65?'var(--red)':'var(--amber)');
+  bar('f2b',Math.min(95,Math.round((1-parseFloat(z.water)/12)*100)),s>0.65?'var(--red)':'var(--amber)');
+  bar('f3b',Math.min(80,Math.round(z.aqi/30*100)),'var(--amber)');
+  bar('f4b',z.elev.startsWith('Very Low')||z.elev.startsWith('Sea')?90:z.elev.startsWith('Low')?70:40,s>0.65?'var(--red)':'var(--amber)');
+  barW('cb1',Math.min(95,p+10));barW('cb2',Math.min(95,p+15));barW('cb3',Math.min(70,p-10));barW('cb4',Math.min(80,p));
+  set('cb1l',p>65?'High':'Medium');document.getElementById('cb1l').style.color=p>65?'var(--red)':'var(--amber)';
+  set('cb2l',p>65?'High':'Medium');document.getElementById('cb2l').style.color=p>65?'var(--red)':'var(--amber)';
+  const plan=GS.PLAN_META[z.plan];
+  selPlanKey=z.plan;
+  set('r-rec-name',plan.name+' — ₹'+plan.price+'/week');
+  set('r-rec-why','Zone risk score '+s.toFixed(2)+' — '+z.label.toLowerCase()+' risk zone. '+plan.name+' provides ₹'+plan.rate+'/hr across '+plan.maxHrs+' disruption hours/week.');
+  set('plan-alert','⭐ ML recommends <b>'+plan.name+'</b> (score '+s.toFixed(2)+') for your zone.');
+  document.querySelectorAll('.plc').forEach(c=>c.classList.remove('sel'));
+  const pc=document.getElementById('plc-'+z.plan)||document.getElementById('plc-premium');
+  if(pc)pc.classList.add('sel');
+  updateOrder(z.plan);
+}
+
+function selPlan(el,key){
+  document.querySelectorAll('.plc').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); selPlanKey=key; updateOrder(key);
+}
+function updateOrder(key){
+  const p=GS.PLAN_META[key];if(!p)return;
+  set('o-plan',p.name);set('o-rate','₹'+p.rate+'/hr');set('o-cap','₹'+p.cap);set('o-total','₹'+p.price);
+  document.getElementById('pay-btn').textContent='Pay ₹'+p.price+' — Activate Coverage';
+}
+function selP(btn){document.querySelectorAll('.pb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function selPay(el){
+  document.querySelectorAll('.pm').forEach(m=>{m.classList.remove('on');const s=m.querySelector('.pmsel');s.textContent='';s.style.background='';s.style.border='1.5px solid var(--wire)';s.style.color='';});
+  el.classList.add('on');const s=el.querySelector('.pmsel');
+  s.textContent='✓';s.style.background='var(--blue)';s.style.border='none';s.style.color='#fff';s.style.display='flex';s.style.alignItems='center';s.style.justifyContent='center';s.style.fontSize='9px';
+}
+
+function doPay(){
+  const btn=document.getElementById('pay-btn');
+  btn.textContent='Processing...';btn.disabled=true;
+  setTimeout(()=>{saveWorker();btn.disabled=false;},1800);
+}
+
+function saveWorker(){
+  const name=document.getElementById('w-name').value.trim()||'Worker';
+  const phone=document.getElementById('w-phone').value.trim();
+  const email=document.getElementById('w-email').value.trim();
+  const pwd=document.getElementById('w-pwd').value.trim()||'demo1234';
+  const plat=document.querySelector('.pb.on')?.textContent?.trim()||'Swiggy';
+  const plan=GS.PLAN_META[selPlanKey];
+  const wid='WKR-'+Math.floor(1000+Math.random()*9000);
+  const w={
+    id:wid,name,phone,
+    email:email||phone.replace(/\D/g,'')+'@gigshield.in',
+    zone:selZone,pincode:selZD.pin,platform:plat,
+    plan:selPlanKey,riskScore:selZD.score,trustScore:40,
+    payouts:0,simPayouts:0,claimsTotal:0,weeklyHrsUsed:0,
+    joined:new Date().toISOString().slice(0,10),
+    role:'worker',password:pwd,fresh:true,
+  };
+  GS.addWorker(w); GS.setCurrent(w);
+  set('s-ti',"You're protected, "+name.split(' ')[0]+'!');
+  set('s-su','Shield '+plan.name.split(' ').slice(1).join(' ')+' is active. GigShield monitors '+selZone+' every 15 min.');
+  set('sv1','₹'+plan.rate+'/hr');set('sv2',plan.maxHrs+' hrs');set('sv3','₹'+plan.cap);
+  go(6);
+}
+
+function goDash(){window.location.href='gigshield_worker.html';}
+
+function set(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v;}
+function bar(id,w,c){const e=document.getElementById(id);if(e){e.style.width=w+'%';e.style.background=c;}}
+function barW(id,w){const e=document.getElementById(id);if(e)e.style.width=w+'%';}
+function toast(t,m){document.getElementById('tt').textContent=t;document.getElementById('tm').textContent=m;const e=document.getElementById('toast');e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),4000);}
+</script>
+</body>
+</html>

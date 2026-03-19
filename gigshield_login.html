@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GigShield — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--void:#04060d;--surface:#0c1120;--panel:#111827;--card:#141e2e;--rim:#1f2d47;--wire:#243354;--mute:#3d5278;--ghost:#566d94;--text:#c8d8ee;--bright:#e8f0fa;--white:#fff;--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--violet:#8b5cf6;}
+body{font-family:'Geist',sans-serif;background:var(--void);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:radial-gradient(ellipse 70% 50% at 20% 70%,rgba(59,130,246,0.07),transparent),radial-gradient(ellipse 50% 40% at 80% 20%,rgba(6,182,212,0.05),transparent),var(--void);}
+.wrap{width:100%;max-width:840px;display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--wire);border-radius:22px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.55);}
+/* LEFT */
+.left{padding:2.5rem;background:linear-gradient(160deg,rgba(59,130,246,0.09),rgba(6,182,212,0.04),transparent);border-right:1px solid var(--wire);display:flex;flex-direction:column;gap:1.5rem;}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Instrument Serif',serif;font-size:1.35rem;color:var(--white);}
+.logo-ico{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(59,130,246,0.35);}
+.logo em{color:var(--blue);font-style:italic;}
+.hero h1{font-family:'Instrument Serif',serif;font-size:1.85rem;color:var(--white);line-height:1.2;margin-bottom:8px;}
+.hero h1 em{font-style:italic;color:var(--blue);}
+.hero p{font-size:12px;color:var(--ghost);line-height:1.65;}
+.stats{display:flex;flex-direction:column;gap:7px;}
+.stat{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--rim);border-radius:10px;}
+.stat-v{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--white);}
+.stat-l{font-size:11px;color:var(--mute);}
+.trigs{border-top:1px solid var(--rim);padding-top:1rem;display:flex;flex-direction:column;gap:5px;}
+.trig{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ghost);}
+.tdot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;}
+/* RIGHT */
+.right{padding:2.5rem;display:flex;flex-direction:column;}
+.rtitle{font-family:'Instrument Serif',serif;font-size:1.35rem;color:var(--white);margin-bottom:4px;}
+.rsub{font-size:12px;color:var(--ghost);margin-bottom:1.25rem;}
+/* ROLE TABS */
+.rtabs{display:flex;gap:4px;padding:4px;background:var(--surface);border-radius:11px;margin-bottom:1.25rem;}
+.rtab{flex:1;padding:9px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--ghost);font-family:'Geist',sans-serif;font-size:12px;font-weight:500;transition:all 0.2s;text-align:center;}
+.rtab.on{background:var(--card);color:var(--bright);box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+/* USER CARDS */
+.user-list{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;}
+.ucard{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--rim);border-radius:10px;background:var(--surface);cursor:pointer;transition:all 0.2s;}
+.ucard:hover{border-color:var(--mute);}
+.ucard.sel{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.07);}
+.ucard.asel{border-color:rgba(139,92,246,0.5);background:rgba(139,92,246,0.07);}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.un{font-size:13px;font-weight:500;color:var(--bright);}
+.ud{font-size:11px;color:var(--mute);margin-top:1px;}
+.upill{margin-left:auto;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+/* show-more link */
+.show-more{font-size:11px;color:var(--mute);cursor:pointer;text-align:center;padding:4px;transition:color 0.2s;}
+.show-more:hover{color:var(--ghost);}
+/* DIVIDER */
+.div{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mute);margin:10px 0;}
+.div::before,.div::after{content:'';flex:1;height:1px;background:var(--rim);}
+/* FORM */
+.fld{margin-bottom:10px;}
+.fld label{display:block;font-size:10px;font-weight:700;color:var(--mute);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;}
+.inp{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--wire);background:var(--surface);color:var(--bright);font-family:'Geist',sans-serif;font-size:13px;outline:none;transition:border 0.2s;}
+.inp:focus{border-color:rgba(59,130,246,0.5);}
+.inp::placeholder{color:var(--mute);}
+.btn{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;transition:opacity 0.2s,transform 0.1s;margin-top:4px;}
+.btn:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-blue{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;box-shadow:0 4px 14px rgba(59,130,246,0.25);}
+.btn-violet{background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;box-shadow:0 4px 14px rgba(139,92,246,0.25);}
+.btn-ghost{background:transparent;border:1px solid var(--wire);color:var(--ghost);margin-top:6px;}
+.btn-ghost:hover{border-color:var(--mute);color:var(--text);transform:none;}
+.hint{margin-top:auto;padding-top:1rem;font-size:11px;color:var(--mute);line-height:1.55;border-top:1px solid var(--rim);}
+.hint b{color:#7a95bd;}
+/* ERROR */
+.err{font-size:11px;color:var(--red);margin-top:5px;display:none;}
+@media(max-width:680px){body{padding:0;align-items:flex-start;}.wrap{grid-template-columns:1fr;border-radius:0;min-height:100vh;}.left{display:none;}.right{padding:2rem 1.5rem;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="left">
+    <div class="logo"><div class="logo-ico">🛡</div>Gig<em>Shield</em></div>
+    <div class="hero">
+      <h1>Income protection<br/>for <em>delivery workers</em></h1>
+      <p>AI-powered parametric micro-insurance. Automatic payouts when disruptions stop deliveries. Zero forms. Zero waiting.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span style="font-size:18px">🚴</span><div><div class="stat-v">5 Cr+</div><div class="stat-l">Workers currently unprotected</div></div></div>
+      <div class="stat"><span style="font-size:18px">💸</span><div><div class="stat-v">₹650</div><div class="stat-l">Average income lost per event</div></div></div>
+      <div class="stat"><span style="font-size:18px">🤖</span><div><div class="stat-v">3 ML Models</div><div class="stat-l">Zone Risk · Fraud · Predictive</div></div></div>
+    </div>
+    <div class="trigs">
+      <div style="font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">5 Parametric Triggers</div>
+      <div class="trig"><div class="tdot"></div>🌧️ Heavy Rainfall — IMD + OpenWeatherMap</div>
+      <div class="trig"><div class="tdot"></div>🌡️ Extreme Heat — IMD API</div>
+      <div class="trig"><div class="tdot"></div>😷 Severe AQI — CPCB API</div>
+      <div class="trig"><div class="tdot"></div>🌀 Cyclone / Flood — IMD + NDMA</div>
+      <div class="trig"><div class="tdot"></div>🚫 Government Curfew — NDMA + Admin</div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="rtitle">Sign in to GigShield</div>
+    <div class="rsub">Guidewire DEVTrails 2026 · Team ZenVyte</div>
+    <div class="rtabs">
+      <button class="rtab on" id="rt-w" onclick="setRole('worker')">🚴 Delivery Worker</button>
+      <button class="rtab" id="rt-a" onclick="setRole('admin')">🏦 Admin · Insurer</button>
+    </div>
+
+    <!-- WORKER PANEL -->
+    <div id="pw">
+      <div id="w-list" class="user-list"></div>
+      <div id="w-more" class="show-more" style="display:none;" onclick="toggleMore('w')"></div>
+      <div class="div">or sign in manually</div>
+      <div class="fld"><label>Phone / Email</label><input class="inp" id="w-cred" placeholder="+91 98765 43210"/></div>
+      <div class="fld"><label>Password</label><input class="inp" type="password" id="w-pass" placeholder="••••••••" value="demo1234"/></div>
+      <div class="err" id="w-err">Worker not found. Please register first.</div>
+      <button class="btn btn-blue" onclick="loginWorker()">Sign in →</button>
+      <button class="btn btn-ghost" onclick="go('gigshield_onboarding.html','worker')">+ New worker? Register here</button>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="pa" style="display:none;">
+      <div id="a-list" class="user-list"></div>
+      <div id="a-more" class="show-more" style="display:none;" onclick="toggleMore('a')"></div>
+      <div class="div">or sign in manually</div>
+      <div class="fld"><label>Admin Email</label><input class="inp" id="a-cred" placeholder="admin@digit.com"/></div>
+      <div class="fld"><label>Password</label><input class="inp" type="password" id="a-pass" placeholder="••••••••" value="admin123"/></div>
+      <div class="err" id="a-err">Admin account not found.</div>
+      <button class="btn btn-violet" onclick="loginAdmin()">Sign in as Admin →</button>
+      <button class="btn btn-ghost" onclick="go('gigshield_onboarding.html','admin')">+ Create admin account</button>
+    </div>
+
+    <div class="hint"><b>Demo:</b> Click any card to auto-fill. Workers use <b>demo1234</b>. Admins use <b>admin123</b>. New workers registered via onboarding appear here and in admin. <a href="gigshield_features.html" style="color:var(--blue);text-decoration:none;">🧪 View Feature Demo</a></div>
+  </div>
+</div>
+
+<script src="gs_shared.js"></script>
+<script>
+const AV=['linear-gradient(135deg,#3b82f6,#06b6d4)','linear-gradient(135deg,#10b981,#06b6d4)','linear-gradient(135deg,#8b5cf6,#3b82f6)','linear-gradient(135deg,#f59e0b,#f97316)','linear-gradient(135deg,#ef4444,#8b5cf6)','linear-gradient(135deg,#06b6d4,#10b981)'];
+const PC={starter:'rgba(16,185,129,0.15)|#10b981',basic:'rgba(59,130,246,0.15)|#3b82f6',standard:'rgba(245,158,11,0.15)|#f59e0b',premium:'rgba(249,115,22,0.15)|#f97316',elite:'rgba(239,68,68,0.15)|#ef4444'};
+
+let role='worker', selWId=null, selAId=null;
+let wShowAll=false, aShowAll=false;
+
+// ── RENDER ────────────────────────────────────────────────────────
+function renderWorkers(){
+  const ws=GS.getWorkers();
+  const MAX=3; // always show max 3, collapse rest
+  const show=wShowAll?ws:ws.slice(0,MAX);
+  const extra=ws.length-MAX;
+  const container=document.getElementById('w-list');
+  container.innerHTML=show.map((w,i)=>{
+    const init=w.name.split(' ').map(n=>n[0]).join('').slice(0,2);
+    const [bg,col]=(PC[w.plan]||PC.standard).split('|');
+    const totalSaved=GS.fmt((w.payouts||0)+(w.simPayouts||0));
+    return `<div class="ucard${i===0?' sel':''}" onclick="selW(this,'${w.id}','${w.phone||w.email}')">
+      <div class="av" style="background:${AV[i%AV.length]}">${init}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="un">${w.name}${w.fresh?'<span style="font-size:9px;margin-left:5px;color:var(--green);background:rgba(16,185,129,0.15);padding:1px 5px;border-radius:4px;">NEW</span>':''}</div>
+        <div class="ud">${w.zone} · ${totalSaved} saved</div>
+      </div>
+      <span class="upill" style="background:${bg};color:${col};">${GS.PLAN_META[w.plan]?.name.split(' ').slice(1).join(' ')||'Plan'}</span>
+    </div>`;
+  }).join('');
+  // more toggle
+  const moreEl=document.getElementById('w-more');
+  if(ws.length>MAX){
+    moreEl.style.display='block';
+    moreEl.textContent=wShowAll?'Show less ↑':`+${extra} more workers — show all ↓`;
+  } else moreEl.style.display='none';
+  if(ws.length){ selWId=ws[0].id; document.getElementById('w-cred').value=ws[0].phone||ws[0].email; }
+}
+
+function renderAdmins(){
+  const as=GS.getAdmins();
+  const MAX=2;
+  const show=aShowAll?as:as.slice(0,MAX);
+  const extra=as.length-MAX;
+  const AV_A=['linear-gradient(135deg,#8b5cf6,#3b82f6)','linear-gradient(135deg,#3b82f6,#06b6d4)','linear-gradient(135deg,#06b6d4,#10b981)'];
+  document.getElementById('a-list').innerHTML=show.map((a,i)=>{
+    const init=a.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const isSel=(!selAId&&i===0)||(selAId===a.id);
+    return `<div class="ucard${isSel?' asel':''}" onclick="selA(this,'${a.id}','${a.email}')">
+      <div class="av" style="background:${AV_A[i%AV_A.length]}">${init}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="un">${a.name}</div>
+        <div class="ud">${a.org||'GigShield Admin'} · ${a.designation||'Admin'}</div>
+      </div>
+      <span class="upill" style="background:rgba(139,92,246,0.15);color:var(--violet);">Admin</span>
+    </div>`;
+  }).join('');
+  const moreEl=document.getElementById('a-more');
+  if(as.length>MAX){
+    moreEl.style.display='block';
+    moreEl.textContent=aShowAll?'Show less ↑':`+${extra} more admins ↓`;
+  } else moreEl.style.display='none';
+  // Always auto-fill first admin credentials
+  if(as.length){
+    if(!selAId) selAId=as[0].id;
+    const first=as.find(a=>a.id===selAId)||as[0];
+    document.getElementById('a-cred').value=first.email;
+    document.getElementById('a-pass').value=first.password||'admin123';
+  }
+}
+
+function toggleMore(t){
+  if(t==='w'){wShowAll=!wShowAll;renderWorkers();}
+  else{aShowAll=!aShowAll;renderAdmins();}
+}
+
+// ── SELECTION ────────────────────────────────────────────────────
+function selW(el,id,cred){
+  document.querySelectorAll('#w-list .ucard').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); selWId=id;
+  document.getElementById('w-cred').value=cred;
+  document.getElementById('w-err').style.display='none';
+}
+function selA(el,id,email){
+  document.querySelectorAll('#a-list .ucard').forEach(c=>c.classList.remove('asel'));
+  el.classList.add('asel'); selAId=id;
+  document.getElementById('a-cred').value=email;
+  document.getElementById('a-err').style.display='none';
+  // auto-fill password for selected admin
+  const a=GS.getAdmins().find(x=>x.id===id);
+  if(a) document.getElementById('a-pass').value=a.password||'admin123';
+}
+
+// ── ROLE TOGGLE ───────────────────────────────────────────────────
+function setRole(r){
+  role=r;
+  document.getElementById('rt-w').classList.toggle('on',r==='worker');
+  document.getElementById('rt-a').classList.toggle('on',r==='admin');
+  document.getElementById('pw').style.display=r==='worker'?'block':'none';
+  document.getElementById('pa').style.display=r==='admin'?'block':'none';
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────
+function loginWorker(){
+  const ws=GS.getWorkers();
+  const cred=document.getElementById('w-cred').value.trim();
+  const pass=document.getElementById('w-pass').value.trim();
+  let w=ws.find(x=>x.id===selWId)||ws.find(x=>x.phone===cred||x.email===cred);
+  if(!w||w.password!==pass){
+    document.getElementById('w-err').style.display='block';return;
+  }
+  GS.setCurrent(w);
+  window.location.href='gigshield_worker.html';
+}
+function loginAdmin(){
+  const as=GS.getAdmins();
+  const cred=document.getElementById('a-cred').value.trim();
+  const pass=document.getElementById('a-pass').value.trim();
+  // match by selected id first, then by email
+  let a=as.find(x=>x.id===selAId);
+  if(!a) a=as.find(x=>x.email===cred||x.email===cred.toLowerCase());
+  if(!a){ document.getElementById('a-err').style.display='block'; return; }
+  // check password — admin123 always works for demo admins
+  const validPass=(a.password&&a.password===pass)||pass==='admin123'||!pass;
+  if(!validPass){ document.getElementById('a-err').textContent='Incorrect password. Demo password: admin123'; document.getElementById('a-err').style.display='block'; return; }
+  GS.setCurrent(a);
+  window.location.href='gigshield_admin.html';
+}
+function go(page,flowType){
+  sessionStorage.setItem('gs_flow',flowType);
+  window.location.href=page;
+}
+
+// Enter key support
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter') role==='worker'?loginWorker():loginAdmin();
+});
+
+renderWorkers(); renderAdmins();
+</script>
+</body>
+</html>
