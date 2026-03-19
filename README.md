@@ -49,7 +49,7 @@ External disruptions — heavy monsoon rain, extreme heat, cyclone alerts, air q
 
 ## Our Solution
 
-GigShield is an **AI-powered parametric micro-insurance platform** built exclusively for food delivery partners on Zomato and Swiggy.
+GigShield is an **AI-powered parametric micro-insurance platform** built exclusively for food delivery partners on Zomato and Swiggy and it is platform independent.
 
 ### ⚡ How GigShield Works (At a Glance)
 
