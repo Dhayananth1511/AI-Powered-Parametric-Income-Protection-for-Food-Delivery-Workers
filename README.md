@@ -8,7 +8,7 @@
 
 ---
 
-## 🚀 Judge Summary — Read This First
+## 🚀 Judge Summary
 
 GigShield is an AI-powered parametric micro-insurance platform that:
 
