@@ -816,8 +816,8 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 
 ## Live Demo
 
-📱 Worker Onboarding → 
-https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers/index.html
+📱 Login → 
+https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers/gigshield_login.html
 
 🧪 Feature Demo → 
 https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers/features.html
