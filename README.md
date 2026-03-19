@@ -270,7 +270,11 @@ This layered approach ensures:
 ---
 
 ## Weekly Premium Model
+### 💡 Simple Pricing Logic
 
+Weekly Premium = Base Price + (Risk Score × Zone Risk Factor)
+
+---
 ### Design Philosophy
 
 GigShield is a **partial income top-up**, not a full income replacement product. This distinction is fundamental to the model's actuarial viability and regulatory simplicity.
