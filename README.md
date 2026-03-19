@@ -24,7 +24,7 @@
 12. [Dashboards](#dashboards)
 13. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
 14. [Financial & Business Model](#financial--business-model)
-15. [Live Demo(prototype)](#Live--Demo)
+15. [Live Demo(prototype)](#Live-Demo)
 16. [Strategy Video](#strategy-video)
 17. [45-Day Development Roadmap](#45-day-development-roadmap)
 
