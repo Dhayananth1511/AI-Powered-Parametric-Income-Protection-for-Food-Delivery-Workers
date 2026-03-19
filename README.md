@@ -17,14 +17,15 @@
 5. [Parametric Triggers](#parametric-triggers)
 6. [Weekly Premium Model](#weekly-premium-model)
 7. [AI/ML Architecture](#aiml-architecture)
-8. [Zero-Touch Claim Flow](#zero-touch-claim-flow)
-9. [Platform & Tech Stack](#platform--tech-stack)
-10. [System Architecture](#system-architecture)
-11. [Dashboards](#dashboards)
-12. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
-13. [Financial & Business Model](#financial--business-model)
-14. [45-Day Development Roadmap](#45-day-development-roadmap)
-15. [Strategy Video](#strategy-video)
+8. [Smart Validation Layer](#smart-validation-layer)
+9. [Zero-Touch Claim Flow](#zero-touch-claim-flow)
+10. [Platform & Tech Stack](#platform--tech-stack)
+11. [System Architecture](#system-architecture)
+12. [Dashboards](#dashboards)
+13. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
+14. [Financial & Business Model](#financial--business-model)
+15. [45-Day Development Roadmap](#45-day-development-roadmap)
+16. [Strategy Video](#strategy-video)
 
 ---
 
@@ -52,15 +53,19 @@ GigShield is an **AI-powered parametric micro-insurance platform** built exclusi
 
 Instead of requiring manual claim submission, GigShield:
 
-- Continuously monitors verified external data sources (IMD, CPCB, government alerts)
-- Automatically detects when a disruption threshold is crossed in a worker's delivery zone
-- Verifies the worker's GPS location and fraud score in real time
-- Triggers an instant partial income top-up — in under 30 seconds, with no human intervention
+- Continuously monitors verified external data sources (IMD, CPCB, government alerts) cross-validated with satellite and radar-based private weather APIs
+- Applies disruption detection at **micro-zone level (2–5 km radius)** rather than city or pincode level, ensuring granular accuracy
+- Automatically detects when a disruption threshold is crossed **and persists for 15–30 minutes** in a worker's delivery zone
+- Verifies the worker's GPS location, behavioral signals, and fraud score in real time
+- Triggers an instant partial income top-up — with near real-time payout processing and zero human intervention
 
 The worker's only job is to subscribe to a weekly plan. Everything else is automated.
 
 **Key differentiators:**
 - Every trigger is independently verifiable through government or third-party APIs — no platform data, no subjective metrics
+- Multi-source data validation prevents false triggers from API delays or outages
+- Micro-zone precision (2–5 km) avoids city-level inaccuracies — rain in one street doesn't incorrectly trigger payouts 5 km away
+- Time-based confirmation window (15–30 min) eliminates brief weather spikes from triggering payouts
 - ML-driven dynamic zone-based pricing makes the model financially sustainable
 - Predictive disruption alerts warn workers 24–48 hours before an event
 - Zero-touch claim experience — no forms, no uploads, no waiting
@@ -78,9 +83,14 @@ Key innovations include:
 - **Parametric Insurance Model** — payouts triggered by objective external data instead of manual claims
 - **Zero-Touch Claims** — workers never need to file forms or upload documents
 - **AI-Driven Risk Pricing** — machine learning assigns optimal plan tiers based on zone risk
+- **Micro-Zone Precision** — disruption detection at 2–5 km zone level, not city or pincode level
+- **Multi-Source Validation** — cross-validates IMD/CPCB with satellite/radar APIs to handle data delays
+- **Time-Based Confirmation** — disruptions must persist 15–30 minutes before triggering payout (no false triggers)
+- **Context-Aware Delivery Logic** — compares disruption duration against average delivery time before triggering
+- **Anonymized Crowd Signal Validation** — aggregated zone-level behavioral signals from multiple workers improve accuracy without privacy risk
 - **Predictive Disruption Alerts** — workers receive warnings 24–48 hours before disruptions
 - **Fraud Detection Engine** — anomaly detection protects insurers from fraudulent claims
-- **Instant Micro-Payouts** — automated top-up payouts delivered in under 30 seconds
+- **Near Real-Time Micro-Payouts** — automated top-up payouts processed instantly with no human intervention
 - **Actuarially Viable Micro-Premiums** — all plans maintain 50–72% annual loss ratio, insurer-partner ready
 
 This transforms insurance from **reactive claims processing** into **proactive financial protection**.
@@ -121,13 +131,13 @@ It's a Tuesday evening in August. A delivery partner is midway through their shi
 
 ### Trigger Table
 
-| # | Disruption Event | Data Source | Threshold | Payout Trigger |
-|---|---|---|---|---|
-| 1 | Heavy Rainfall | OpenWeatherMap API + IMD | Rainfall > 35mm within 3 hours in worker's pincode | Per disruption hour (up to plan cap) |
-| 2 | Extreme Heat | IMD API | Sustained temperature > 43°C for 2+ hours | Per disruption hour (up to plan cap) |
-| 3 | Severe Air Pollution | CPCB AQI API (free public API) | AQI > 300 (Hazardous category) | Per disruption hour (up to plan cap) |
-| 4 | Cyclone / Flood Alert | IMD Disaster Alert Feed + NDMA | Orange or Red alert issued for worker's district | Full weekly plan cap triggered immediately |
-| 5 | Government Curfew / Hartal | NDMA public alert feed + admin-confirmed flag | Section 144 order or state-declared shutdown in worker's zone | Full weekly plan cap triggered immediately |
+| # | Disruption Event | Data Source | Threshold | Confirmation Window | Payout Trigger |
+|---|---|---|---|---|---|
+| 1 | Heavy Rainfall | OpenWeatherMap API + IMD + Satellite Radar API | Rainfall > 35mm within 3 hours in worker's micro-zone | Persists for 15–30 minutes | Per disruption hour (up to plan cap) |
+| 2 | Extreme Heat | IMD API + Private Weather API | Sustained temperature > 43°C for 2+ hours | Persists for 30 minutes | Per disruption hour (up to plan cap) |
+| 3 | Severe Air Pollution | CPCB AQI API + OpenAQ | AQI > 300 (Hazardous category) | Confirmed across 2+ sources | Per disruption hour (up to plan cap) |
+| 4 | Cyclone / Flood Alert | IMD Disaster Alert Feed + NDMA | Orange or Red alert issued for worker's district | Alert active for 30+ minutes | Full weekly plan cap triggered immediately |
+| 5 | Government Curfew / Hartal | NDMA public alert feed + admin-confirmed flag | Section 144 order or state-declared shutdown in worker's zone | Admin-verified flag | Full weekly plan cap triggered immediately |
 
 ### Why These Triggers Are Compliant
 
@@ -136,6 +146,122 @@ Each trigger satisfies all three compliance requirements:
 1. **Externally verifiable** — sourced from IMD, CPCB, NDMA, or a government-issued order. Not derived from platform data.
 2. **Parametric** — defined by a measurable threshold that is either crossed or not. No subjective assessment.
 3. **Causally linked to income loss** — each event directly prevents outdoor delivery work, causing loss of hourly wages.
+
+### Time-Based Confirmation
+
+A key safeguard against false triggers: GigShield validates that the disruption condition **persists for 15–30 minutes** before any payout is initiated.
+
+| Scenario | Result |
+|---|---|
+| Rain for 5 minutes → clears | ❌ No payout — condition did not persist |
+| Rain for 30 minutes continuous | ✅ Trigger confirmed — payout initiated |
+| AQI spikes briefly, recovers | ❌ No payout — single-source spike |
+| AQI confirmed across 2+ sources for 20+ min | ✅ Trigger confirmed |
+
+---
+
+## Smart Validation Layer
+
+While designing GigShield, we identified real-world challenges in relying solely on external data sources. To ensure accuracy, fairness, and reliability, we built a **multi-layer validation approach** on top of the parametric trigger system.
+
+### 1. Multi-Source Data Reliability
+
+**Problem:** External APIs (IMD, CPCB, etc.) may sometimes be delayed, unavailable, or return stale data — a rare but real scenario.
+
+**Solution:**
+- Primary source: Government APIs (IMD, CPCB, NDMA)
+- Secondary validation: Private satellite and radar-based weather APIs
+- Cross-verify disruption signals across at least 2 independent sources before triggering any payout
+- If primary API is down, fallback to satellite API — no single point of failure
+
+---
+
+### 2. Micro-Zone Precision (2–5 km Granularity)
+
+**Problem:** Pincode-level or city-level data is too coarse. Rain may be heavy in one neighborhood but absent 3 km away. Using city-wide data creates wrong triggers for workers outside the actual disruption area.
+
+**Solution:**
+- Workers are mapped using pincode as a base, then placed into smaller **micro-zones of 2–5 km radius**
+- Disruption detection and trigger logic operates at micro-zone level, not city or pincode level
+- Each worker's zone centroid is used for precise weather API queries
+- Workers at the boundary of a disruption zone receive proportional signal weighting
+
+**Impact:** Prevents workers in unaffected areas from receiving incorrect payouts — and ensures workers in genuinely affected areas are not missed.
+
+---
+
+### 3. Time-Based Confirmation (False Trigger Prevention)
+
+**Problem:** Brief weather spikes (a 5-minute shower, a momentary AQI spike) should not trigger payouts — they don't meaningfully disrupt delivery work.
+
+**Solution:**
+- Every disruption trigger is subject to a **15–30 minute persistence check**
+- Only after the condition remains at or above the threshold continuously is the payout initiated
+- Duration counter starts at first threshold breach; resets if condition drops below threshold
+
+| Duration | Action |
+|---|---|
+| < 15 minutes | Monitoring — no trigger |
+| 15–30 minutes | Confirmation window — alert worker |
+| > 30 minutes | Trigger confirmed — claim initiated |
+
+---
+
+### 4. Context-Aware Delivery Time Logic
+
+**Problem:** Not all disruptions meaningfully impact delivery income. A 20-minute disruption has a very different impact from a 3-hour disruption on a worker mid-shift.
+
+**Solution:**
+- Compare disruption duration against the worker's average delivery time (estimated at 30–45 minutes per delivery)
+- If disruption duration is shorter than average delivery time → low impact, no payout triggered
+- If disruption duration significantly exceeds average delivery time → high income impact, payout initiated
+- Payout scales proportionally with verified disruption hours, up to the plan cap
+
+---
+
+### 5. Anonymized Zone-Level Crowd Signal Validation
+
+**Problem:** External data alone may not fully capture ground conditions — API data can lag real conditions by 10–20 minutes in rapidly changing weather.
+
+**Solution:**
+- In addition to external APIs, GigShield uses **anonymized, aggregated behavioral signals** from multiple active workers in the same micro-zone
+- Signals tracked (at zone level, never individual level):
+  - Reduced average movement speed across workers in zone
+  - Inactivity spikes — multiple workers showing near-zero movement simultaneously
+  - Location clustering — workers gathering under shelters
+- These signals are **never linked to individual identities** — only zone-level patterns are used
+- No platform data (Zomato/Swiggy orders) is accessed or required
+- Crowd signal is used as a **secondary confirmation layer**, not as the primary trigger
+
+**Privacy guarantee:** No individual worker is tracked or identified. Behavioral signals are aggregated at zone level and discarded after the disruption window closes.
+
+**Why this works:** If 8 workers in Velachery simultaneously drop to near-zero speed during a rainfall event, it strongly confirms the disruption is real — even if the weather API is lagging by 15 minutes.
+
+---
+
+### Combined Validation Logic
+
+GigShield requires **all five layers** to pass before a claim is approved:
+
+```
+Layer 1: External API threshold crossed (IMD / CPCB / NDMA)
+       ↓
+Layer 2: Cross-verified by secondary source (satellite / radar API)
+       ↓
+Layer 3: Condition persists 15–30 minutes (time-based confirmation)
+       ↓
+Layer 4: Worker GPS confirmed inside affected micro-zone
+       ↓
+Layer 5: Anonymized zone crowd signal confirms disruption (optional boost)
+       ↓
+       ✅ Claim auto-approved — payout initiated
+```
+
+This layered approach ensures:
+- High accuracy — multiple independent data points required
+- Low false-positive rate — brief spikes filtered out
+- Real-world reliability — crowd signals compensate for API lag
+- Privacy compliance — no individual tracking, no platform dependency
 
 ---
 
@@ -226,13 +352,15 @@ Gig workers on Zomato/Swiggy operate on a weekly earnings and payout cycle. Dail
 Example demonstration of GigShield in action:
 
 1. Ravi subscribes to the **Standard Plan (₹79/week)** using the GigShield mobile app.
-2. GigShield continuously monitors weather data using **OpenWeatherMap and IMD APIs** (polled every 15 minutes).
-3. Rainfall in Ravi's delivery zone (Velachery pincode) crosses the **35mm disruption threshold**.
-4. The platform verifies Ravi's **GPS location** is within the affected zone.
-5. Fraud detection model evaluates the claim — fraud score: **14/100 (clean)**.
-6. The claim is automatically approved. Disruption duration verified: **4 hours**.
-7. Standard plan payout: **4 hours × ₹40/hour = ₹160**.
-8. Insurer partner releases the payout through **Razorpay Sandbox**.
+2. GigShield continuously monitors weather data using **OpenWeatherMap + IMD APIs + satellite radar API** (polled every 15 minutes), applied at **Ravi's micro-zone (Velachery, 3 km radius)**.
+3. Rainfall in Ravi's micro-zone crosses the **35mm disruption threshold**.
+4. GigShield initiates a **15–30 minute time confirmation window** — rainfall must persist to confirm real disruption.
+5. Rain persists for 30+ minutes. Secondary source (radar API) confirms. Crowd signal: 7 workers in zone show near-zero movement.
+6. The platform verifies Ravi's **GPS location** is within the affected micro-zone.
+7. Fraud detection model evaluates the claim — fraud score: **14/100 (clean)**.
+8. The claim is automatically approved. Disruption duration verified: **4 hours**.
+9. Standard plan payout: **4 hours × ₹40/hour = ₹160**.
+10. Insurer partner releases the payout through **Razorpay Sandbox**.
 
 Worker receives notification:
 ```
@@ -293,7 +421,7 @@ GigShield integrates three purpose-built ML models.
 
 ### Model 1 — Zone Risk Classifier
 
-**Purpose:** Recommend the most appropriate plan tier to each worker at onboarding based on their delivery zone's historical disruption risk.
+**Purpose:** Recommend the most appropriate plan tier to each worker at onboarding based on their delivery micro-zone's historical disruption risk.
 
 **Algorithm:** Random Forest Classifier
 
@@ -307,8 +435,8 @@ GigShield integrates three purpose-built ML models.
 
 | Feature | Description |
 |---|---|
-| Zone latitude / longitude | Geographic position of delivery zone centroid |
-| Historical disruption events/month (12-month rolling) | Frequency of past disruption events in that zone |
+| Zone latitude / longitude | Geographic position of delivery micro-zone centroid (2–5 km radius) |
+| Historical disruption events/month (12-month rolling) | Frequency of past disruption events in that micro-zone |
 | Proximity to water bodies | Distance to nearest river, lake, or coastline (flood proxy) |
 | Zone elevation | Low elevation = poor drainage = higher flood risk |
 | Month of year | Monsoon seasonality weighting |
@@ -337,10 +465,11 @@ GigShield integrates three purpose-built ML models.
 
 | Rule | Logic |
 |---|---|
-| No verified trigger event | If no IMD/CPCB threshold breach recorded in worker's pincode on claim day → automatic rejection |
-| GPS pincode mismatch | If worker's GPS location at trigger time does not overlap with disruption event pincode → automatic rejection |
+| No verified trigger event | If no IMD/CPCB threshold breach recorded in worker's micro-zone on claim day → automatic rejection |
+| GPS pincode mismatch | If worker's GPS location at trigger time does not overlap with disruption event micro-zone → automatic rejection |
 | Claim cap exceeded | If worker has already reached max hours for the week → automatic rejection |
 | Plan not active | If worker's weekly plan has expired → automatic rejection |
+| Time confirmation not met | If disruption persisted for fewer than 15 minutes → automatic rejection |
 
 #### Anomaly Scoring (Isolation Forest — Applied After Hard Rules Pass)
 
@@ -351,6 +480,7 @@ GigShield integrates three purpose-built ML models.
 | Claim timing relative to trigger | Claim initiated before trigger threshold crossed = suspicious |
 | Device fingerprint | Multiple accounts on same device = duplicate registration fraud |
 | Historical claim approval rate | Consistent 100% approval rate over months = flag for review |
+| Zone crowd signal disagreement | Worker claims disruption, but zone crowd signal shows no inactivity spike = flag |
 
 **Output:** Fraud score 0–100
 
@@ -362,27 +492,116 @@ GigShield integrates three purpose-built ML models.
 
 ---
 
+### Worker Eligibility & Trust Score System
+
+**Purpose:** Maintain a persistent, dynamic trust score per worker built from genuine past activity — used to determine payout eligibility before the fraud detection model even runs. This is not a per-claim check. It is a running reputation score that accumulates across weeks.
+
+**Why this exists:** Fraud detection alone scores each claim in isolation. A sophisticated fraudster could pass individual claim checks while still exhibiting suspicious patterns across weeks. The eligibility system catches this by looking at the full history of a worker's behaviour — not just their latest claim.
+
+#### How the Trust Score Is Built
+
+Every worker has a Trust Score from **0 to 100**, updated weekly based on four combined factors:
+
+| Factor | What It Measures | Trust Impact |
+|---|---|---|
+| **Weeks Actively Subscribed** | Continuous weeks with an active plan (no gaps) | +points per unbroken week |
+| **Genuine Past Claims** | Claims that were auto-approved with clean fraud scores | +points per verified clean claim |
+| **Consistent GPS Activity** | Regular work-hour GPS movement matching a delivery worker's pattern | +points for consistent activity |
+| **Low Fraud Score History** | Rolling average of fraud scores across all past claims | -points if fraud scores are elevated |
+
+All four factors are combined into a single weighted Trust Score. No single factor dominates — a worker must show genuine behaviour across all dimensions.
+
+#### Trust Score Tiers
+
+| Trust Score | Tier | Eligibility Status |
+|---|---|---|
+| 75 – 100 | 🟢 Trusted | Full auto-approval. Highest payout priority. |
+| 50 – 74 | 🔵 Established | Auto-approval. Standard processing. |
+| 25 – 49 | 🟡 Building | Claim goes to manual review queue before payout. |
+| 0 – 24 | 🔴 Restricted | Claim goes to manual review. Payout capped at 50% of plan maximum. |
+
+#### New Worker Handling (No History)
+
+A worker with no claim history starts with a **Provisional Trust Score of 40 (Building tier)**. They can claim immediately from Week 1, but with a **reduced payout cap of 50%** of their plan maximum until they build 3 weeks of genuine activity.
+
+This approach:
+- Does not punish new workers for being new
+- Limits insurer exposure on unproven accounts
+- Rewards consistent genuine workers with full benefits quickly
+
+| Week | Status | Payout Cap |
+|---|---|---|
+| Week 1 (new) | Provisional — no history | 50% of plan max |
+| Week 2–3 | Building — limited history | 75% of plan max |
+| Week 4+ (clean record) | Established or Trusted | 100% of plan max |
+
+#### How Low Eligibility Works
+
+Workers in the **Building (25–49)** or **Restricted (0–24)** tier are not rejected — their claim is automatically routed to the **manual review queue** in the admin dashboard. A human reviewer checks the GPS trace, crowd signal data, and fraud score before approving or rejecting.
+
+This means:
+- No genuine worker is ever auto-rejected purely due to low trust score
+- Suspicious workers face extra scrutiny without being unfairly blocked
+- The insurer's fraud exposure is minimised at the eligibility gate, before individual claim checks run
+
+#### Trust Score Recovery
+
+A worker whose score has dropped due to flagged claims can recover by:
+- Maintaining continuous active subscriptions without suspicious claims
+- Passing manual review on subsequent claims (each clean manual-review approval restores points)
+- Completing 4 consecutive clean weeks (automatic partial score restoration)
+
+#### Combined Flow with Fraud Detection
+
+```
+Disruption trigger confirmed
+          │
+          ▼
+┌─────────────────────────────┐
+│  Eligibility Gate           │
+│  Check worker Trust Score   │
+│                             │
+│  🟢 75–100 → Proceed        │
+│  🔵 50–74  → Proceed        │
+│  🟡 25–49  → Manual Review  │
+│  🔴 0–24   → Manual Review  │
+│             + 50% payout cap│
+└──────────────┬──────────────┘
+               │
+               ▼
+     Fraud Detection Model
+     (Isolation Forest score)
+               │
+               ▼
+     Payout decision
+```
+
+The eligibility gate runs **before** the fraud model — high-risk workers are flagged for human review before any automated payout logic runs.
+
+---
+
 ### Model 3 — Predictive Disruption Alert Engine
 
-**Purpose:** Forecast disruption probability 24–48 hours ahead for each delivery zone, enabling proactive worker notifications and insurer risk preparation.
+**Purpose:** Forecast disruption probability 24–48 hours ahead for each delivery micro-zone, enabling proactive worker notifications and insurer risk preparation.
 
 **Algorithm:** XGBoost on time-series weather features (LSTM evaluated as alternative in Phase 3)
 
 **Training Data:** IMD 10-year historical weather records, seasonal cyclone patterns, monsoon onset/withdrawal historical dates
 
 **Input Features:**
-- 7-day rolling weather trend for the zone
+- 7-day rolling weather trend for the micro-zone
 - Current IMD forecast data (temperature, rainfall probability, wind speed)
 - Season flag (monsoon / pre-monsoon / winter)
 - Zone historical disruption frequency by month
 - Recent AQI trend
+- Satellite-derived cloud cover and moisture indices
 
-**Output:** Disruption probability score (0–100%) per zone per day
+**Output:** Disruption probability score (0–100%) per micro-zone per day
 
 **Worker-facing notification:**
 > *"⚡ Storm likely in your delivery zone tomorrow 6–9pm. Probability: 78%. Your ₹160 coverage is active."*
 
-**Admin-facing view:** City-wide heatmap showing predicted disruption risk for the next 48 hours, enabling the insurer partner to pre-position liquidity for expected payouts.
+**Admin-facing view:** City-wide heatmap showing predicted disruption risk for the next 48 hours at micro-zone level, enabling the insurer partner to pre-position liquidity for expected payouts.
 
 ---
 
@@ -392,30 +611,43 @@ GigShield integrates three purpose-built ML models.
 Worker subscribes to ₹79 Standard weekly plan on GigShield mobile app
            │
            ▼
-GigShield backend polls OpenWeatherMap + IMD every 15 minutes
+GigShield backend polls OpenWeatherMap + IMD + Satellite API every 15 minutes
+Applied at micro-zone level (2–5 km radius, not city/pincode)
            │
            ▼
-7:23pm — Rainfall crosses 35mm threshold in worker's pincode
+7:23pm — Rainfall crosses 35mm threshold in worker's micro-zone
            │
            ▼
-┌──────────────────────────────────────────┐
-│           Automated Verification         │
-│  ✅ Worker GPS in affected zone?         │
-│  ✅ Plan active this week?               │
-│  ✅ Hourly cap not yet reached?          │
-│  ✅ Fraud score: 14/100 (clean)          │
-│  ✅ No duplicate claim today?            │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│      Time-Based Confirmation Window          │
+│  ⏱️ Monitoring for 15–30 minutes...          │
+│  7:53pm — Rain persists. Threshold still met.│
+│  Secondary source (radar API) confirms ✅    │
+└──────────────────────────────────────────────┘
            │
            ▼
-   Claim auto-approved in < 30 seconds
+┌──────────────────────────────────────────────┐
+│           Automated Verification             │
+│  ✅ Worker GPS in affected micro-zone?       │
+│  ✅ Plan active this week?                   │
+│  ✅ Hourly cap not yet reached?              │
+│  ✅ Disruption persisted 30+ minutes?        │
+│  ✅ Zone crowd signal confirms (7 workers    │
+│     showing near-zero movement) ✅           │
+│  ✅ Fraud score: 14/100 (clean)              │
+│  ✅ No duplicate claim today?                │
+└──────────────────────────────────────────────┘
+           │
+           ▼
+   Claim auto-approved
            │
            ▼
    Disruption duration verified: 4 hours
    Payout: 4 hrs × ₹40/hr = ₹160
            │
            ▼
-   Razorpay sandbox triggers transfer
+   Insurer partner releases payout
+   Processed via Razorpay sandbox (near real-time)
            │
            ▼
    Firebase push notification sent:
@@ -425,7 +657,7 @@ GigShield backend polls OpenWeatherMap + IMD every 15 minutes
    Worker is home. Dry. Paid. Without filing a single form.
 ```
 
-**Total time from disruption detection to payout: under 30 seconds. Zero human intervention. Zero forms.**
+**Total time from disruption confirmation to payout initiation: near real-time. Zero human intervention. Zero forms.**
 
 ---
 
@@ -438,7 +670,7 @@ GigShield is built on two platforms sharing a single backend:
 | Platform | Target User | Purpose |
 |---|---|---|
 | **Mobile App (React Native)** | Delivery Workers | Onboarding, plan selection, disruption alerts, payout tracking |
-| **Web App (React.js)** | Insurer / Admin | Zone heatmap, policy portfolio, fraud queue, loss ratio analytics, predictive disruption map |
+| **Web App (React.js)** | Insurer / Admin | Micro-zone heatmap, policy portfolio, fraud queue, loss ratio analytics, predictive disruption map |
 
 A shared **FastAPI backend** serves both platforms through a unified REST API. This architecture avoids duplication and ensures ML model outputs are consistent across both interfaces.
 
@@ -451,11 +683,12 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 | Backend | Python FastAPI | ML-friendly, async support, high performance |
 | Database | PostgreSQL | Relational — workers, policies, claims, payout records |
 | ML Models | Scikit-learn (Random Forest, Isolation Forest), XGBoost | Production-grade libraries, well-documented |
-| Weather API | OpenWeatherMap (free tier) + IMD public data | Real-time conditions + historical training data |
-| AQI API | CPCB AQI API / OpenAQ (free public APIs) | Government-verified pollution data |
+| Weather API (Primary) | OpenWeatherMap (free tier) + IMD public data | Real-time conditions + historical training data |
+| Weather API (Secondary) | Satellite/radar-based private weather API | Backup validation, handles IMD data delays |
+| AQI API | CPCB AQI API + OpenAQ (free public APIs) | Government-verified pollution data, cross-validated |
 | Disaster Alerts | NDMA public alert feed | Replaces manual curfew verification for Trigger #5 |
-| Location | Google Maps API | GPS zone verification, delivery area mapping |
-| Payments | Razorpay Sandbox (test mode) | Simulated instant payout |
+| Zone Mapping | Google Maps API + custom micro-zone segmentation (2–5 km) | Precise GPS zone verification beyond pincode level |
+| Payments | Razorpay Sandbox (test mode) | Simulated near-real-time payout |
 | Push Notifications | Firebase Cloud Messaging | Real-time worker alerts on mobile |
 | Hosting | Railway / Render (free tier) | Fast deployment for hackathon demo |
 
@@ -479,25 +712,31 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
                        │
           ┌────────────┼────────────┐
           ▼            ▼            ▼
-   ┌──────────┐  ┌──────────┐  ┌──────────────┐
-   │PostgreSQL│  │ ML Engine│  │Disruption    │
-   │(Workers, │  │(Risk,    │  │Monitor       │
-   │Policies, │  │Fraud,    │  │(Polls APIs   │
-   │Claims)   │  │Predict)  │  │every 15 min) │
-   └──────────┘  └──────────┘  └──────┬───────┘
+   ┌──────────┐  ┌──────────┐  ┌──────────────────────┐
+   │PostgreSQL│  │ ML Engine│  │Disruption Monitor    │
+   │(Workers, │  │(Risk,    │  │(Polls APIs every     │
+   │Policies, │  │Fraud,    │  │15 min at micro-zone  │
+   │Claims)   │  │Predict)  │  │level — 2–5 km zones) │
+   └──────────┘  └──────────┘  └──────┬───────────────┘
                                        │
-                    ┌──────────────────┼──────────────────┐
-                    ▼                  ▼                   ▼
-           ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
-           │OpenWeatherMap│  │  CPCB AQI    │  │  IMD / NDMA      │
-           │+ IMD Weather │  │  API         │  │  Alert Feed      │
-           └──────────────┘  └──────────────┘  └──────────────────┘
+                    ┌──────────────────┼──────────────────────┐
+                    ▼                  ▼                       ▼
+           ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐
+           │OpenWeatherMap│  │  CPCB AQI    │  │  IMD / NDMA          │
+           │+ IMD Weather │  │  API +OpenAQ │  │  Alert Feed          │
+           │+ Satellite   │  │              │  │                      │
+           │  Radar API   │  │              │  │                      │
+           └──────────────┘  └──────────────┘  └──────────────────────┘
                                        │
                                        ▼
-                            ┌─────────────────────┐
-                            │  Claim Trigger &     │
-                            │  Fraud Check Engine  │
-                            └──────────┬──────────┘
+                            ┌──────────────────────────┐
+                            │  Multi-Layer Validation  │
+                            │  • Time confirmation     │
+                            │  • Cross-source verify   │
+                            │  • GPS micro-zone check  │
+                            │  • Crowd signal layer    │
+                            │  • Fraud score engine    │
+                            └──────────┬───────────────┘
                                        │
                                        ▼
                             ┌─────────────────────┐
@@ -526,7 +765,8 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 - **Plan Status Badge** — Active 🟢 / Expired 🔴 / Disruption in Progress ⚡
 - **Current Plan Card** — Plan name, weekly premium, hourly rate, hours remaining this week
-- **This Week's Disruptions** — Events detected in your delivery zone
+- **My Micro-Zone** — Visual map of the worker's assigned 2–5 km delivery zone
+- **This Week's Disruptions** — Events detected in your delivery micro-zone
 - **Payouts Received** — Timeline of all credited amounts with disruption type and hours covered
 - **Predictive Alert Panel** — "Heavy rain likely tomorrow 6–9pm in your zone (78% probability)"
 - **Earnings Protected Counter** — "You've saved ₹640 this month with GigShield"
@@ -535,14 +775,15 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 ### Admin / Insurer Web Dashboard
 
-- **City Zone Risk Heatmap** — Live + 48-hour predictive disruption risk by pincode
+- **City Micro-Zone Risk Heatmap** — Live + 48-hour predictive disruption risk by micro-zone (2–5 km cells)
 - **Active Policies by Plan** — Breakdown across all 5 plan tiers with counts and premium volume
 - **Premium Collected This Week** — Total across all plans (gross and net of GigShield fee)
 - **Claims Today** — Auto-approved / In review / Auto-rejected with hourly breakdown
-- **Loss Ratio by Zone** — Real-time portfolio loss ratio, segmented by delivery zone
-- **Fraud Review Queue** — Claims in the 30–70 score band with GPS trace, timing evidence
+- **Loss Ratio by Zone** — Real-time portfolio loss ratio, segmented by delivery micro-zone
+- **Fraud Review Queue** — Claims in the 30–70 score band with GPS trace, timing evidence, crowd signal comparison
 - **ML Model Health** — Confidence scores, feature drift indicators, retraining alerts
 - **Predicted Payout Exposure** — Expected payouts for next 48 hours based on disruption forecast
+- **Data Source Status** — Live status of all API feeds (IMD, CPCB, NDMA, satellite API) — flags delays
 
 ---
 
@@ -550,7 +791,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 ### What GigShield Covers
 
-GigShield covers **income lost by food delivery workers during verified external disruptions** that prevent delivery activity. Coverage is parametric — payouts are triggered by objective data thresholds, not manual claim assessment. Payouts are calculated on a per-hour basis up to the plan's weekly maximum.
+GigShield covers **income lost by food delivery workers during verified external disruptions** that prevent delivery activity. Coverage is parametric — payouts are triggered by objective data thresholds that persist for a minimum confirmation window (15–30 minutes), not manual claim assessment. Payouts are calculated on a per-hour basis up to the plan's weekly maximum.
 
 GigShield provides a **partial income top-up** — not full income replacement. This distinction keeps the product actuarially viable, affordable, and insurer-partnerable.
 
@@ -576,6 +817,7 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 - [x] System architecture design
 - [x] GitHub repository setup with full README
 - [x] Financial & business model — IRDAI partner insurer structure, 10% platform fee model
+- [x] Smart Validation Layer design — multi-source reliability, micro-zone precision, time confirmation, crowd signals
 - [ ] Minimal prototype: Worker onboarding screen + plan selection UI (React Native)
 - [ ] Strategy video (2 minutes)
 
@@ -585,9 +827,11 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 - [ ] Worker registration and KYC flow (simulated Aadhaar verification)
 - [ ] Insurance policy management (create, view, renew, upgrade weekly plan)
 - [ ] Zone Risk Classifier model — trained and deployed for plan recommendation at onboarding
-- [ ] OpenWeatherMap + IMD + CPCB AQI API integration and disruption detection engine (15-min polling)
+- [ ] Micro-zone segmentation layer — divide city into 2–5 km zones, map each worker to micro-zone
+- [ ] OpenWeatherMap + IMD + satellite radar API integration and disruption detection engine (15-min polling)
+- [ ] Time-based confirmation engine (15–30 min persistence check before trigger fires)
 - [ ] Hourly payout calculation engine (duration × hourly rate, capped at plan maximum)
-- [ ] Claims management system (auto-trigger pipeline: verify GPS → fraud check → approve → payout)
+- [ ] Claims management system (auto-trigger pipeline: time confirm → cross-source verify → GPS check → fraud check → approve → payout)
 - [ ] Razorpay sandbox payout integration
 - [ ] Firebase push notification setup
 - [ ] 2-minute demo video
@@ -595,14 +839,16 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 ### Phase 3 — Scale & Optimise (Weeks 5–6 | April 5–17)
 *Theme: Perfect for Your Worker*
 
-- [ ] Advanced fraud detection — Isolation Forest model trained and deployed (GPS spoofing, fake weather claim detection)
-- [ ] Predictive disruption alert engine — XGBoost model, 48-hour zone-level forecast
-- [ ] Intelligent admin dashboard (zone heatmap, loss ratio by zone, fraud queue, predictive payout exposure map)
-- [ ] Worker dashboard — all 5 plan cards, earnings protected counter, alert panel, upgrade flow
+- [ ] Advanced fraud detection — Isolation Forest model trained and deployed (GPS spoofing, crowd signal disagreement detection)
+- [ ] Anonymized zone-level crowd signal validation layer — aggregate worker behavioral signals per micro-zone
+- [ ] Predictive disruption alert engine — XGBoost model, 48-hour micro-zone-level forecast
+- [ ] Context-aware delivery time logic — compare disruption duration vs average delivery time before triggering
+- [ ] Intelligent admin dashboard (micro-zone heatmap, loss ratio by zone, fraud queue, predictive payout exposure map, API status panel)
+- [ ] Worker dashboard — all 5 plan cards, micro-zone map, earnings protected counter, alert panel, upgrade flow
 - [ ] NDMA alert feed integration for Trigger #5 (automated curfew/hartal detection)
 - [ ] Full system integration testing across all 5 disruption triggers
-- [ ] 5-minute demo video (simulated rainstorm → auto-claim → 4-hour payout walkthrough)
-- [ ] Final pitch deck (PDF) — persona, AI architecture, fraud model, business viability of weekly pricing
+- [ ] 5-minute demo video (simulated rainstorm → 30-min confirmation → auto-claim → 4-hour payout walkthrough)
+- [ ] Final pitch deck (PDF) — persona, AI architecture, fraud model, smart validation layer, business viability
 
 ---
 
@@ -620,6 +866,8 @@ For demonstration purposes:
 - Insurance payouts are simulated using **Razorpay Sandbox**
 - Worker identity verification is mocked
 - External data sources are integrated using publicly available APIs (OpenWeatherMap, CPCB, IMD, NDMA)
+- Satellite/radar secondary API is simulated in demo using cached weather data
+- Anonymized crowd signal layer is simulated using synthetic zone-level movement data
 - ML models are trained on IMD/CPCB public historical data
 
 In a real deployment, GigShield would integrate with a **licensed IRDAI insurance partner** to underwrite policies and process real claim payouts.
