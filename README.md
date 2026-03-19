@@ -53,7 +53,7 @@ GigShield is an **AI-powered parametric micro-insurance platform** built exclusi
 
 ### ⚡ How GigShield Works (At a Glance)
 
-User → AI Risk Score → Weekly Plan → Monitor Data → Trigger → Auto Claim → Payout
+#### User → AI Risk Score → Weekly Plan → Monitor Data → Trigger → Auto Claim → Payout 
 
 Instead of requiring manual claim submission, GigShield:
 
