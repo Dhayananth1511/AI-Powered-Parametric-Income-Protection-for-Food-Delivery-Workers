@@ -51,6 +51,10 @@ External disruptions — heavy monsoon rain, extreme heat, cyclone alerts, air q
 
 GigShield is an **AI-powered parametric micro-insurance platform** built exclusively for food delivery partners on Zomato and Swiggy.
 
+### ⚡ How GigShield Works (At a Glance)
+
+User → AI Risk Score → Weekly Plan → Monitor Data → Trigger → Auto Claim → Payout
+
 Instead of requiring manual claim submission, GigShield:
 
 - Continuously monitors verified external data sources (IMD, CPCB, government alerts) cross-validated with satellite and radar-based private weather APIs
