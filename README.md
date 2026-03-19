@@ -24,8 +24,9 @@
 12. [Dashboards](#dashboards)
 13. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
 14. [Financial & Business Model](#financial--business-model)
-15. [45-Day Development Roadmap](#45-day-development-roadmap)
+15. [Live Demo(prototype)](#Live--Demo)
 16. [Strategy Video](#strategy-video)
+17. [45-Day Development Roadmap](#45-day-development-roadmap)
 
 ---
 
@@ -813,6 +814,27 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 
 ---
 
+## Live Demo
+
+🌐 Try GigShield (Deployed Prototype):  
+https://dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers/
+
+💡 What you can explore:
+- Worker onboarding and plan selection
+- Disruption detection concept
+- Parametric trigger flow
+- Dashboard overview
+
+> Note: This is a prototype built for the Guidewire DEVTrails 2026 Hackathon.
+
+---
+
+## Strategy Video
+
+🎥 *2-minute strategy video — link to be added upon submission (before March 20, EOD).*
+
+---
+
 ## 45-Day Development Roadmap
 
 ### Phase 1 — Ideation & Foundation (Weeks 1–2 | March 4–20)
@@ -826,7 +848,7 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 - [x] GitHub repository setup with full README
 - [x] Financial & business model — IRDAI partner insurer structure, 10% platform fee model
 - [x] Smart Validation Layer design — multi-source reliability, micro-zone precision, time confirmation, crowd signals
-- [ ] Minimal prototype: Worker onboarding screen + plan selection UI (React Native)
+- [x] Minimal prototype: Worker onboarding screen + plan selection UI (React Native)
 - [ ] Strategy video (2 minutes)
 
 ### Phase 2 — Automation & Protection (Weeks 3–4 | March 21–April 4)
@@ -857,12 +879,6 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 - [ ] Full system integration testing across all 5 disruption triggers
 - [ ] 5-minute demo video (simulated rainstorm → 30-min confirmation → auto-claim → 4-hour payout walkthrough)
 - [ ] Final pitch deck (PDF) — persona, AI architecture, fraud model, smart validation layer, business viability
-
----
-
-## Strategy Video
-
-🎥 *2-minute strategy video — link to be added upon submission (before March 20, EOD).*
 
 ---
 
