@@ -814,7 +814,7 @@ This exclusion boundary is by design — it keeps GigShield compliant, financial
 
 ---
 
-## 🔗 Live Demo
+## Live Demo
 
 📱 Worker Onboarding → https://Dhayananth1511.github.io/GigShield/onboarding.html
 
