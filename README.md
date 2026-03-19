@@ -687,8 +687,8 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 | Layer | Technology | Justification |
 |---|---|---|
-| Mobile Frontend | React Native | Single codebase for iOS + Android, fast iteration |
-| Web Frontend | React.js | Component-based admin dashboard with map integration |
+| Mobile Web (HTML/CSS/JS) | Delivery Workers | Onboarding, plan selection, disruption alerts, payout tracking |
+| Desktop Web (HTML/CSS/JS)| Insurer / Admin  | Policy portfolio, fraud queue, loss ratio analytics           |
 | Backend | Python FastAPI | ML-friendly, async support, high performance |
 | Database | PostgreSQL | Relational — workers, policies, claims, payout records |
 | ML Models | Scikit-learn (Random Forest, Isolation Forest), XGBoost | Production-grade libraries, well-documented |
@@ -707,8 +707,7 @@ A shared **FastAPI backend** serves both platforms through a unified REST API. T
 
 ```
 ┌─────────────────────┐        ┌─────────────────────┐
-│   Worker Mobile App  │        │   Admin Web App      │
-│   (React Native)     │        │   (React.js)         │
+│   Worker Mobile App │        |     Admin Web App   │  
 └────────┬────────────┘        └──────────┬──────────┘
          │                                │
          └──────────────┬─────────────────┘
