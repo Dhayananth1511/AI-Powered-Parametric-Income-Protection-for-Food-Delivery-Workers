@@ -678,8 +678,8 @@ GigShield is built on two platforms sharing a single backend:
 
 | Platform | Target User | Purpose |
 |---|---|---|
-| **Mobile App (React Native)** | Delivery Workers | Onboarding, plan selection, disruption alerts, payout tracking |
-| **Web App (React.js)** | Insurer / Admin | Micro-zone heatmap, policy portfolio, fraud queue, loss ratio analytics, predictive disruption map |
+| Mobile Web (HTML/CSS/JS) | Delivery Workers | Onboarding, plan selection, disruption alerts, payout tracking |
+| Desktop Web (HTML/CSS/JS)| Insurer / Admin  | Policy portfolio, fraud queue, loss ratio analytics           |
 
 A shared **FastAPI backend** serves both platforms through a unified REST API. This architecture avoids duplication and ensures ML model outputs are consistent across both interfaces.
 
