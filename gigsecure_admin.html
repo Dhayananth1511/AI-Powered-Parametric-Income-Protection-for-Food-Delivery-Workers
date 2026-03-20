@@ -46,12 +46,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:54px;display:flex;ali
 .al-c{border-top:2px solid var(--cyan);}
 
 /* POLICY TABLE */
-.pt{width:100%;border-collapse:collapse;}
-.pt th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--wire);}
-.pt td{padding:10px 12px;font-size:12px;border-bottom:1px solid rgba(36,51,84,0.3);vertical-align:middle;}
+.pt{width:100%;border-collapse:collapse;table-layout:fixed;}
+.pt th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--wire);white-space:nowrap;}
+.pt td{padding:9px 10px;font-size:12px;border-bottom:1px solid rgba(36,51,84,0.3);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pt tr:last-child td{border-bottom:none;}
 .pt tr:hover td{background:rgba(255,255,255,0.015);}
 .pt tr.nr td{background:rgba(16,185,129,0.04);}
+/* Column widths */
+.pt th:nth-child(1),.pt td:nth-child(1){width:22%;white-space:normal;}
+.pt th:nth-child(2),.pt td:nth-child(2){width:18%;}
+.pt th:nth-child(3),.pt td:nth-child(3){width:10%;}
+.pt th:nth-child(4),.pt td:nth-child(4){width:11%;text-align:right;}
+.pt th:nth-child(5),.pt td:nth-child(5){width:11%;text-align:right;}
+.pt th:nth-child(6),.pt td:nth-child(6){width:8%;text-align:center;}
+.pt th:nth-child(7),.pt td:nth-child(7){width:9%;text-align:center;}
+.pt th:nth-child(8),.pt td:nth-child(8){width:11%;}
 .av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
 .pill{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
 .p-ok{background:rgba(16,185,129,0.15);color:var(--green);}
@@ -180,11 +189,23 @@ select.inp{appearance:none;cursor:pointer;}
 .zm-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;}
 .zm-workers{margin-top:5px;display:flex;gap:3px;justify-content:center;flex-wrap:wrap;}
 .zm-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;}
+
+/* SEARCH BAR */
+.search-wrap{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.search-inp{flex:1;padding:9px 13px 9px 36px;border-radius:10px;border:1px solid var(--wire);background:var(--surface);color:var(--bright);font-family:"Geist",sans-serif;font-size:13px;outline:none;transition:border 0.2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23566d94' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;}
+.search-inp:focus{border-color:rgba(59,130,246,0.5);}
+.search-inp::placeholder{color:var(--mute);}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;}
+.filt-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--rim);background:transparent;color:var(--ghost);font-family:"Geist",sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.18s;}
+.filt-btn:hover{border-color:var(--mute);color:var(--text);}
+.filt-btn.on{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.4);color:var(--blue);}
+.search-result-note{font-size:11px;color:var(--mute);margin-top:6px;min-height:16px;}
+.no-results{text-align:center;padding:2rem;color:var(--ghost);font-size:13px;}
 </style>
 </head>
 <body>
 <nav>
-  <a class="nl" href="gigsecure_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
+  <a class="nl" href="gigsecure_login.html"><div class="ni">🛡</div>Gig<em>Secure</em></a>
   <div class="ntabs">
     <a class="nt" href="gigsecure_worker.html">👤 Worker View</a>
     <a class="nt here">🏦 Admin Dashboard</a>
@@ -284,18 +305,45 @@ select.inp{appearance:none;cursor:pointer;}
           <div class="sec" style="margin:0;flex:1;">📋 Registered Policies</div>
           <span class="pill" style="background:rgba(59,130,246,0.15);color:var(--blue);font-size:11px;" id="pol-count-badge">0 total</span>
         </div>
-        <div class="card" style="margin-bottom:1rem;">
-          <div style="overflow-x:auto;">
+        <!-- SEARCH & FILTER -->
+        <div class="search-wrap">
+          <input class="search-inp" id="worker-search" placeholder="Search by name, ID, zone, platform..." oninput="searchWorkers(this.value)" autocomplete="off"/>
+          <button class="filt-btn" id="sort-btn" onclick="toggleSort()" title="Sort by total payouts">↕ Sort</button>
+          <button class="filt-btn" id="clear-btn" onclick="clearSearch()" style="display:none;">✕ Clear</button>
+        </div>
+        <div class="filter-row" id="filter-row">
+          <button class="filt-btn on" onclick="setFilter('all',this)">All Plans</button>
+          <button class="filt-btn" onclick="setFilter('starter',this)">🌱 Starter</button>
+          <button class="filt-btn" onclick="setFilter('basic',this)">🔵 Basic</button>
+          <button class="filt-btn" onclick="setFilter('standard',this)">🟡 Standard</button>
+          <button class="filt-btn" onclick="setFilter('premium',this)">🟠 Premium</button>
+          <button class="filt-btn" onclick="setFilter('elite',this)">🔴 Elite</button>
+          <button class="filt-btn" onclick="setFilter('high-risk',this)">🔴 High Risk</button>
+          <button class="filt-btn" onclick="setFilter('new',this)">✨ New</button>
+        </div>
+        <div class="search-result-note" id="search-note"></div>
+        <div class="card" style="margin-bottom:1rem;margin-top:8px;">
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
             <table class="pt">
+              <colgroup>
+                <col style="width:22%">
+                <col style="width:18%">
+                <col style="width:10%">
+                <col style="width:11%">
+                <col style="width:11%">
+                <col style="width:8%">
+                <col style="width:9%">
+                <col style="width:11%">
+              </colgroup>
               <thead>
                 <tr>
                   <th>Worker</th>
                   <th>Zone</th>
                   <th>Plan</th>
-                  <th>Past Payouts</th>
-                  <th>Simulated</th>
-                  <th>Claims</th>
-                  <th>Risk</th>
+                  <th style="text-align:right">Past Payouts</th>
+                  <th style="text-align:right">Simulated</th>
+                  <th style="text-align:center">Claims</th>
+                  <th style="text-align:center">Risk</th>
                   <th>Joined</th>
                 </tr>
               </thead>
@@ -555,35 +603,10 @@ function load(){
   const lr=stats.weeklyPremium>0?Math.round(stats.totalPayouts/(stats.weeklyPremium*4.33)*100):0;
   document.getElementById('k-lr').textContent=lr+'%';
   document.getElementById('k-lr').style.color=lr<75?'var(--green)':'var(--amber)';
-  document.getElementById('pol-count-badge').textContent=ws.length+' total';
-  document.getElementById('pol-foot').textContent=ws.length+' registered policies · Sorted by join date';
+  document.getElementById('pol-foot').textContent=ws.length+' registered policies · Use search to filter';
 
-  // ── POLICY TABLE ──────────────────────────────────────────────
-  const tbody=document.getElementById('pol-tbody');
-  tbody.innerHTML=ws.map((w,i)=>{
-    const plan=GS.PLAN_META[w.plan]||GS.PLAN_META.standard;
-    const init=w.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    const [bg,col]=(PC[w.plan]||PC.standard).split('|');
-    const sc=w.riskScore||0.45;
-    const scoreCol=sc>0.65?'var(--red)':sc>0.4?'var(--amber)':'var(--green)';
-    const isNew=w.fresh||w.joinedToday;
-    return `<tr class="${isNew?'nr':''}">
-      <td><div style="display:flex;align-items:center;gap:8px;">
-        <div class="av" style="background:${AV[i%AV.length]}">${init}</div>
-        <div>
-          <div style="font-weight:500;color:var(--bright);font-size:12px;">${w.name}${isNew?'<span style="margin-left:5px;font-size:9px;color:var(--green);background:rgba(16,185,129,0.15);padding:1px 5px;border-radius:4px;">NEW</span>':''}</div>
-          <div style="font-size:10px;color:var(--mute)">${w.id}</div>
-        </div>
-      </div></td>
-      <td style="color:var(--ghost);font-size:12px;">${w.zone||'—'}</td>
-      <td><span class="pill" style="background:${bg};color:${col};">${plan.name.split(' ').slice(1).join(' ')}</span></td>
-      <td style="color:var(--green);font-weight:500;font-size:12px;">${GS.fmt(w.payouts||0)}</td>
-      <td style="color:var(--cyan);font-weight:500;font-size:12px;">${GS.fmt(w.simPayouts||0)}</td>
-      <td style="color:var(--ghost);font-size:12px;">${w.claimsTotal||0}</td>
-      <td style="color:${scoreCol};font-weight:600;font-size:12px;">${sc.toFixed(2)}</td>
-      <td style="color:var(--mute);font-size:11px;">${w.joined||'—'}</td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--ghost);padding:2rem;">No policies yet</td></tr>';
+  // ── POLICY TABLE — rendered via search/filter engine ──────────
+  applySearchFilter();  // applies current query+filter and renders table
 
   // ── PLAN BREAKDOWN ────────────────────────────────────────────
   const bd=stats.planBreakdown;
@@ -781,6 +804,140 @@ function filterByZone(zone){
   }
   toast(activeZoneFilter ? '📍 Filtered: '+activeZoneFilter : '📍 Filter cleared', 
         activeZoneFilter ? 'Showing workers in '+activeZoneFilter : 'Showing all registered workers');
+}
+
+
+// ── SEARCH & FILTER ──────────────────────────────────────────────────────────
+let currentFilter = 'all';
+let currentSort   = false;  // false = default, true = by total payouts desc
+let currentQuery  = '';
+
+function searchWorkers(q){
+  currentQuery = q.trim().toLowerCase();
+  document.getElementById('clear-btn').style.display = q ? 'block' : 'none';
+  applySearchFilter();
+}
+
+function setFilter(plan, btn){
+  currentFilter = plan;
+  document.querySelectorAll('.filt-btn').forEach(b=>{
+    if(b.id!=='sort-btn'&&b.id!=='clear-btn') b.classList.remove('on');
+  });
+  btn.classList.add('on');
+  applySearchFilter();
+}
+
+function toggleSort(){
+  currentSort = !currentSort;
+  const btn = document.getElementById('sort-btn');
+  btn.classList.toggle('on', currentSort);
+  btn.textContent = currentSort ? '↓ Payouts' : '↕ Sort';
+  applySearchFilter();
+}
+
+function clearSearch(){
+  currentQuery = '';
+  currentFilter = 'all';
+  currentSort = false;
+  document.getElementById('worker-search').value = '';
+  document.getElementById('clear-btn').style.display = 'none';
+  document.getElementById('sort-btn').textContent = '↕ Sort';
+  document.getElementById('sort-btn').classList.remove('on');
+  document.querySelectorAll('.filt-btn').forEach((b,i)=>{
+    if(b.id!=='sort-btn'&&b.id!=='clear-btn') b.classList.toggle('on', i===0);
+  });
+  applySearchFilter();
+}
+
+function applySearchFilter(){
+  let ws = GS.getWorkers();
+  const q = currentQuery;
+
+  // Filter by search query
+  if(q){
+    ws = ws.filter(w =>
+      w.name.toLowerCase().includes(q) ||
+      w.id.toLowerCase().includes(q) ||
+      (w.zone||'').toLowerCase().includes(q) ||
+      (w.platform||'').toLowerCase().includes(q) ||
+      (w.plan||'').toLowerCase().includes(q) ||
+      (w.phone||'').includes(q) ||
+      (w.email||'').toLowerCase().includes(q)
+    );
+  }
+
+  // Filter by plan / risk / new
+  if(currentFilter !== 'all'){
+    if(currentFilter === 'high-risk'){
+      ws = ws.filter(w => (w.riskScore||0) > 0.65);
+    } else if(currentFilter === 'new'){
+      ws = ws.filter(w => w.fresh);
+    } else {
+      ws = ws.filter(w => w.plan === currentFilter);
+    }
+  }
+
+  // Sort
+  if(currentSort){
+    ws = ws.slice().sort((a,b) => ((b.payouts||0)+(b.simPayouts||0)) - ((a.payouts||0)+(a.simPayouts||0)));
+  }
+
+  // Render filtered results
+  renderPolicyTable(ws);
+
+  // Update badge and note
+  const badge = document.getElementById('pol-count-badge');
+  const note  = document.getElementById('search-note');
+  const total = GS.getWorkers().length;
+  if(badge) badge.textContent = ws.length + (ws.length < total ? ' of '+total : ' total');
+  if(note){
+    if(ws.length === 0){
+      note.textContent = '🔍 No workers match "'+currentQuery+'"';
+      note.style.color = 'var(--amber)';
+    } else if(q || currentFilter !== 'all'){
+      note.textContent = ws.length + ' result' + (ws.length>1?'s':'') + (q?' for "'+currentQuery+'"':'') + (currentFilter!=='all'?' · '+currentFilter+' filter':'');
+      note.style.color = 'var(--ghost)';
+    } else {
+      note.textContent = '';
+    }
+  }
+}
+
+function renderPolicyTable(ws){
+  const tbody = document.getElementById('pol-tbody');
+  if(!tbody) return;
+  if(ws.length === 0){
+    tbody.innerHTML = '<tr><td colspan="8" class="no-results">🔍 No workers found matching your search</td></tr>';
+    return;
+  }
+  const AV_L=['linear-gradient(135deg,#3b82f6,#06b6d4)','linear-gradient(135deg,#10b981,#06b6d4)','linear-gradient(135deg,#8b5cf6,#3b82f6)','linear-gradient(135deg,#f59e0b,#f97316)','linear-gradient(135deg,#ef4444,#8b5cf6)','linear-gradient(135deg,#06b6d4,#10b981)'];
+  const PC_L={starter:'rgba(16,185,129,0.15)|#10b981',basic:'rgba(59,130,246,0.15)|#3b82f6',standard:'rgba(245,158,11,0.15)|#f59e0b',premium:'rgba(249,115,22,0.15)|#f97316',elite:'rgba(239,68,68,0.15)|#ef4444'};
+  tbody.innerHTML = ws.map((w,i) => {
+    const plan = GS.PLAN_META[w.plan]||GS.PLAN_META.standard;
+    const init = w.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const [bg,col] = (PC_L[w.plan]||PC_L.standard).split('|');
+    const sc = w.riskScore||0.45;
+    const scoreCol = sc>0.65?'var(--red)':sc>0.4?'var(--amber)':'var(--green)';
+    const isNew = w.fresh||w.joinedToday;
+    const zonePart = (w.zone||'—').split(',')[0];
+    const totalPay = (w.payouts||0)+(w.simPayouts||0);
+    return `<tr class="${isNew?'nr':''}">
+      <td><div style="display:flex;align-items:center;gap:7px;">
+        <div class="av" style="background:${AV_L[i%AV_L.length]};width:28px;height:28px;font-size:10px;flex-shrink:0;">${init}</div>
+        <div style="min-width:0;">
+          <div style="font-weight:500;color:var(--bright);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${w.name}${isNew?'<span style="margin-left:4px;font-size:9px;color:var(--green);background:rgba(16,185,129,0.15);padding:1px 5px;border-radius:4px;">NEW</span>':''}</div>
+          <div style="font-size:10px;color:var(--mute)">${w.id}</div>
+        </div>
+      </div></td>
+      <td style="color:var(--ghost);font-size:11px;overflow:hidden;text-overflow:ellipsis;">${zonePart}</td>
+      <td><span class="pill" style="background:${bg};color:${col};font-size:10px;">${plan.name.split(' ')[0]}</span></td>
+      <td style="color:var(--green);font-weight:600;font-size:12px;text-align:right;">${GS.fmt(w.payouts||0)}</td>
+      <td style="color:var(--cyan);font-weight:600;font-size:12px;text-align:right;">${GS.fmt(w.simPayouts||0)}</td>
+      <td style="color:var(--ghost);font-size:12px;text-align:center;">${w.claimsTotal||0}</td>
+      <td style="color:${scoreCol};font-weight:700;font-size:12px;text-align:center;">${sc.toFixed(2)}</td>
+      <td style="color:var(--mute);font-size:11px;">${w.joined||'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 function refresh(){load();toast('Refreshed','All stats updated from worker records');}
