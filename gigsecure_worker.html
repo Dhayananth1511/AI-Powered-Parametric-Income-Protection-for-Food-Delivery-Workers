@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GigShield — Worker Dashboard</title>
+<title>GigSecure — Worker Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -161,11 +161,11 @@ select.inp{appearance:none;cursor:pointer;}
 </head>
 <body>
 <nav>
-  <a class="nl" href="gigshield_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
+  <a class="nl" href="gigsecure_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
   <div class="ntabs">
     <a class="nt here">👤 My Dashboard</a>
-    <a class="nt" href="gigshield_admin.html">🏦 Admin View</a>
-    <a class="nt" href="gigshield_features.html">🧪 Features</a>
+    <a class="nt" href="gigsecure_admin.html">🏦 Admin View</a>
+    <a class="nt" href="gigsecure_features.html">🧪 Features</a>
   </div>
   <div class="nr">
     <span class="wb" id="nav-badge">👤 Loading...</span>
@@ -228,7 +228,7 @@ select.inp{appearance:none;cursor:pointer;}
           <div class="pn" id="p-name">🟡 Shield Standard</div>
           <div class="pp" id="p-price">₹79/week · Urban zone · IRDAI insurer partner</div>
           <div class="pstats">
-            <div><div class="ps-v" id="p-rate">₹40/hr</div><div class="ps-k">Payout rate</div></div>
+            <div><div class="ps-v" id="p-rate">₹60/hr</div><div class="ps-k">Payout rate</div></div>
             <div><div class="ps-v" id="p-hrs">4 hrs</div><div class="ps-k">Weekly max</div></div>
             <div><div class="ps-v" id="p-cap">₹160</div><div class="ps-k">Weekly cap</div></div>
             <div><div class="ps-v" id="p-risk">0.45</div><div class="ps-k">Zone risk score</div></div>
@@ -295,12 +295,12 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="card" id="payouts-history">
           <div class="ph-item">
             <div class="ph-ico" style="background:rgba(59,130,246,0.15);">🌧️</div>
-            <div><div class="ph-name">Heavy Rainfall · Velachery</div><div class="ph-meta">Mon Mar 17 · 2 hrs × ₹40/hr · Standard</div></div>
+            <div><div class="ph-name">Heavy Rainfall · Velachery</div><div class="ph-meta">Mon Mar 17 · 2 hrs × ₹60/hr · Standard</div></div>
             <div class="ph-amt">+₹80</div>
           </div>
           <div class="ph-item">
             <div class="ph-ico" style="background:rgba(245,158,11,0.15);">😷</div>
-            <div><div class="ph-name">Severe AQI · Chennai</div><div class="ph-meta">Wed Mar 19 · 1 hr × ₹40/hr · Standard</div></div>
+            <div><div class="ph-name">Severe AQI · Chennai</div><div class="ph-meta">Wed Mar 19 · 1 hr × ₹60/hr · Standard</div></div>
             <div class="ph-amt">+₹40</div>
           </div>
           <div class="ph-item" id="sim-payout-row" style="display:none;">
@@ -354,7 +354,7 @@ select.inp{appearance:none;cursor:pointer;}
           <div class="reveal" id="reveal">
             <div style="font-size:1.5rem;margin-bottom:5px;">🎉</div>
             <div class="ramt" id="rev-amt">₹80</div>
-            <div class="rlbl" id="rev-lbl">2 hrs × ₹40/hr</div>
+            <div class="rlbl" id="rev-lbl">2 hrs × ₹60/hr</div>
             <div class="rbadge">⚡ Auto-approved · Fully automated · Zero manual steps</div>
             <div class="rtotal">Total simulated this session: <span id="rev-total">₹0</span></div>
           </div>
@@ -372,7 +372,7 @@ let planRate=40, planCap=160, planMaxHrs=4, userId=null;
 function init(){
   // always re-read from localStorage for fresh data
   const u=GS.getCurrent();
-  if(!u||u.role==='admin'){window.location.href='gigshield_login.html';return;}
+  if(!u||u.role==='admin'){window.location.href='gigsecure_login.html';return;}
 
   // get fresh worker data from store (may have sim payouts added)
   const ws=GS.getWorkers();
@@ -420,7 +420,7 @@ function init(){
   const sel=document.getElementById('s-hrs');
   sel.innerHTML=Array.from({length:plan.maxHrs},(_,i)=>`<option value="${i+1}"${i+1===2?' selected':''}>${i+1} hour${i+1>1?'s':''} — ${GS.fmt((i+1)*plan.rate)}</option>`).join('');
 
-  if(fresh.fresh){toast('🎉 Welcome to GigShield!','Your coverage is active. You are protected.');GS.updateWorker(fresh.id,{fresh:false});}
+  if(fresh.fresh){toast('🎉 Welcome to GigSecure!','Your coverage is active. You are protected.');GS.updateWorker(fresh.id,{fresh:false});}
   window.planRate=plan.rate;window.planCap=plan.cap;
 
   // Update predictive alert with real zone + cap

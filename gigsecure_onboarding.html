@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GigShield — Register</title>
+<title>GigSecure — Register</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -163,7 +163,7 @@ select.inp{appearance:none;cursor:pointer;}
 </head>
 <body>
 <nav>
-  <a class="nl" href="gigshield_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
+  <a class="nl" href="gigsecure_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
   <div class="nsteps" id="nsteps">
     <div class="ns on" id="ns1">1</div><div class="nl2" id="nl1"></div>
     <div class="ns" id="ns2">2</div><div class="nl2" id="nl2"></div>
@@ -172,7 +172,7 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="ns" id="ns5">5</div><div class="nl2" id="nl5"></div>
     <div class="ns" id="ns6">6</div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;"><a href="gigshield_features.html" style="font-size:12px;color:var(--ghost);text-decoration:none;">🧪 Features</a><a href="gigshield_login.html" style="font-size:12px;color:var(--ghost);text-decoration:none;">← Login</a></div>
+  <div style="display:flex;align-items:center;gap:10px;"><a href="gigsecure_features.html" style="font-size:12px;color:var(--ghost);text-decoration:none;">🧪 Features</a><a href="gigsecure_login.html" style="font-size:12px;color:var(--ghost);text-decoration:none;">← Login</a></div>
 </nav>
 <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
 
@@ -194,7 +194,7 @@ select.inp{appearance:none;cursor:pointer;}
       </button>
     </div>
     <button class="btn-f btn-blue" onclick="go(2)">Continue →</button>
-    <button class="btn-g" onclick="window.location.href='gigshield_login.html'">Already have an account? Sign in</button>
+    <button class="btn-g" onclick="window.location.href='gigsecure_login.html'">Already have an account? Sign in</button>
   </div>
 </div>
 
@@ -234,7 +234,7 @@ select.inp{appearance:none;cursor:pointer;}
     <!-- ADMIN FORM — completely different from worker -->
     <div id="a-reg" style="display:none;">
       <h2 class="sh">Admin Account Setup</h2>
-      <p class="ss">Step 1 of 2 — Create your insurer admin account to manage GigShield policies</p>
+      <p class="ss">Step 1 of 2 — Create your insurer admin account to manage GigSecure policies</p>
 
       <div class="sec">Admin Identity</div>
       <div class="fld"><label>Full Name</label><input class="inp" id="a-name" placeholder="Karthik Sundaram"/></div>
@@ -252,8 +252,8 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="fld"><label>Create Password</label><input class="inp" type="password" id="a-pwd" placeholder="Min 6 characters"/></div>
 
       <div class="sec">Access Verification</div>
-      <div class="fld"><label>GigShield Admin Access Code</label><input class="inp" id="a-code" placeholder="GS-ADMIN-2026"/></div>
-      <div class="info"><b>Access code</b> is issued by the GigShield platform team to verified insurer partners. Demo code: <b>GS-ADMIN-2026</b></div>
+      <div class="fld"><label>GigSecure Admin Access Code</label><input class="inp" id="a-code" placeholder="GS-ADMIN-2026"/></div>
+      <div class="info"><b>Access code</b> is issued by the GigSecure platform team to verified insurer partners. Demo code: <b>GS-ADMIN-2026</b></div>
 
       <div class="sec">Admin Dashboard Access Includes</div>
       <div class="feat-check">
@@ -346,10 +346,10 @@ select.inp{appearance:none;cursor:pointer;}
     <p class="ss">Step 3 of 5 — Underwritten by IRDAI-licensed insurer partner</p>
     <div style="padding:9px 13px;border-radius:9px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);font-size:12px;color:var(--amber);margin-bottom:1rem;" id="plan-alert">⭐ ML recommends <b>Shield Premium</b> based on your zone.</div>
     <div class="plan-list">
-      <div class="plc" onclick="selPlan(this,'starter')"><div><div class="pn">🌱 Shield Starter</div><div class="pt">New workers · Low-risk zones</div><div class="ps"><span class="pst">₹25/hr</span><span class="pst">Max 2hrs</span><span class="pst">Cap ₹50</span></div></div><div class="ppr">₹35<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc" onclick="selPlan(this,'basic')"><div><div class="pn">🔵 Shield Basic</div><div class="pt">Part-time · Low-risk zones</div><div class="ps"><span class="pst">₹30/hr</span><span class="pst">Max 3hrs</span><span class="pst">Cap ₹90</span></div></div><div class="ppr">₹55<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc" onclick="selPlan(this,'standard')"><div><div class="pn">🟡 Shield Standard</div><div class="pt">Full-time · Urban zones</div><div class="ps"><span class="pst">₹40/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹160</span></div></div><div class="ppr">₹79<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc rec sel" id="plc-premium" onclick="selPlan(this,'premium')"><div class="rec-tag">ML Recommended</div><div style="margin-top:8px;"><div class="pn">🟠 Shield Premium</div><div class="pt">High-earning full-time</div><div class="ps"><span class="pst">₹50/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹200</span></div></div><div class="ppr">₹109<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'starter')"><div><div class="pn">🌱 Shield Starter</div><div class="pt">New workers · Low-risk zones</div><div class="ps"><span class="pst">₹35/hr</span><span class="pst">Max 2hrs</span><span class="pst">Cap ₹50</span></div></div><div class="ppr">₹35<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'basic')"><div><div class="pn">🔵 Shield Basic</div><div class="pt">Part-time · Low-risk zones</div><div class="ps"><span class="pst">₹45/hr</span><span class="pst">Max 3hrs</span><span class="pst">Cap ₹90</span></div></div><div class="ppr">₹55<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'standard')"><div><div class="pn">🟡 Shield Standard</div><div class="pt">Full-time · Urban zones</div><div class="ps"><span class="pst">₹60/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹160</span></div></div><div class="ppr">₹79<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc rec sel" id="plc-premium" onclick="selPlan(this,'premium')"><div class="rec-tag">ML Recommended</div><div style="margin-top:8px;"><div class="pn">🟠 Shield Premium</div><div class="pt">High-earning full-time</div><div class="ps"><span class="pst">₹75/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹200</span></div></div><div class="ppr">₹109<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
       <div class="plc" onclick="selPlan(this,'elite')"><div><div class="pn">🔴 Shield Elite</div><div class="pt">Coastal · Flood-prone zones</div><div class="ps"><span class="pst">₹60/hr</span><span class="pst">Max 5hrs</span><span class="pst">Cap ₹300</span></div></div><div class="ppr">₹149<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
     </div>
     <button class="btn-f btn-blue" onclick="go(5)">Continue →</button>
@@ -366,7 +366,7 @@ select.inp{appearance:none;cursor:pointer;}
       <div style="font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Order Summary</div>
       <div class="or"><span class="ol">Plan</span><span class="ov" id="o-plan">🟠 Shield Premium</span></div>
       <div class="or"><span class="ol">Coverage</span><span class="ov">7 days (Mon–Sun)</span></div>
-      <div class="or"><span class="ol">Payout rate</span><span class="ov" id="o-rate">₹50/hr</span></div>
+      <div class="or"><span class="ol">Payout rate</span><span class="ov" id="o-rate">₹75/hr</span></div>
       <div class="or"><span class="ol">Weekly cap</span><span class="ov" id="o-cap">₹200</span></div>
       <div class="or"><span class="ol">Underwriter</span><span class="ov">IRDAI Insurer Partner</span></div>
       <div class="or" style="border-top:1px solid var(--wire);padding-top:10px;margin-top:4px;">
@@ -380,7 +380,7 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="pm" onclick="selPay(this)"><div class="pmi" style="background:rgba(16,185,129,0.15);">🏦</div><div><div class="pmn">Net Banking</div><div class="pmsub">All major banks</div></div><div class="pmsel"></div></div>
       <div class="pm" onclick="selPay(this)"><div class="pmi" style="background:rgba(245,158,11,0.15);">💵</div><div><div class="pmn">Debit / Credit Card</div><div class="pmsub">Visa · Mastercard · RuPay</div></div><div class="pmsel"></div></div>
     </div>
-    <div class="info">🔒 Payments via <b>Razorpay Sandbox</b> (demo). No real money transacted. In production, all claim payouts are handled by the licensed IRDAI insurer partner — GigShield does not underwrite risk. GigShield does not underwrite risk — all claims are handled by the licensed IRDAI insurer partner.</div>
+    <div class="info">🔒 Payments via <b>Razorpay Sandbox</b> (demo). No real money transacted. In production, all claim payouts are handled by the licensed IRDAI insurer partner — GigSecure does not underwrite risk. GigSecure does not underwrite risk — all claims are handled by the licensed IRDAI insurer partner.</div>
     <button class="btn-f btn-blue" id="pay-btn" onclick="doPay()">Pay ₹109 — Activate Coverage</button>
   </div>
 </div>
@@ -397,7 +397,7 @@ select.inp{appearance:none;cursor:pointer;}
         <div style="font-size:13px;font-weight:600;" id="s-status">Coverage Active</div>
       </div>
       <div class="sgrid" id="s-grid">
-        <div class="scs"><div class="scv" id="sv1">₹50/hr</div><div class="scl">Payout rate</div></div>
+        <div class="scs"><div class="scv" id="sv1">₹75/hr</div><div class="scl">Payout rate</div></div>
         <div class="scs"><div class="scv" id="sv2">4 hrs</div><div class="scl">Weekly max</div></div>
         <div class="scs"><div class="scv" id="sv3">₹200</div><div class="scl">Weekly cap</div></div>
         <div class="scs"><div class="scv">Monday</div><div class="scl">Auto-renews</div></div>
@@ -555,7 +555,7 @@ function submitSc2(){
     document.getElementById('sring').className='sring a';
     document.getElementById('sring').textContent='🏦';
     document.getElementById('s-ti').textContent='Admin account created!';
-    document.getElementById('s-su').textContent='Welcome, '+name.split(' ')[0]+'. Your GigShield admin account is live.';
+    document.getElementById('s-su').textContent='Welcome, '+name.split(' ')[0]+'. Your GigSecure admin account is live.';
     document.getElementById('s-cov').className='scov a';
     document.getElementById('s-status').textContent='Account Active · '+org;
     document.getElementById('s-status').style.color='var(--violet)';
@@ -663,7 +663,7 @@ function saveWorker(){
   const wid='WKR-'+Math.floor(1000+Math.random()*9000);
   const w={
     id:wid,name,phone,
-    email:email||phone.replace(/\D/g,'')+'@gigshield.in',
+    email:email||phone.replace(/\D/g,'')+'@gigsecure.in',
     zone:selZone,pincode:selZD.pin,platform:plat,
     plan:selPlanKey,riskScore:selZD.score,trustScore:40,
     payouts:0,simPayouts:0,claimsTotal:0,weeklyHrsUsed:0,
@@ -672,12 +672,12 @@ function saveWorker(){
   };
   GS.addWorker(w); GS.setCurrent(w);
   set('s-ti',"You're protected, "+name.split(' ')[0]+'!');
-  set('s-su','Shield '+plan.name.split(' ').slice(1).join(' ')+' is active. GigShield monitors '+selZone+' every 15 min.');
+  set('s-su','Shield '+plan.name.split(' ').slice(1).join(' ')+' is active. GigSecure monitors '+selZone+' every 15 min.');
   set('sv1','₹'+plan.rate+'/hr');set('sv2',plan.maxHrs+' hrs');set('sv3','₹'+plan.cap);
   go(6);
 }
 
-function goDash(){window.location.href='gigshield_worker.html';}
+function goDash(){window.location.href='gigsecure_worker.html';}
 
 function set(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v;}
 function bar(id,w,c){const e=document.getElementById(id);if(e){e.style.width=w+'%';e.style.background=c;}}

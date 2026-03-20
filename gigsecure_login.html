@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GigShield — Sign In</title>
+<title>GigSecure — Sign In</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -93,7 +93,7 @@ body{font-family:'Geist',sans-serif;background:var(--void);color:var(--text);min
   </div>
 
   <div class="right">
-    <div class="rtitle">Sign in to GigShield</div>
+    <div class="rtitle">Sign in to GigSecure</div>
     <div class="rsub">Guidewire DEVTrails 2026 · Team ZenVyte</div>
     <div class="rtabs">
       <button class="rtab on" id="rt-w" onclick="setRole('worker')">🚴 Delivery Worker</button>
@@ -109,7 +109,7 @@ body{font-family:'Geist',sans-serif;background:var(--void);color:var(--text);min
       <div class="fld"><label>Password</label><input class="inp" type="password" id="w-pass" placeholder="••••••••" value="demo1234"/></div>
       <div class="err" id="w-err">Worker not found. Please register first.</div>
       <button class="btn btn-blue" onclick="loginWorker()">Sign in →</button>
-      <button class="btn btn-ghost" onclick="go('gigshield_onboarding.html','worker')">+ New worker? Register here</button>
+      <button class="btn btn-ghost" onclick="go('gigsecure_onboarding.html','worker')">+ New worker? Register here</button>
     </div>
 
     <!-- ADMIN PANEL -->
@@ -121,10 +121,10 @@ body{font-family:'Geist',sans-serif;background:var(--void);color:var(--text);min
       <div class="fld"><label>Password</label><input class="inp" type="password" id="a-pass" placeholder="••••••••" value="admin123"/></div>
       <div class="err" id="a-err">Admin account not found.</div>
       <button class="btn btn-violet" onclick="loginAdmin()">Sign in as Admin →</button>
-      <button class="btn btn-ghost" onclick="go('gigshield_onboarding.html','admin')">+ Create admin account</button>
+      <button class="btn btn-ghost" onclick="go('gigsecure_onboarding.html','admin')">+ Create admin account</button>
     </div>
 
-    <div class="hint"><b>Demo:</b> Click any card to auto-fill. Workers use <b>demo1234</b>. Admins use <b>admin123</b>. New workers registered via onboarding appear here and in admin. <a href="gigshield_features.html" style="color:var(--blue);text-decoration:none;">🧪 View Feature Demo</a></div>
+    <div class="hint"><b>Demo:</b> Click any card to auto-fill. Workers use <b>demo1234</b>. Admins use <b>admin123</b>. New workers registered via onboarding appear here and in admin. <a href="gigsecure_features.html" style="color:var(--blue);text-decoration:none;">🧪 View Feature Demo</a></div>
   </div>
 </div>
 
@@ -178,7 +178,7 @@ function renderAdmins(){
       <div class="av" style="background:${AV_A[i%AV_A.length]}">${init}</div>
       <div style="flex:1;min-width:0;">
         <div class="un">${a.name}</div>
-        <div class="ud">${a.org||'GigShield Admin'} · ${a.designation||'Admin'}</div>
+        <div class="ud">${a.org||'GigSecure Admin'} · ${a.designation||'Admin'}</div>
       </div>
       <span class="upill" style="background:rgba(139,92,246,0.15);color:var(--violet);">Admin</span>
     </div>`;
@@ -238,7 +238,7 @@ function loginWorker(){
     document.getElementById('w-err').style.display='block';return;
   }
   GS.setCurrent(w);
-  window.location.href='gigshield_worker.html';
+  window.location.href='gigsecure_worker.html';
 }
 function loginAdmin(){
   const as=GS.getAdmins();
@@ -252,7 +252,7 @@ function loginAdmin(){
   const validPass=(a.password&&a.password===pass)||pass==='admin123'||!pass;
   if(!validPass){ document.getElementById('a-err').textContent='Incorrect password. Demo password: admin123'; document.getElementById('a-err').style.display='block'; return; }
   GS.setCurrent(a);
-  window.location.href='gigshield_admin.html';
+  window.location.href='gigsecure_admin.html';
 }
 function go(page,flowType){
   sessionStorage.setItem('gs_flow',flowType);

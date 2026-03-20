@@ -1,12 +1,12 @@
-/* ── GigShield Shared Store v2 ── */
+/* ── GigSecure Shared Store v2 ── */
 const GS = {
 
   PLAN_META: {
-    starter: { name:'🌱 Starter', price:35,  rate:25, maxHrs:2, cap:50  },
-    basic:   { name:'🔵 Basic',   price:55,  rate:30, maxHrs:3, cap:90  },
-    standard:{ name:'🟡 Standard',price:79,  rate:40, maxHrs:4, cap:160 },
-    premium: { name:'🟠 Premium', price:109, rate:50, maxHrs:4, cap:200 },
-    elite:   { name:'🔴 Elite',   price:149, rate:60, maxHrs:5, cap:300 },
+    starter: { name:'🌱 Starter', price:35,  rate:35, maxHrs:3, cap:105 },
+    basic:   { name:'🔵 Basic',   price:55,  rate:45, maxHrs:4, cap:180 },
+    standard:{ name:'🟡 Standard',price:79,  rate:60, maxHrs:5, cap:300 },
+    premium: { name:'🟠 Premium', price:109, rate:75, maxHrs:6, cap:450 },
+    elite:   { name:'🔴 Elite',   price:149, rate:90, maxHrs:7, cap:630 },
   },
 
   SEED_WORKERS: [
@@ -17,7 +17,7 @@ const GS = {
 
   SEED_ADMINS: [
     { id:'ADM-001', name:'Karthik Sundaram', email:'admin@digit.com',   password:'admin123', role:'admin', org:'Digit Insurance Pvt Ltd',   designation:'Portfolio Manager', phone:'+91 80000 00001', joined:'2026-01-01' },
-    { id:'ADM-002', name:'Priya Nair',        email:'ops@gigshield.in', password:'admin123', role:'admin', org:'GigShield Platform Admin', designation:'Platform Admin',     phone:'+91 80000 00002', joined:'2026-01-01' },
+    { id:'ADM-002', name:'Priya Nair',        email:'ops@gigsecure.in', password:'admin123', role:'admin', org:'GigSecure Platform Admin', designation:'Platform Admin',     phone:'+91 80000 00002', joined:'2026-01-01' },
   ],
 
   init(){
@@ -45,7 +45,7 @@ const GS = {
 
   setCurrent(u){ localStorage.setItem('gs_current', JSON.stringify(u)); },
   getCurrent(){  return JSON.parse(localStorage.getItem('gs_current')||'null'); },
-  logout(){ localStorage.removeItem('gs_current'); window.location.href='gigshield_login.html'; },
+  logout(){ localStorage.removeItem('gs_current'); window.location.href='gigsecure_login.html'; },
 
   // Record a simulation payout — updates the worker's record in localStorage
   recordPayout(workerId, amount){

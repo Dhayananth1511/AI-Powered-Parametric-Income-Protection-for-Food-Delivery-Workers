@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GigShield — Feature Demo</title>
+<title>GigSecure — Feature Demo</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -225,11 +225,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 <nav>
   <div class="nav-logo"><div class="nav-logo-ico">🛡</div>Gig<em>Shield</em></div>
   <div class="nav-tabs">
-    <a class="ntab" href="gigshield_login.html">← Login</a>
-    <a class="ntab" href="gigshield_worker.html">👤 Worker</a>
-    <a class="ntab" href="gigshield_admin.html">🏦 Admin</a>
-    <a class="ntab" href="gigshield_onboarding.html">📋 Register</a>
-    <a class="ntab here" href="gigshield_features.html">🧪 Features</a>
+    <a class="ntab" href="gigsecure_login.html">← Login</a>
+    <a class="ntab" href="gigsecure_worker.html">👤 Worker</a>
+    <a class="ntab" href="gigsecure_admin.html">🏦 Admin</a>
+    <a class="ntab" href="gigsecure_onboarding.html">📋 Register</a>
+    <a class="ntab here" href="gigsecure_features.html">🧪 Features</a>
   </div>
   <div class="nav-tag"><div class="ndot"></div>6 Live Features</div>
 </nav>
@@ -237,8 +237,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 <div class="page-wrap">
   <div class="hero">
     <div class="hero-tag">🧪 Phase 1 — Interactive Feature Demo</div>
-    <h1>GigShield <em>Features</em> in Action</h1>
-    <p>Six real, interactive features showing exactly how GigShield works — from live weather monitoring to fraud detection scoring.</p>
+    <h1>GigSecure <em>Features</em> in Action</h1>
+    <p>Six real, interactive features showing exactly how GigSecure works — from live weather monitoring to fraud detection scoring.</p>
   </div>
 
   <div class="feat-nav">
@@ -258,7 +258,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="sec-num">1</div>
       <div>
         <div class="sec-title">Live Weather Monitor</div>
-        <div class="sec-sub">Real-time conditions for Tamil Nadu zones. Shows whether any GigShield trigger threshold is currently active.</div>
+        <div class="sec-sub">Real-time conditions for Tamil Nadu zones. Shows whether any GigSecure trigger threshold is currently active.</div>
       </div>
     </div>
 
@@ -298,7 +298,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           <div style="font-size:11px;color:var(--mute);text-align:center;margin-top:6px;" id="w-updated">Updating...</div>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">GigShield Trigger Status</div>
+          <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">GigSecure Trigger Status</div>
           <div class="trigger-status" id="trigger-status">
             <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🌧️ Rainfall threshold</span><span class="badge b-green">Safe</span></div>
             <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🌡️ Heat threshold</span><span class="badge b-green">Safe</span></div>
@@ -307,7 +307,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🚫 Curfew / Hartal</span><span class="badge b-green">No Alert</span></div>
           </div>
           <div style="margin-top:10px;padding:10px 12px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);border-radius:9px;font-size:11px;color:var(--ghost);line-height:1.5;">
-            💡 In production, GigShield polls IMD + OpenWeatherMap + CPCB every 15 minutes across 2–5 km micro-zones. Disruption must persist 15–30 min before payout triggers. Demo uses simulated data.
+            💡 In production, GigSecure polls IMD + OpenWeatherMap + CPCB every 15 minutes across 2–5 km micro-zones. Disruption must persist 15–30 min before payout triggers. Demo uses simulated data.
           </div>
         </div>
       </div>
@@ -335,10 +335,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div class="inp-wrap">
           <label>Your Plan</label>
           <select class="inp" id="cs-plan" onchange="calcClaim()">
-            <option value="starter">🌱 Starter — ₹25/hr · max 2hrs</option>
-            <option value="basic">🔵 Basic — ₹30/hr · max 3hrs</option>
-            <option value="standard" selected>🟡 Standard — ₹40/hr · max 4hrs</option>
-            <option value="premium">🟠 Premium — ₹50/hr · max 4hrs</option>
+            <option value="starter">🌱 Starter — ₹35/hr · max 2hrs</option>
+            <option value="basic">🔵 Basic — ₹45/hr · max 3hrs</option>
+            <option value="standard" selected>🟡 Standard — ₹60/hr · max 4hrs</option>
+            <option value="premium">🟠 Premium — ₹75/hr · max 4hrs</option>
             <option value="elite">🔴 Elite — ₹60/hr · max 5hrs</option>
           </select>
         </div>
@@ -373,9 +373,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div class="claim-live" id="claim-result-box">
           <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Payout Calculation</div>
           <div class="claim-result-big" id="cr-amount">₹80</div>
-          <div style="font-size:12px;color:var(--ghost);text-align:center;margin-top:5px;" id="cr-formula">2 hrs × ₹40/hr — Standard Plan</div>
+          <div style="font-size:12px;color:var(--ghost);text-align:center;margin-top:5px;" id="cr-formula">2 hrs × ₹60/hr — Standard Plan</div>
           <div class="claim-breakdown" id="cr-breakdown">
-            <div class="cb-row"><span class="cb-lbl">Plan hourly rate</span><span class="cb-val" id="crb-rate">₹40/hr</span></div>
+            <div class="cb-row"><span class="cb-lbl">Plan hourly rate</span><span class="cb-val" id="crb-rate">₹60/hr</span></div>
             <div class="cb-row"><span class="cb-lbl">Disruption hours</span><span class="cb-val" id="crb-hrs">2 hours</span></div>
             <div class="cb-row"><span class="cb-lbl">Hours already used</span><span class="cb-val" id="crb-used">0 of 4 hours</span></div>
             <div class="cb-row"><span class="cb-lbl">Eligible hours this claim</span><span class="cb-val" id="crb-elig">2 hours</span></div>
@@ -400,7 +400,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="sec-num">3</div>
       <div>
         <div class="sec-title">Fraud Score Visualizer</div>
-        <div class="sec-sub">Toggle 8 fraud signals to see how the Isolation Forest model scores each claim. GigShield requires 4 of 6 core signals to pass — GPS alone is never trusted.</div>
+        <div class="sec-sub">Toggle 8 fraud signals to see how the Isolation Forest model scores each claim. GigSecure requires 4 of 6 core signals to pass — GPS alone is never trusted.</div>
       </div>
     </div>
 
@@ -408,7 +408,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Behavioural Signals</div>
         <div style="font-size:11px;color:var(--ghost);margin-bottom:10px;padding:8px 12px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);border-radius:8px;">
-          🛡️ <b style="color:#7a95bd">GigShield requires 4 of 6 signals to match before approving any claim.</b> GPS alone is never trusted.
+          🛡️ <b style="color:#7a95bd">GigSecure requires 4 of 6 signals to match before approving any claim.</b> GPS alone is never trusted.
         </div>
         <div class="fraud-controls" id="fraud-signals">
           <div class="fraud-toggle-row">
@@ -485,7 +485,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="sec-num">4</div>
       <div>
         <div class="sec-title">Weekly Earnings Calculator</div>
-        <div class="sec-sub">Enter your daily earnings to see exactly how much income GigShield protects vs. how much a plan costs.</div>
+        <div class="sec-sub">Enter your daily earnings to see exactly how much income GigSecure protects vs. how much a plan costs.</div>
       </div>
     </div>
 
@@ -613,25 +613,25 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <tbody>
           <tr>
             <td class="plan-name-cell">🌱 Starter</td>
-            <td>₹35</td><td>₹25/hr</td><td>2 hrs</td><td>₹50</td><td>₹1,820</td>
+            <td>₹35</td><td>₹35/hr</td><td>2 hrs</td><td>₹50</td><td>₹1,820</td>
             <td><span class="badge b-green">72%</span></td>
             <td style="color:var(--ghost);font-size:12px;">New workers · Low-risk zones</td>
           </tr>
           <tr>
             <td class="plan-name-cell">🔵 Basic</td>
-            <td>₹55</td><td>₹30/hr</td><td>3 hrs</td><td>₹90</td><td>₹2,860</td>
+            <td>₹55</td><td>₹45/hr</td><td>3 hrs</td><td>₹90</td><td>₹2,860</td>
             <td><span class="badge b-green">55%</span></td>
             <td style="color:var(--ghost);font-size:12px;">Part-time · Low-risk</td>
           </tr>
           <tr class="highlight">
             <td class="plan-name-cell">🟡 Standard ⭐</td>
-            <td>₹79</td><td>₹40/hr</td><td>4 hrs</td><td>₹160</td><td>₹4,108</td>
+            <td>₹79</td><td>₹60/hr</td><td>4 hrs</td><td>₹160</td><td>₹4,108</td>
             <td><span class="badge b-green">51%</span></td>
             <td style="color:var(--ghost);font-size:12px;">Full-time urban workers</td>
           </tr>
           <tr>
             <td class="plan-name-cell">🟠 Premium</td>
-            <td>₹109</td><td>₹50/hr</td><td>4 hrs</td><td>₹200</td><td>₹5,668</td>
+            <td>₹109</td><td>₹75/hr</td><td>4 hrs</td><td>₹200</td><td>₹5,668</td>
             <td><span class="badge b-green">46%</span></td>
             <td style="color:var(--ghost);font-size:12px;">High-earning full-time</td>
           </tr>
@@ -662,7 +662,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div class="lbl" style="margin-bottom:10px;">Affordability by Plan (% of weekly earnings)</div>
         <div id="afford-bars" style="display:flex;flex-direction:column;gap:7px;"></div>
         <div style="margin-top:10px;padding:10px 12px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:9px;font-size:12px;color:var(--ghost);line-height:1.5;">
-          ✅ Micro-insurance affordability threshold: under 2.5% of weekly earnings (CGAP benchmark) — all 5 GigShield plans qualify
+          ✅ Micro-insurance affordability threshold: under 2.5% of weekly earnings (CGAP benchmark) — all 5 GigSecure plans qualify
         </div>
       </div>
     </div>

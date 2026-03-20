@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GigShield — Admin Dashboard</title>
+<title>GigSecure — Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -166,11 +166,11 @@ select.inp{appearance:none;cursor:pointer;}
 </head>
 <body>
 <nav>
-  <a class="nl" href="gigshield_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
+  <a class="nl" href="gigsecure_login.html"><div class="ni">🛡</div>Gig<em>Shield</em></a>
   <div class="ntabs">
-    <a class="nt" href="gigshield_worker.html">👤 Worker View</a>
+    <a class="nt" href="gigsecure_worker.html">👤 Worker View</a>
     <a class="nt here">🏦 Admin Dashboard</a>
-    <a class="nt" href="gigshield_features.html">🧪 Features</a>
+    <a class="nt" href="gigsecure_features.html">🧪 Features</a>
   </div>
   <div class="nr">
     <span class="ab" id="admin-badge">🏦 Admin</span>
@@ -182,7 +182,7 @@ select.inp{appearance:none;cursor:pointer;}
 <div class="page">
   <div class="dh">
     <div>
-      <h2 id="dh-title">Admin Dashboard — GigShield</h2>
+      <h2 id="dh-title">Admin Dashboard — GigSecure</h2>
       <p id="dh-sub">Loading portfolio data...</p>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
@@ -212,7 +212,7 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="kcard al-v">
         <div class="kl">Platform Fee (10%)</div>
         <div class="kv" id="k-fee">₹0</div>
-        <div class="ks">GigShield platform fee (10%)</div>
+        <div class="ks">GigSecure platform fee (5%)</div>
       </div>
     </div>
 
@@ -489,9 +489,9 @@ let selW=null, sessionTotal=0;
 
 function init(){
   const u=GS.getCurrent();
-  if(!u||u.role!=='admin'){window.location.href='gigshield_login.html';return;}
+  if(!u||u.role!=='admin'){window.location.href='gigsecure_login.html';return;}
   document.getElementById('admin-badge').textContent='🏦 '+(u.name||'Admin');
-  document.getElementById('dh-title').textContent='Admin Dashboard — GigShield';
+  document.getElementById('dh-title').textContent='Admin Dashboard — GigSecure';
   document.getElementById('dh-sub').textContent=(u.org||u.name||'Admin')+' · '+(u.designation||'Portfolio Manager')+' · All systems operational';
   load();
 }
