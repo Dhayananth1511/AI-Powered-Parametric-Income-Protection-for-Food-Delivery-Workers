@@ -24,8 +24,8 @@ GigShield is an AI-powered parametric micro-insurance platform that:
 
 ## Table of Contents
 
-1. [Judge Summary](#-judge-summary--read-this-first)
-2. [Why GigShield Wins](#-why-gigshield-wins)
+1. [Judge Summary](#judge-summary--read-this-first)
+2. [Why GigShield Wins](#why-gigshield-wins)
 3. [Problem Statement](#problem-statement)
 4. [Our Solution](#our-solution)
 5. [Why GigShield Is Innovative](#why-gigshield-is-innovative)
