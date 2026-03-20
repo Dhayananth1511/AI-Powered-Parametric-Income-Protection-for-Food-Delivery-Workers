@@ -520,7 +520,6 @@ GigSecure is built as a **fully responsive web application** — workers access 
 |---|---|---|
 | Mobile Web (HTML · CSS · JS) | Delivery Workers | Onboarding, plan selection, alerts, payouts, plan management |
 | Desktop Web (HTML · CSS · JS) | Insurer / Admin | Policies, fraud queue, loss ratio, payout simulation |
-|---|---|---|
 | Mobile Frontend | HTML · CSS · JavaScript | Responsive mobile web — no install needed |
 | Web Frontend | HTML · CSS · JavaScript | Same codebase, shared components |
 | Backend | Python FastAPI | ML-friendly, async, high performance |
@@ -534,6 +533,7 @@ GigSecure is built as a **fully responsive web application** — workers access 
 | Payments | Razorpay Sandbox | Simulated near-real-time payout |
 | Notifications | Firebase Cloud Messaging | Real-time worker alerts |
 | Hosting | Railway / Render (free tier) | Fast hackathon deployment |
+|---|---|---|
 
 ---
 
@@ -786,7 +786,12 @@ In production, GigSecure integrates with a licensed IRDAI insurance partner for 
 
 **Hackathon:** Guidewire DEVTrails 2026 Pan-India University Hackathon
 **Team:** ZenVyte
-**Members:** Dhayananth N *(Lead)* · Mowlieswaran G · Arun Kumar S · Karthick V · Hardik Muthusamy
+**Members:** 
+Dhayananth N *(Lead)* 
+· Mowlieswaran G 
+· Arun Kumar S 
+· Karthick V 
+· Hardik Muthusamy
 **Problem:** AI-Powered Insurance for India's Gig Economy
 **Focus:** Food Delivery Workers — Zomato / Swiggy
 **Platform:** Responsive Web — Mobile (Workers) + Desktop (Admin)
