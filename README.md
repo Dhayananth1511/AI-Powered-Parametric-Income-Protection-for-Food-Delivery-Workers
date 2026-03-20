@@ -6,7 +6,7 @@
 
 ---
 
-## 🚀 Judge Summary — Read This First
+## 🚀 Judge Summary
 
 > **"GigSecure is the only system that doesn't trust GPS."**
 
@@ -25,7 +25,7 @@ GigSecure solves a **₹5,880/year income loss problem** for 5 crore+ informal a
 
 ---
 
-## 🧪 What is Actually Working (Phase 1 Prototype)
+## What is Actually Working (Phase 1 Prototype)
 
 | Feature | Status |
 |---|---|
@@ -36,16 +36,13 @@ GigSecure solves a **₹5,880/year income loss problem** for 5 crore+ informal a
 | ✅ Admin dashboard — policy list, 7 KPIs, claims pipeline, API status | **Built** |
 | ✅ Claims pipeline — Auto-Approved (131) · Manual Review (3) · Auto-Rejected (8) | **Built** |
 | ✅ 6 interactive feature demos — weather, fraud score, earnings calc, plan compare | **Built** |
-| ⚠️ Weather + AQI APIs | Simulated with realistic data — live integration in Phase 2 |
-| ⚠️ ML models | Architecture fully designed — training on IMD/CPCB data in Phase 2 |
-| ⚠️ Real insurer API integration | IRDAI partner structure fully designed — integration in Phase 3 |
 
 ---
 
 ## Table of Contents
 
-1. [🚀 Judge Summary](#-judge-summary--read-this-first)
-2. [🧪 What is Built (Phase 1)](#-what-is-actually-working-phase-1-prototype)
+1. [🚀 Judge Summary](#-judge-summary)
+2. [What is Built (Phase 1)](#what-is-actually-working-phase-1-prototype)
 3. [Problem Statement](#problem-statement)
 4. [Our Solution](#our-solution)
 5. [Why GigSecure Is Innovative](#why-gigsecure-is-innovative)
@@ -63,7 +60,7 @@ GigSecure solves a **₹5,880/year income loss problem** for 5 crore+ informal a
 17. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
 18. [Plan Cancellation & Refund Policy](#plan-cancellation--refund-policy)
 19. [Financial & Business Model](#financial--business-model)
-20. [🏆 Why GigSecure Wins](#-why-gigsecure-wins)
+20. [Why GigSecure Wins](#why-gigsecure-wins)
 21. [Live Demo](#live-demo)
 22. [Strategy Video](#strategy-video)
 23. [45-Day Development Roadmap](#45-day-development-roadmap)
@@ -697,7 +694,7 @@ All claim liabilities handled by the licensed insurer partner.
 
 
 ---
-## 🏆 Why GigSecure Wins
+## Why GigSecure Wins
 
 1. **Only solution with multi-signal fraud prevention** — GPS + accelerometer + cell tower + network + behavior + crowd signal
 2. **Only solution with actuarial pricing proof** — loss ratios calculated for all 5 plans including heavy monsoon scenarios
