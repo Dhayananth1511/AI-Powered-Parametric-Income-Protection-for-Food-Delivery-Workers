@@ -307,7 +307,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             <div class="ts-row safe"><div class="ts-indicator ind-green"></div><span style="flex:1">🚫 Curfew / Hartal</span><span class="badge b-green">No Alert</span></div>
           </div>
           <div style="margin-top:10px;padding:10px 12px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);border-radius:9px;font-size:11px;color:var(--ghost);line-height:1.5;">
-            💡 In production, GigShield polls IMD + OpenWeatherMap + CPCB every 15 minutes. Demo uses OpenWeatherMap free API (live data).
+            💡 In production, GigShield polls IMD + OpenWeatherMap + CPCB every 15 minutes across 2–5 km micro-zones. Disruption must persist 15–30 min before payout triggers. Demo uses simulated data.
           </div>
         </div>
       </div>
@@ -400,37 +400,48 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="sec-num">3</div>
       <div>
         <div class="sec-title">Fraud Score Visualizer</div>
-        <div class="sec-sub">Toggle fraud signals to see how the Isolation Forest model scores each claim in real time.</div>
+        <div class="sec-sub">Toggle 8 fraud signals to see how the Isolation Forest model scores each claim. GigShield requires 4 of 6 core signals to pass — GPS alone is never trusted.</div>
       </div>
     </div>
 
     <div class="g2">
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Behavioural Signals</div>
+        <div style="font-size:11px;color:var(--ghost);margin-bottom:10px;padding:8px 12px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);border-radius:8px;">
+          🛡️ <b style="color:#7a95bd">GigShield requires 4 of 6 signals to match before approving any claim.</b> GPS alone is never trusted.
+        </div>
         <div class="fraud-controls" id="fraud-signals">
           <div class="fraud-toggle-row">
-            <div><div class="ft-label">GPS velocity during disruption</div><div class="ft-sub">Speed &gt;5 km/h = still working</div></div>
-            <div class="toggle" id="fs1" onclick="toggleFraud(this,25)" data-pts="25"><div class="toggle-dot"></div></div>
+            <div><div class="ft-label">🌍 GPS outside disruption zone</div><div class="ft-sub">Pincode + coordinate mismatch detected</div></div>
+            <div class="toggle" id="fs1" onclick="toggleFraud(this,30)" data-pts="30"><div class="toggle-dot"></div></div>
           </div>
           <div class="fraud-toggle-row">
-            <div><div class="ft-label">Claim filed before trigger confirmed</div><div class="ft-sub">Initiated 2hrs before threshold</div></div>
-            <div class="toggle" id="fs2" onclick="toggleFraud(this,20)" data-pts="20"><div class="toggle-dot"></div></div>
+            <div><div class="ft-label">📡 Cell tower ID mismatch</div><div class="ft-sub">Home tower detected — geographic mismatch with GPS claim</div></div>
+            <div class="toggle" id="fs2" onclick="toggleFraud(this,28)" data-pts="28"><div class="toggle-dot"></div></div>
           </div>
           <div class="fraud-toggle-row">
-            <div><div class="ft-label">GPS outside disruption zone</div><div class="ft-sub">Pincode mismatch detected</div></div>
-            <div class="toggle" id="fs3" onclick="toggleFraud(this,30)" data-pts="30"><div class="toggle-dot"></div></div>
+            <div><div class="ft-label">📱 Accelerometer flat — no movement</div><div class="ft-sub">Stationary signal — no prior delivery movement in zone</div></div>
+            <div class="toggle" id="fs3" onclick="toggleFraud(this,22)" data-pts="22"><div class="toggle-dot"></div></div>
           </div>
           <div class="fraud-toggle-row">
-            <div><div class="ft-label">4 consecutive weekly claims</div><div class="ft-sub">No variation in pattern</div></div>
-            <div class="toggle" id="fs4" onclick="toggleFraud(this,15)" data-pts="15"><div class="toggle-dot"></div></div>
+            <div><div class="ft-label">🚀 GPS velocity during disruption</div><div class="ft-sub">Speed &gt;5 km/h = actively working, not disrupted</div></div>
+            <div class="toggle" id="fs4" onclick="toggleFraud(this,18)" data-pts="18"><div class="toggle-dot"></div></div>
           </div>
           <div class="fraud-toggle-row">
-            <div><div class="ft-label">Multiple accounts on same device</div><div class="ft-sub">Device fingerprint match</div></div>
-            <div class="toggle" id="fs5" onclick="toggleFraud(this,35)" data-pts="35"><div class="toggle-dot"></div></div>
+            <div><div class="ft-label">⏱️ Claim filed before trigger confirmed</div><div class="ft-sub">Submitted before 15-min confirmation window passed</div></div>
+            <div class="toggle" id="fs5" onclick="toggleFraud(this,20)" data-pts="20"><div class="toggle-dot"></div></div>
           </div>
           <div class="fraud-toggle-row">
-            <div><div class="ft-label">Zone crowd signal disagrees</div><div class="ft-sub">Other workers show no inactivity</div></div>
-            <div class="toggle" id="fs6" onclick="toggleFraud(this,18)" data-pts="18"><div class="toggle-dot"></div></div>
+            <div><div class="ft-label">👥 Zone crowd signal disagrees</div><div class="ft-sub">Other workers in zone show no inactivity spike</div></div>
+            <div class="toggle" id="fs6" onclick="toggleFraud(this,15)" data-pts="15"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">📲 Multiple accounts — same device</div><div class="ft-sub">Device fingerprint matches another registered worker</div></div>
+            <div class="toggle" id="fs7" onclick="toggleFraud(this,35)" data-pts="35"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="fraud-toggle-row">
+            <div><div class="ft-label">🔁 4 consecutive identical claims</div><div class="ft-sub">No variation in pattern — anomalous regularity</div></div>
+            <div class="toggle" id="fs8" onclick="toggleFraud(this,12)" data-pts="12"><div class="toggle-dot"></div></div>
           </div>
         </div>
       </div>
@@ -453,12 +464,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
         <div style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Factor Contributions</div>
         <div class="fraud-factors" id="fraud-factors">
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">GPS zone</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Cell tower ID</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Accelerometer</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
           <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">GPS velocity</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
           <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Claim timing</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
-          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">GPS zone match</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
-          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Claim frequency</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
-          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Device fingerprint</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
           <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Crowd signal</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Device fingerprint</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="ff-row"><div class="ff-dot" style="background:var(--green)"></div><span class="ff-name">Claim frequency</span><span class="ff-contrib">+0 pts</span><div class="ff-bar-wrap"><div class="ff-bar" style="width:0%;background:var(--green)"></div></div></div>
         </div>
       </div>
     </div>
@@ -649,7 +662,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div class="lbl" style="margin-bottom:10px;">Affordability by Plan (% of weekly earnings)</div>
         <div id="afford-bars" style="display:flex;flex-direction:column;gap:7px;"></div>
         <div style="margin-top:10px;padding:10px 12px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:9px;font-size:12px;color:var(--ghost);line-height:1.5;">
-          ✅ Micro-insurance threshold: plans under 2.5% of weekly earnings are considered affordable for gig workers (CGAP benchmark)
+          ✅ Micro-insurance affordability threshold: under 2.5% of weekly earnings (CGAP benchmark) — all 5 GigShield plans qualify
         </div>
       </div>
     </div>
@@ -770,9 +783,9 @@ function calcClaim(){
 
   const box=document.getElementById('claim-result-box');
   if(!valid){
-    document.getElementById('cr-amount').textContent='₹0';
-    document.getElementById('cr-formula').textContent=gps==='no'?'Rejected: GPS outside zone':'No eligible hours remaining';
-    document.getElementById('crb-payout').textContent='₹0';
+    document.getElementById('cr-amount').textContent='₹0 — Claim Ineligible';
+    document.getElementById('cr-formula').textContent=gps==='no'?'Auto-rejected: GPS zone mismatch — cell tower cross-check failed':'Weekly cap reached — no remaining hours';
+    document.getElementById('crb-payout').textContent='₹0 — Not eligible';
     document.getElementById('crb-payout').style.color='var(--red)';
     box.style.background='linear-gradient(135deg,rgba(239,68,68,0.1),rgba(239,68,68,0.05))';
     box.style.borderColor='rgba(239,68,68,0.2)';
@@ -805,14 +818,14 @@ function calcClaim(){
 // ═══════════════════════════════════════════════════════════════════
 // FEATURE 3: FRAUD DETECTOR
 // ═══════════════════════════════════════════════════════════════════
-const fraudPts=[0,0,0,0,0,0];
-const fraudMax=[25,20,30,15,35,18];
-const fraudNames=['GPS velocity','Claim timing','GPS zone match','Claim frequency','Device fingerprint','Crowd signal'];
+const fraudPts=[0,0,0,0,0,0,0,0];
+const fraudMax=[30,28,22,18,20,15,35,12];
+const fraudNames=['GPS zone','Cell tower ID','Accelerometer','GPS velocity','Claim timing','Crowd signal','Device fingerprint','Claim frequency'];
 
 function toggleFraud(el,pts){
   el.classList.toggle('on');
   const idx=parseInt(el.id.replace('fs',''))-1;
-  fraudPts[idx]=el.classList.contains('on')?pts:0;
+  if(idx>=0&&idx<fraudPts.length) fraudPts[idx]=el.classList.contains('on')?pts:0;
   updateFraud();
 }
 
@@ -828,7 +841,7 @@ function updateFraud(){
   document.getElementById('fraud-verdict').textContent=verdict;
   document.getElementById('fraud-verdict').style.color=vc;
 
-  const rows=document.querySelectorAll('#fraud-factors .ff-row');
+  const rows=document.querySelectorAll('#fraud-factors .ff-row'); // 8 signal rows
   rows.forEach((r,i)=>{
     const pts=fraudPts[i];
     const pct=Math.round(pts/fraudMax[i]*100);

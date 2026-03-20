@@ -160,7 +160,7 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="kcard al-v">
         <div class="kl">Platform Fee (10%)</div>
         <div class="kv" id="k-fee">₹0</div>
-        <div class="ks">GigShield earnings</div>
+        <div class="ks">GigShield platform fee (10%)</div>
       </div>
     </div>
 
@@ -250,18 +250,19 @@ select.inp{appearance:none;cursor:pointer;}
           <button class="run-btn" id="a-btn" onclick="runSim()">▶ Run Payout Simulation</button>
 
           <div class="sf" id="a-sf">
-            <div class="si" id="a1"><div class="sico" id="a1i">🔍</div><div style="font-size:12px;"><div>IMD threshold confirmed in worker's zone</div><div style="font-size:11px;color:var(--mute)">30min persistence check · API verified</div></div></div>
-            <div class="si" id="a2"><div class="sico" id="a2i">📍</div><div style="font-size:12px;"><div>GPS micro-zone verified</div><div style="font-size:11px;color:var(--mute)">Worker confirmed inside disruption zone ✅</div></div></div>
-            <div class="si" id="a3"><div class="sico" id="a3i">🤖</div><div style="font-size:12px;"><div>Fraud Detection — Isolation Forest</div><div style="font-size:11px;color:var(--mute)">Score: 14/100 — CLEAN ✅</div></div></div>
-            <div class="si" id="a4"><div class="sico" id="a4i">✅</div><div style="font-size:12px;"><div>Insurer partner API notified</div><div style="font-size:11px;color:var(--mute)">Payout authorised · Policy verified</div></div></div>
-            <div class="si" id="a5"><div class="sico" id="a5i">💸</div><div style="font-size:12px;"><div id="a5t">Processing payout</div><div style="font-size:11px;color:var(--mute)">Razorpay Sandbox + Firebase FCM</div></div></div>
+            <div class="si" id="a1"><div class="sico" id="a1i">🔍</div><div style="font-size:12px;"><div>IMD threshold confirmed in worker's zone</div><div style="font-size:11px;color:var(--mute)">30min persistence · Cross-verified via satellite radar API</div></div></div>
+            <div class="si" id="a2"><div class="sico" id="a2i">📡</div><div style="font-size:12px;"><div>Cell tower ID verified</div><div style="font-size:11px;color:var(--mute)">Serving cell tower matches zone — GPS spoofing ruled out ✅</div></div></div>
+            <div class="si" id="a3"><div class="sico" id="a3i">📱</div><div style="font-size:12px;"><div>Accelerometer pattern confirmed</div><div style="font-size:11px;color:var(--mute)">Prior delivery movement in zone — not a stationary spoofer ✅</div></div></div>
+            <div class="si" id="a4"><div class="sico" id="a4i">🤖</div><div style="font-size:12px;"><div>Fraud Detection — Isolation Forest</div><div style="font-size:11px;color:var(--mute)">4 of 6 anti-spoofing signals passed · Score: 14/100 — CLEAN ✅</div></div></div>
+            <div class="si" id="a5"><div class="sico" id="a5i">✅</div><div style="font-size:12px;"><div>Claim auto-approved · Insurer notified</div><div style="font-size:11px;color:var(--mute)">Payout authorised · Policy verified</div></div></div>
+            <div class="si" id="a6"><div class="sico" id="a6i">💸</div><div style="font-size:12px;"><div id="a5t">Payout released</div><div style="font-size:11px;color:var(--mute)">Razorpay Sandbox + Firebase FCM notification</div></div></div>
           </div>
 
           <div class="reveal" id="a-reveal">
             <div style="font-size:1.1rem;margin-bottom:4px;">🎉</div>
             <div class="ramt" id="a-amt">₹80</div>
             <div class="rlbl" id="a-lbl">—</div>
-            <div class="rbadge">⚡ Auto-processed · Policy verified</div>
+            <div class="rbadge">⚡ Auto-processed · Insurer partner notified · Policy verified</div>
             <div class="rtotal">Total payouts this session: <span id="a-session-total">₹0</span></div>
           </div>
         </div>
@@ -409,14 +410,14 @@ function runSim(){
   resetSim(false);
   document.getElementById('a-sf').classList.add('on');
   document.getElementById('a-reveal').classList.remove('on');
-  const steps=['a1','a2','a3','a4','a5']; let i=0;
+  const steps=['a1','a2','a3','a4','a5','a6']; let i=0;
   function tick(){
     if(i<steps.length){
       document.getElementById(steps[i]).classList.add('vis','run');
       if(i>0){const p=document.getElementById(steps[i-1]);p.classList.remove('run');p.classList.add('done');p.querySelector('.sico').textContent='✓';}
       i++;setTimeout(tick,600);
     } else {
-      document.getElementById('a5').classList.remove('run');document.getElementById('a5').classList.add('done');document.getElementById('a5').querySelector('.sico').textContent='✓';
+      document.getElementById('a6').classList.remove('run');document.getElementById('a6').classList.add('done');document.getElementById('a6').querySelector('.sico').textContent='✓';
       document.getElementById('a5t').textContent=GS.fmt(payout)+' Released to '+selW.name;
 
       // ── PERSIST PAYOUT ───────────────────────────────────────
@@ -439,7 +440,7 @@ function runSim(){
 
 function resetSim(full=true){
   if(full){document.getElementById('a-sf').classList.remove('on');document.getElementById('a-reveal').classList.remove('on');document.getElementById('a-btn').disabled=false;}
-  ['a1','a2','a3','a4','a5'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('vis','run','done');});
+  ['a1','a2','a3','a4','a5','a6'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('vis','run','done');});
 }
 
 function refresh(){load();toast('Refreshed','All stats updated from worker records');}
