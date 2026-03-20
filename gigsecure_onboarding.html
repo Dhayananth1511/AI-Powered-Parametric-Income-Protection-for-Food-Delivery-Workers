@@ -344,13 +344,13 @@ select.inp{appearance:none;cursor:pointer;}
     <button class="back" onclick="go(3)">← Back</button>
     <h2 class="sh">Choose Your Plan</h2>
     <p class="ss">Step 3 of 5 — Underwritten by IRDAI-licensed insurer partner</p>
-    <div style="padding:9px 13px;border-radius:9px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);font-size:12px;color:var(--amber);margin-bottom:1rem;" id="plan-alert">⭐ ML recommends <b>Shield Premium</b> based on your zone.</div>
+    <div style="padding:9px 13px;border-radius:9px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);font-size:12px;color:var(--amber);margin-bottom:1rem;" id="plan-alert">⭐ ML recommends a plan based on your delivery zone risk score.</div>
     <div class="plan-list">
-      <div class="plc" onclick="selPlan(this,'starter')"><div><div class="pn">🌱 Shield Starter</div><div class="pt">New workers · Low-risk zones</div><div class="ps"><span class="pst">₹35/hr</span><span class="pst">Max 2hrs</span><span class="pst">Cap ₹50</span></div></div><div class="ppr">₹35<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc" onclick="selPlan(this,'basic')"><div><div class="pn">🔵 Shield Basic</div><div class="pt">Part-time · Low-risk zones</div><div class="ps"><span class="pst">₹45/hr</span><span class="pst">Max 3hrs</span><span class="pst">Cap ₹90</span></div></div><div class="ppr">₹55<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc" onclick="selPlan(this,'standard')"><div><div class="pn">🟡 Shield Standard</div><div class="pt">Full-time · Urban zones</div><div class="ps"><span class="pst">₹60/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹160</span></div></div><div class="ppr">₹79<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc rec sel" id="plc-premium" onclick="selPlan(this,'premium')"><div class="rec-tag">ML Recommended</div><div style="margin-top:8px;"><div class="pn">🟠 Shield Premium</div><div class="pt">High-earning full-time</div><div class="ps"><span class="pst">₹75/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹200</span></div></div><div class="ppr">₹109<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
-      <div class="plc" onclick="selPlan(this,'elite')"><div><div class="pn">🔴 Shield Elite</div><div class="pt">Coastal · Flood-prone zones</div><div class="ps"><span class="pst">₹60/hr</span><span class="pst">Max 5hrs</span><span class="pst">Cap ₹300</span></div></div><div class="ppr">₹149<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'starter')" id="plc-starter"><div><div class="pn">🌱 Shield Starter</div><div class="pt">New workers · Low-risk zones</div><div class="ps"><span class="pst">₹35/hr</span><span class="pst">Max 3hrs</span><span class="pst">Cap ₹105</span></div></div><div class="ppr">₹55<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'basic')"><div><div class="pn">🔵 Shield Basic</div><div class="pt">Part-time · Low-risk zones</div><div class="ps"><span class="pst">₹45/hr</span><span class="pst">Max 4hrs</span><span class="pst">Cap ₹180</span></div></div><div class="ppr">₹70<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'standard')"><div><div class="pn">🟡 Shield Standard</div><div class="pt">Full-time · Urban zones</div><div class="ps"><span class="pst">₹60/hr</span><span class="pst">Max 5hrs</span><span class="pst">Cap ₹300</span></div></div><div class="ppr">₹90<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc rec sel" id="plc-premium" onclick="selPlan(this,'premium')"><div class="rec-tag">ML Recommended</div><div style="margin-top:8px;"><div class="pn">🟠 Shield Premium</div><div class="pt">High-earning full-time</div><div class="ps"><span class="pst">₹75/hr</span><span class="pst">Max 6hrs</span><span class="pst">Cap ₹450</span></div></div><div class="ppr">₹115<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
+      <div class="plc" onclick="selPlan(this,'elite')"><div><div class="pn">🔴 Shield Elite</div><div class="pt">Coastal · Flood-prone zones</div><div class="ps"><span class="pst">₹90/hr</span><span class="pst">Max 7hrs</span><span class="pst">Cap ₹630</span></div></div><div class="ppr">₹135<span style="font-size:11px;color:var(--ghost)">/wk</span></div><div class="radio"><div class="rdot"></div></div></div>
     </div>
     <button class="btn-f btn-blue" onclick="go(5)">Continue →</button>
   </div>
@@ -364,7 +364,7 @@ select.inp{appearance:none;cursor:pointer;}
     <p class="ss">Step 4 of 5 — Weekly subscription · Auto-renews every Monday</p>
     <div class="obox">
       <div style="font-size:10px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Order Summary</div>
-      <div class="or"><span class="ol">Plan</span><span class="ov" id="o-plan">🟠 Shield Premium</span></div>
+      <div class="or"><span class="ol">Plan</span><span class="ov" id="o-plan">🟡 Shield Standard</span></div>
       <div class="or"><span class="ol">Coverage</span><span class="ov">7 days (Mon–Sun)</span></div>
       <div class="or"><span class="ol">Payout rate</span><span class="ov" id="o-rate">₹75/hr</span></div>
       <div class="or"><span class="ol">Weekly cap</span><span class="ov" id="o-cap">₹200</span></div>
@@ -381,7 +381,7 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="pm" onclick="selPay(this)"><div class="pmi" style="background:rgba(245,158,11,0.15);">💵</div><div><div class="pmn">Debit / Credit Card</div><div class="pmsub">Visa · Mastercard · RuPay</div></div><div class="pmsel"></div></div>
     </div>
     <div class="info">🔒 Payments via <b>Razorpay Sandbox</b> (demo). No real money transacted. In production, all claim payouts are handled by the licensed IRDAI insurer partner — GigSecure does not underwrite risk. GigSecure does not underwrite risk — all claims are handled by the licensed IRDAI insurer partner.</div>
-    <button class="btn-f btn-blue" id="pay-btn" onclick="doPay()">Pay ₹109 — Activate Coverage</button>
+    <button class="btn-f btn-blue" id="pay-btn" onclick="doPay()">Pay ₹90 — Activate Coverage</button>
   </div>
 </div>
 

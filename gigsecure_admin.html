@@ -162,6 +162,24 @@ select.inp{appearance:none;cursor:pointer;}
 .cl-reason{font-size:10px;margin-top:3px;padding:2px 7px;border-radius:4px;display:inline-block;}
 .reason-ok{background:rgba(16,185,129,0.1);color:var(--green);}
 .reason-rej{background:rgba(239,68,68,0.1);color:var(--red);}
+
+/* ZONE MAP */
+.zone-map-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--rim);margin-bottom:1rem;position:relative;background:var(--card);}
+.zone-map-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rim);}
+.zone-map-title{font-size:12px;font-weight:600;color:var(--bright);}
+.zm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px;}
+.zm-cell{border-radius:9px;padding:9px 10px;border:1px solid var(--rim);background:var(--surface);cursor:pointer;transition:all 0.2s;text-align:center;}
+.zm-cell:hover{border-color:var(--mute);transform:translateY(-1px);}
+.zm-cell.active{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.08);}
+.zm-cell.high-risk{border-left:3px solid var(--red);}
+.zm-cell.med-risk{border-left:3px solid var(--amber);}
+.zm-cell.low-risk{border-left:3px solid var(--green);}
+.zm-name{font-size:11px;font-weight:600;color:var(--bright);margin-bottom:2px;}
+.zm-count{font-size:10px;color:var(--mute);margin-bottom:3px;}
+.zm-risk{font-size:10px;font-weight:700;}
+.zm-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;}
+.zm-workers{margin-top:5px;display:flex;gap:3px;justify-content:center;flex-wrap:wrap;}
+.zm-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;}
 </style>
 </head>
 <body>
@@ -238,6 +256,30 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="g2">
       <!-- LEFT: POLICY TABLE + PLAN BREAKDOWN -->
       <div>
+
+      <!-- ZONE WORKER MAP -->
+      <div style="margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="sec" style="margin:0;flex:1;">🗺️ Zone Coverage Map — Active Workers per Zone</div>
+          <span class="pill" style="background:rgba(59,130,246,0.15);color:var(--blue);font-size:11px;" id="zone-count-badge">0 zones active</span>
+        </div>
+        <div class="zone-map-wrap">
+          <div class="zone-map-header">
+            <span class="zone-map-title">Tamil Nadu Micro-Zones · 2–5 km radius · Click zone to filter policy table</span>
+            <span style="font-size:11px;color:var(--mute);">
+              <span style="color:var(--red);">● High risk</span>
+              <span style="margin:0 6px;color:var(--amber);">● Medium</span>
+              <span style="color:var(--green);">● Low risk</span>
+            </span>
+          </div>
+          <div class="zm-grid" id="zone-map-grid">
+            <!-- Populated by JS -->
+          </div>
+          <div style="padding:8px 14px;font-size:11px;color:var(--mute);border-top:1px solid var(--rim);">
+            Showing zones with registered workers · Risk score from Random Forest Zone Classifier
+          </div>
+        </div>
+      </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div class="sec" style="margin:0;flex:1;">📋 Registered Policies</div>
           <span class="pill" style="background:rgba(59,130,246,0.15);color:var(--blue);font-size:11px;" id="pol-count-badge">0 total</span>
@@ -297,24 +339,24 @@ select.inp{appearance:none;cursor:pointer;}
         <!-- AUTO-APPROVED PANEL -->
         <div class="cp-panel on" id="panel-approved">
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-4821 · Velachery</div><div class="cl-meta">🌧️ Rain · 2 hrs · Standard · Score: 12 · GPS ✅ · Cell tower ✅ · Accelerometer ✅</div><span class="cl-reason reason-ok">6-signal score: 9/10 · Fraud score 12 — CLEAN</span></div>
-            <span class="pill p-ok">₹80 Released</span>
+            <div class="cl-left"><div class="cl-id">WKR-4821 · Velachery</div><div class="cl-meta">🌧️ Rain · 2.5 hrs · Standard (₹60/hr) · Score: 12 · GPS ✅ · Cell tower ✅ · Accelerometer ✅</div><span class="cl-reason reason-ok">6-signal score: 9/10 · Fraud score 12 — CLEAN · 2.5×₹60=₹150</span></div>
+            <span class="pill p-ok">₹150 Released</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-3302 · Marina Beach</div><div class="cl-meta">🌧️ Rain · 3 hrs · Elite · Score: 8 · GPS ✅ · Cell tower ✅ · Crowd signal ✅</div><span class="cl-reason reason-ok">6-signal score: 10/10 · Fraud score 8 — CLEAN</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-3302 · Marina Beach</div><div class="cl-meta">🌀 Cyclone Alert · Full cap · Elite (₹90/hr · 7hr cap) · Score: 8 · All signals ✅</div><span class="cl-reason reason-ok">6-signal score: 10/10 · Fraud score 8 — CLEAN · Full cap triggered</span></div>
+            <span class="pill p-ok">₹630 Released</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-1190 · Adyar</div><div class="cl-meta">🌧️ Rain · 4 hrs (cap reached) · Basic (₹45/hr · 4hr cap) · Score: 6 · GPS ✅</div><span class="cl-reason reason-ok">6-signal score: 8/10 · Fraud score 6 — CLEAN · 4×₹45=₹180 (cap)</span></div>
             <span class="pill p-ok">₹180 Released</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-1190 · Adyar</div><div class="cl-meta">🌧️ Rain · 1 hr · Basic · Score: 6 · GPS ✅ · Pre-disruption activity ✅</div><span class="cl-reason reason-ok">6-signal score: 8/10 · Fraud score 6 — CLEAN</span></div>
-            <span class="pill p-ok">₹30 Released</span>
+            <div class="cl-left"><div class="cl-id">WKR-6631 · Royapuram</div><div class="cl-meta">🌡️ Heat · 2 hrs · Premium (₹75/hr) · Score: 9 · All signals ✅</div><span class="cl-reason reason-ok">6-signal score: 10/10 · Fraud score 9 — CLEAN · 2×₹75=₹150</span></div>
+            <span class="pill p-ok">₹150 Released</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-6631 · Royapuram</div><div class="cl-meta">🌀 Cyclone Alert · Full cap · Elite · Score: 9 · All signals ✅</div><span class="cl-reason reason-ok">6-signal score: 10/10 · Fraud score 9 — CLEAN</span></div>
-            <span class="pill p-ok">₹300 Released</span>
-          </div>
-          <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-9012 · Guindy</div><div class="cl-meta">🌡️ Heat · 2 hrs · Standard · Score: 14 · GPS ✅ · Behavioral baseline ✅</div><span class="cl-reason reason-ok">6-signal score: 8/10 · Fraud score 14 — CLEAN</span></div>
-            <span class="pill p-ok">₹80 Released</span>
+            <div class="cl-left"><div class="cl-id">WKR-9012 · Guindy</div><div class="cl-meta">😷 AQI > 300 · 3 hrs · Standard (₹60/hr) · Score: 14 · GPS ✅ · Behavioral baseline ✅</div><span class="cl-reason reason-ok">6-signal score: 8/10 · Fraud score 14 — CLEAN · 3×₹60=₹180</span></div>
+            <span class="pill p-ok">₹180 Released</span>
           </div>
           <div style="margin-top:8px;font-size:11px;color:var(--mute);text-align:right;">Showing 5 of 131 auto-approved claims today · All paid within seconds of trigger confirmation</div>
         </div>
@@ -323,7 +365,7 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="cp-panel" id="panel-review">
           <div class="fq-item" id="fqi-1">
             <div class="fq-top">
-              <div><div class="fq-id">WKR-7741 · T. Nagar</div><div class="fq-meta">😷 AQI claim · Standard Plan · ₹160</div></div>
+              <div><div class="fq-id">WKR-7741 · T. Nagar</div><div class="fq-meta">😷 AQI claim · Standard Plan · ₹180 (3hrs × ₹60/hr)</div></div>
               <span class="fq-score-lo">Score: 47</span>
             </div>
             <div class="fq-signals">
@@ -333,13 +375,13 @@ select.inp{appearance:none;cursor:pointer;}
             </div>
             <div style="font-size:11px;color:var(--ghost);margin-bottom:8px;">Isolation Forest anomaly: GPS velocity suggests active working. Pattern review needed.</div>
             <div class="fq-actions">
-              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-1','approved','WKR-7741')">✓ Approve + Release ₹160</button>
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-1','approved','WKR-7741')">✓ Approve + Release ₹180</button>
               <button class="fq-btn fq-no" onclick="resolveFQ('fqi-1','rejected','WKR-7741')">✗ Reject + Notify Worker</button>
             </div>
           </div>
           <div class="fq-item" id="fqi-2">
             <div class="fq-top">
-              <div><div class="fq-id">WKR-2298 · Mylapore</div><div class="fq-meta">🌧️ Rain claim · Premium Plan · ₹200</div></div>
+              <div><div class="fq-id">WKR-2298 · Mylapore</div><div class="fq-meta">🌧️ Rain claim · Premium Plan · ₹300 (4hrs × ₹75/hr)</div></div>
               <span class="fq-score-lo">Score: 52</span>
             </div>
             <div class="fq-signals">
@@ -348,13 +390,13 @@ select.inp{appearance:none;cursor:pointer;}
             </div>
             <div style="font-size:11px;color:var(--ghost);margin-bottom:8px;">Pre-trigger claim submission is suspicious. GPS and cell tower match — may be genuine early check-in.</div>
             <div class="fq-actions">
-              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-2','approved','WKR-2298')">✓ Approve + Release ₹200</button>
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-2','approved','WKR-2298')">✓ Approve + Release ₹300</button>
               <button class="fq-btn fq-no" onclick="resolveFQ('fqi-2','rejected','WKR-2298')">✗ Reject + Notify Worker</button>
             </div>
           </div>
           <div class="fq-item" id="fqi-3">
             <div class="fq-top">
-              <div><div class="fq-id">WKR-9901 · Guindy</div><div class="fq-meta">🌧️ Rain claim · Basic Plan · ₹90</div></div>
+              <div><div class="fq-id">WKR-9901 · Guindy</div><div class="fq-meta">🌧️ Rain claim · Basic Plan · ₹180 (4hrs × ₹45/hr cap)</div></div>
               <span class="fq-score-hi">Score: 71</span>
             </div>
             <div class="fq-signals">
@@ -365,7 +407,7 @@ select.inp{appearance:none;cursor:pointer;}
             </div>
             <div style="font-size:11px;color:var(--ghost);margin-bottom:8px;">High fraud probability. Multiple signals failed. Recommend rejection unless worker provides cell tower log via appeal.</div>
             <div class="fq-actions">
-              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-3','approved','WKR-9901')">✓ Approve + Release ₹90</button>
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-3','approved','WKR-9901')">✓ Approve + Release ₹180</button>
               <button class="fq-btn fq-no" onclick="resolveFQ('fqi-3','rejected','WKR-9901')">✗ Reject + Notify Worker</button>
             </div>
           </div>
@@ -375,35 +417,35 @@ select.inp{appearance:none;cursor:pointer;}
         <!-- AUTO-REJECTED PANEL -->
         <div class="cp-panel" id="panel-rejected">
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-5583 · Porur</div><div class="cl-meta">🌧️ Rain claim · Standard Plan · Attempted ₹160</div><span class="cl-reason reason-rej">Hard reject: GPS pincode mismatch · Cell tower shows home location · 6-signal score: 1/10</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-5583 · Porur</div><div class="cl-meta">🌧️ Rain claim · Standard Plan · Attempted ₹300 (Standard 5hr cap)</div><span class="cl-reason reason-rej">Hard reject: GPS pincode mismatch · Cell tower shows home location · 6-signal score: 1/10</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-2244 · Mylapore</div><div class="cl-meta">🌧️ Rain claim · Standard Plan · Attempted ₹160</div><span class="cl-reason reason-rej">Hard reject: Weekly cap already reached (4/4 hours used this week)</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-2244 · Mylapore</div><div class="cl-meta">🌧️ Rain claim · Standard Plan · Attempted ₹300 (Standard 5hr cap)</div><span class="cl-reason reason-rej">Hard reject: Weekly cap already reached (4/4 hours used this week)</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-3381 · Ambattur</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹90</div><span class="cl-reason reason-rej">Hard reject: No IMD/CPCB threshold breach recorded in zone on claim date</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-3381 · Ambattur</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹180 (Basic 4hr cap)</div><span class="cl-reason reason-rej">Hard reject: No IMD/CPCB threshold breach recorded in zone on claim date</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-8812 · Tambaram</div><div class="cl-meta">😷 AQI claim · Starter Plan · Attempted ₹50</div><span class="cl-reason reason-rej">Hard reject: Plan expired · No active weekly subscription at time of claim</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-8812 · Tambaram</div><div class="cl-meta">😷 AQI claim · Starter Plan · Attempted ₹105 (Starter 3hr cap)</div><span class="cl-reason reason-rej">Hard reject: Plan expired · No active weekly subscription at time of claim</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-4401 · Chromepet</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹90</div><span class="cl-reason reason-rej">Auto-reject: Isolation Forest score 78/100 · Accelerometer flat · Device fingerprint matched 3 prior flagged accounts</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-4401 · Chromepet</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹180 (Basic 4hr cap)</div><span class="cl-reason reason-rej">Auto-reject: Isolation Forest score 78/100 · Accelerometer flat · Device fingerprint matched 3 prior flagged accounts</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-7720 · Pallavaram</div><div class="cl-meta">🌧️ Rain claim · Starter Plan · Attempted ₹50</div><span class="cl-reason reason-rej">Hard reject: Disruption persisted only 8 minutes — below 15-minute confirmation threshold</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-7720 · Pallavaram</div><div class="cl-meta">🌧️ Rain claim · Starter Plan · Attempted ₹105 (Starter 3hr cap)</div><span class="cl-reason reason-rej">Hard reject: Disruption persisted only 8 minutes — below 15-minute confirmation threshold</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-6612 · Anna Nagar</div><div class="cl-meta">🌡️ Heat claim · Standard Plan · Attempted ₹160</div><span class="cl-reason reason-rej">Hard reject: GPS outside disruption micro-zone · Worker was 8.2 km from nearest affected zone centroid</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-6612 · Anna Nagar</div><div class="cl-meta">🌡️ Heat claim · Standard Plan · Attempted ₹300 (Standard 5hr cap)</div><span class="cl-reason reason-rej">Hard reject: GPS outside disruption micro-zone · Worker was 8.2 km from nearest affected zone centroid</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div class="cl-row">
-            <div class="cl-left"><div class="cl-id">WKR-1199 · Avadi</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹90</div><span class="cl-reason reason-rej">Auto-reject: Isolation Forest score 82/100 · GPS spoofing detected · Accelerometer stationary · Cell tower mismatch</span></div>
+            <div class="cl-left"><div class="cl-id">WKR-1199 · Avadi</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹180 (Basic 4hr cap)</div><span class="cl-reason reason-rej">Auto-reject: Isolation Forest score 82/100 · GPS spoofing detected · Accelerometer stationary · Cell tower mismatch</span></div>
             <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
           </div>
           <div style="margin-top:8px;font-size:11px;color:var(--mute);">All rejected workers are notified · One-tap appeal available · Hard rejects = rule violation · Auto-rejects = ML fraud score ≥ 70</div>
@@ -569,6 +611,8 @@ function load(){
   renderWorkerSel(ws);
 
   document.getElementById('a-session-total').textContent=GS.fmt(sessionTotal);
+  // Render zone map
+  renderZoneMap();
 }
 
 function renderWorkerSel(ws){
@@ -613,7 +657,8 @@ function runSim(){
   const hrs=parseInt(document.getElementById('a-hrs').value);
   const type=document.getElementById('a-type').value;
   const plan=GS.PLAN_META[selW.plan]||GS.PLAN_META.standard;
-  const payout=Math.min(hrs*plan.rate,plan.cap);
+  const fullCapTypes=['cyclone','hartal'];
+  const payout=fullCapTypes.includes(type) ? plan.cap : Math.min(hrs*plan.rate,plan.cap);
   const labels={rain:'🌧️ Heavy Rain',heat:'🌡️ Extreme Heat',aqi:'😷 Severe AQI',cyclone:'🌀 Cyclone Alert',hartal:'🚫 Curfew/Hartal'};
   btn.disabled=true;
   resetSim(false);
@@ -650,6 +695,92 @@ function runSim(){
 function resetSim(full=true){
   if(full){document.getElementById('a-sf').classList.remove('on');document.getElementById('a-reveal').classList.remove('on');document.getElementById('a-btn').disabled=false;}
   ['a1','a2','a3','a4','a5','a6'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('vis','run','done');});
+}
+
+
+// ── ZONE MAP ──────────────────────────────────────────────────────────────────
+const ZONE_RISK_COLORS = {
+  high:   { label:'High Risk',   col:'var(--red)',   cls:'high-risk',  bg:'rgba(239,68,68,0.15)' },
+  medium: { label:'Med Risk',    col:'var(--amber)', cls:'med-risk',   bg:'rgba(245,158,11,0.15)' },
+  low:    { label:'Low Risk',    col:'var(--green)', cls:'low-risk',   bg:'rgba(16,185,129,0.15)' },
+};
+function getRiskLevel(score){
+  return score > 0.65 ? 'high' : score > 0.35 ? 'medium' : 'low';
+}
+const AV_COLORS = ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444','#06b6d4'];
+
+let activeZoneFilter = null;
+
+function renderZoneMap(){
+  const ws = GS.getWorkers();
+  // Group workers by zone
+  const zoneMap = {};
+  ws.forEach((w,i) => {
+    const z = w.zone || 'Unknown';
+    if(!zoneMap[z]) zoneMap[z] = { workers:[], avgRisk:0, totalPayout:0 };
+    zoneMap[z].workers.push({...w, colorIdx:i});
+    zoneMap[z].avgRisk += (w.riskScore||0.45);
+    zoneMap[z].totalPayout += (w.payouts||0)+(w.simPayouts||0);
+  });
+  // Calculate avg risk per zone
+  Object.keys(zoneMap).forEach(z => {
+    zoneMap[z].avgRisk = zoneMap[z].avgRisk / zoneMap[z].workers.length;
+  });
+
+  const grid = document.getElementById('zone-map-grid');
+  const badge = document.getElementById('zone-count-badge');
+  if(badge) badge.textContent = Object.keys(zoneMap).length + ' zones active';
+
+  if(!grid) return;
+  grid.innerHTML = Object.entries(zoneMap).map(([zone, data]) => {
+    const rl = getRiskLevel(data.avgRisk);
+    const rc = ZONE_RISK_COLORS[rl];
+    const isActive = activeZoneFilter === zone;
+    const wNames = data.workers.slice(0,3).map((w,i) => {
+      const init = w.name.split(' ').map(n=>n[0]).join('').slice(0,2);
+      const col = AV_COLORS[w.colorIdx % AV_COLORS.length];
+      return `<div class="zm-av" style="background:${col}" title="${w.name}">${init}</div>`;
+    }).join('');
+    const extraCount = data.workers.length > 3 ? `<div class="zm-av" style="background:var(--mute);font-size:9px">+${data.workers.length-3}</div>` : '';
+    return `<div class="zm-cell ${rc.cls}${isActive?' active':''}" onclick="filterByZone('${zone.replace(/'/g,"\'")}')">
+      <div class="zm-name">${zone.split(',')[0]}</div>
+      <div class="zm-count">${data.workers.length} worker${data.workers.length>1?'s':''}</div>
+      <div class="zm-risk"><span class="zm-dot" style="background:${rc.col}"></span><span style="color:${rc.col}">${rc.label}</span></div>
+      <div class="zm-workers">${wNames}${extraCount}</div>
+    </div>`;
+  }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:12px;color:var(--ghost);">No workers registered yet</div>';
+}
+
+function filterByZone(zone){
+  if(activeZoneFilter === zone){
+    activeZoneFilter = null;
+  } else {
+    activeZoneFilter = zone;
+  }
+  renderZoneMap();
+  // Filter policy table
+  const rows = document.querySelectorAll('#pol-tbody tr');
+  rows.forEach(row => {
+    if(!activeZoneFilter){
+      row.style.display = '';
+    } else {
+      const zoneCell = row.cells && row.cells[1];
+      if(zoneCell){
+        row.style.display = zoneCell.textContent.includes(activeZoneFilter.split(',')[0]) ? '' : 'none';
+      }
+    }
+  });
+  const badge = document.getElementById('pol-count-badge');
+  if(badge){
+    if(activeZoneFilter){
+      const visible = document.querySelectorAll('#pol-tbody tr:not([style*="none"])').length;
+      badge.textContent = visible + ' (filtered by zone)';
+    } else {
+      badge.textContent = GS.getWorkers().length + ' total';
+    }
+  }
+  toast(activeZoneFilter ? '📍 Filtered: '+activeZoneFilter : '📍 Filter cleared', 
+        activeZoneFilter ? 'Showing workers in '+activeZoneFilter : 'Showing all registered workers');
 }
 
 function refresh(){load();toast('Refreshed','All stats updated from worker records');}

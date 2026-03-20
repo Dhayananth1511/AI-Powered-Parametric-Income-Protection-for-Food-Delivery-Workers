@@ -2,11 +2,11 @@
 const GS = {
 
   PLAN_META: {
-    starter: { name:'🌱 Starter', price:35,  rate:35, maxHrs:3, cap:105 },
-    basic:   { name:'🔵 Basic',   price:55,  rate:45, maxHrs:4, cap:180 },
-    standard:{ name:'🟡 Standard',price:79,  rate:60, maxHrs:5, cap:300 },
-    premium: { name:'🟠 Premium', price:109, rate:75, maxHrs:6, cap:450 },
-    elite:   { name:'🔴 Elite',   price:149, rate:90, maxHrs:7, cap:630 },
+    starter: { name:'🌱 Starter', price:55,  rate:35, maxHrs:3, cap:105 },
+    basic:   { name:'🔵 Basic',   price:70,  rate:45, maxHrs:4, cap:180 },
+    standard:{ name:'🟡 Standard',price:90,  rate:60, maxHrs:5, cap:300 },
+    premium: { name:'🟠 Premium', price:115, rate:75, maxHrs:6, cap:450 },
+    elite:   { name:'🔴 Elite',   price:135, rate:90, maxHrs:7, cap:630 },
   },
 
   SEED_WORKERS: [

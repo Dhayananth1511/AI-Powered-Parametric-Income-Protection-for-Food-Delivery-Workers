@@ -278,13 +278,13 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="card" id="disruptions-list">
           <div class="disr-item">
             <div class="disr-ico" style="background:rgba(59,130,246,0.15);">🌧️</div>
-            <div><div class="disr-name">Heavy Rainfall — Velachery</div><div class="disr-meta">Mon Mar 17 · 7:23pm · 2 hrs confirmed · Standard Plan</div></div>
-            <div class="disr-amt">+₹80</div>
+            <div><div class="disr-name">Heavy Rainfall — Velachery</div><div class="disr-meta">Mon Mar 17 · 7:23pm · 2.5 hrs · Standard Plan · ₹60/hr</div></div>
+            <div class="disr-amt">+₹150</div>
           </div>
           <div class="disr-item">
             <div class="disr-ico" style="background:rgba(245,158,11,0.15);">😷</div>
-            <div><div class="disr-name">Severe AQI — Chennai Zone</div><div class="disr-meta">Wed Mar 19 · 2:10pm · 1 hr confirmed · Standard Plan</div></div>
-            <div class="disr-amt">+₹40</div>
+            <div><div class="disr-name">Severe AQI > 300 — Chennai Zone</div><div class="disr-meta">Wed Mar 19 · 2:10pm · 3 hrs · Standard Plan · ₹60/hr</div></div>
+            <div class="disr-amt">+₹180</div>
           </div>
           <div id="no-disruptions" style="display:none;text-align:center;padding:1rem;font-size:12px;color:var(--mute);">No disruptions detected this week ✅</div>
           <div style="margin-top:8px;font-size:11px;color:var(--mute);">Week: Mon–Sun · IMD + CPCB verified · Payouts auto-credited</div>
@@ -309,7 +309,7 @@ select.inp{appearance:none;cursor:pointer;}
             <div class="ph-amt" id="sim-ph-amt">+₹0</div>
           </div>
           <div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,0.06);border-radius:8px;font-size:11px;color:var(--ghost);">
-            Total saved: <span id="ph-total" style="color:var(--green);font-weight:600;">₹120</span> this week · <span id="ph-total-month" style="color:var(--green);font-weight:600;">₹640</span> this month
+            Total saved: <span id="ph-total" style="color:var(--green);font-weight:600;">₹330</span> this week · <span id="ph-total-month" style="color:var(--green);font-weight:600;">₹640</span> this month
           </div>
         </div>
 
@@ -337,8 +337,9 @@ select.inp{appearance:none;cursor:pointer;}
               <select class="inp" id="s-hrs"></select>
             </div>
           </div>
-          <div style="padding:8px 12px;border-radius:8px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);font-size:12px;color:var(--ghost);margin-bottom:12px;">
-            Payout = Hours × ₹<span id="s-rate">40</span>/hr · Max ₹<span id="s-cap">160</span>/week
+          <div style="padding:8px 12px;border-radius:8px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);font-size:12px;color:var(--ghost);margin-bottom:12px;" id="sim-info-box">
+            Payout = Hours × ₹<span id="s-rate">60</span>/hr · Max ₹<span id="s-cap">300</span>/week<br/>
+            <span style="color:var(--amber);font-size:11px;" id="sim-full-cap-note" style="display:none;"></span>
           </div>
           <button class="run-btn" id="sim-btn" onclick="runSim()">▶ Run Simulation</button>
 
@@ -440,7 +441,18 @@ function runSim(){
   const btn=document.getElementById('sim-btn');
   const hrs=parseInt(document.getElementById('s-hrs').value);
   const type=document.getElementById('s-type').value;
-  const payout=Math.min(hrs*planRate,planCap);
+  // Cyclone and curfew always pay full cap immediately (README spec)
+  const fullCapTypes=['cyclone','hartal'];
+  const payout=fullCapTypes.includes(type) ? planCap : Math.min(hrs*planRate,planCap);
+  const note=document.getElementById('sim-full-cap-note');
+  if(note){
+    if(fullCapTypes.includes(type)){
+      note.textContent='⚡ '+( type==='cyclone'?'Cyclone/Flood':'Curfew/Hartal')+' — Full weekly cap released immediately';
+      note.style.display='block';
+    } else {
+      note.style.display='none';
+    }
+  }
   const labels={rain:'🌧️ Heavy Rain',heat:'🌡️ Extreme Heat',aqi:'😷 Severe AQI',cyclone:'🌀 Cyclone Alert',hartal:'🚫 Curfew/Hartal'};
   btn.disabled=true;
   reset(false);
