@@ -139,6 +139,29 @@ select.inp{appearance:none;cursor:pointer;}
 .api-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;}
 .tag-ok{background:rgba(16,185,129,0.15);color:var(--green);}
 .tag-slow{background:rgba(245,158,11,0.15);color:var(--amber);}
+
+/* CLAIMS PIPELINE */
+.cp-tabs{display:flex;gap:4px;padding:4px;background:var(--surface);border-radius:10px;margin-bottom:12px;}
+.cp-tab{flex:1;padding:7px 8px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--ghost);font-family:"Geist",sans-serif;font-size:11px;font-weight:500;transition:all 0.2s;text-align:center;}
+.cp-tab.on{background:var(--card);color:var(--bright);box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.cp-tab .cp-count{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:20px;font-size:10px;font-weight:700;}
+.cp-tab.on .cp-count.g{background:rgba(16,185,129,0.2);color:var(--green);}
+.cp-tab.on .cp-count.a{background:rgba(245,158,11,0.2);color:var(--amber);}
+.cp-tab.on .cp-count.r{background:rgba(239,68,68,0.2);color:var(--red);}
+.cp-count.g{background:rgba(16,185,129,0.1);color:var(--green);}
+.cp-count.a{background:rgba(245,158,11,0.1);color:var(--amber);}
+.cp-count.r{background:rgba(239,68,68,0.1);color:var(--red);}
+.cp-panel{display:none;}
+.cp-panel.on{display:block;}
+/* Claim rows */
+.cl-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface);border-radius:9px;border:1px solid var(--rim);margin-bottom:5px;font-size:12px;transition:border-color 0.2s;}
+.cl-row:hover{border-color:var(--mute);}
+.cl-left{}
+.cl-id{font-weight:500;color:var(--bright);}
+.cl-meta{font-size:11px;color:var(--mute);margin-top:1px;}
+.cl-reason{font-size:10px;margin-top:3px;padding:2px 7px;border-radius:4px;display:inline-block;}
+.reason-ok{background:rgba(16,185,129,0.1);color:var(--green);}
+.reason-rej{background:rgba(239,68,68,0.1);color:var(--red);}
 </style>
 </head>
 <body>
@@ -245,57 +268,146 @@ select.inp{appearance:none;cursor:pointer;}
           <div class="pbd" id="plan-bd"></div>
         </div>
 
-      <!-- FRAUD REVIEW QUEUE -->
+      <!-- CLAIMS PIPELINE -->
       <div style="margin-top:1rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div class="sec" style="margin:0;flex:1;">🔍 Fraud Review Queue — Isolation Forest</div>
-          <span class="pill p-w" id="fq-count-badge">3 pending</span>
+          <div class="sec" style="margin:0;flex:1;">📋 Claims Pipeline — Today</div>
+          <div style="display:flex;gap:5px;font-size:11px;color:var(--mute);">
+            <span>Score 0–30: Auto-approve</span>
+            <span>·</span>
+            <span>30–70: Review</span>
+            <span>·</span>
+            <span>70+: Auto-reject</span>
+          </div>
         </div>
-        <div id="fraud-queue">
+
+        <!-- TABS -->
+        <div class="cp-tabs">
+          <button class="cp-tab on" onclick="switchTab('approved',this)">
+            ✅ Auto-Approved <span class="cp-count g" id="cnt-approved">131</span>
+          </button>
+          <button class="cp-tab" onclick="switchTab('review',this)">
+            🔍 Manual Review <span class="cp-count a" id="cnt-review">3</span>
+          </button>
+          <button class="cp-tab" onclick="switchTab('rejected',this)">
+            ❌ Auto-Rejected <span class="cp-count r" id="cnt-rejected">8</span>
+          </button>
+        </div>
+
+        <!-- AUTO-APPROVED PANEL -->
+        <div class="cp-panel on" id="panel-approved">
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-4821 · Velachery</div><div class="cl-meta">🌧️ Rain · 2 hrs · Standard · Score: 12 · GPS ✅ · Cell tower ✅ · Accelerometer ✅</div><span class="cl-reason reason-ok">6-signal score: 9/10 · Fraud score 12 — CLEAN</span></div>
+            <span class="pill p-ok">₹80 Released</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-3302 · Marina Beach</div><div class="cl-meta">🌧️ Rain · 3 hrs · Elite · Score: 8 · GPS ✅ · Cell tower ✅ · Crowd signal ✅</div><span class="cl-reason reason-ok">6-signal score: 10/10 · Fraud score 8 — CLEAN</span></div>
+            <span class="pill p-ok">₹180 Released</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-1190 · Adyar</div><div class="cl-meta">🌧️ Rain · 1 hr · Basic · Score: 6 · GPS ✅ · Pre-disruption activity ✅</div><span class="cl-reason reason-ok">6-signal score: 8/10 · Fraud score 6 — CLEAN</span></div>
+            <span class="pill p-ok">₹30 Released</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-6631 · Royapuram</div><div class="cl-meta">🌀 Cyclone Alert · Full cap · Elite · Score: 9 · All signals ✅</div><span class="cl-reason reason-ok">6-signal score: 10/10 · Fraud score 9 — CLEAN</span></div>
+            <span class="pill p-ok">₹300 Released</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-9012 · Guindy</div><div class="cl-meta">🌡️ Heat · 2 hrs · Standard · Score: 14 · GPS ✅ · Behavioral baseline ✅</div><span class="cl-reason reason-ok">6-signal score: 8/10 · Fraud score 14 — CLEAN</span></div>
+            <span class="pill p-ok">₹80 Released</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--mute);text-align:right;">Showing 5 of 131 auto-approved claims today · All paid within seconds of trigger confirmation</div>
+        </div>
+
+        <!-- MANUAL REVIEW PANEL -->
+        <div class="cp-panel" id="panel-review">
           <div class="fq-item" id="fqi-1">
             <div class="fq-top">
-              <div><div class="fq-id">WKR-7741 · T. Nagar</div><div class="fq-meta">😷 AQI claim · Standard Plan · ₹160 · Score: 47</div></div>
+              <div><div class="fq-id">WKR-7741 · T. Nagar</div><div class="fq-meta">😷 AQI claim · Standard Plan · ₹160</div></div>
               <span class="fq-score-lo">Score: 47</span>
             </div>
             <div class="fq-signals">
-              <span class="fq-sig">GPS velocity 7 km/h</span>
-              <span class="fq-sig">4 consecutive weeks</span>
+              <span class="fq-sig">GPS velocity 7 km/h during disruption</span>
+              <span class="fq-sig">4 consecutive weekly claims</span>
+              <span class="fq-sig">Claim timing: 12 min after trigger</span>
             </div>
+            <div style="font-size:11px;color:var(--ghost);margin-bottom:8px;">Isolation Forest anomaly: GPS velocity suggests active working. Pattern review needed.</div>
             <div class="fq-actions">
-              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-1','approved','WKR-7741')">✓ Approve</button>
-              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-1','rejected','WKR-7741')">✗ Reject</button>
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-1','approved','WKR-7741')">✓ Approve + Release ₹160</button>
+              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-1','rejected','WKR-7741')">✗ Reject + Notify Worker</button>
             </div>
           </div>
           <div class="fq-item" id="fqi-2">
             <div class="fq-top">
-              <div><div class="fq-id">WKR-2298 · Mylapore</div><div class="fq-meta">🌧️ Rain claim · Premium Plan · ₹200 · Score: 52</div></div>
+              <div><div class="fq-id">WKR-2298 · Mylapore</div><div class="fq-meta">🌧️ Rain claim · Premium Plan · ₹200</div></div>
               <span class="fq-score-lo">Score: 52</span>
             </div>
             <div class="fq-signals">
-              <span class="fq-sig">Claim filed 45 min before trigger</span>
+              <span class="fq-sig">Claim filed 45 min before trigger confirmed</span>
+              <span class="fq-sig">Historical approval rate: 100%</span>
             </div>
+            <div style="font-size:11px;color:var(--ghost);margin-bottom:8px;">Pre-trigger claim submission is suspicious. GPS and cell tower match — may be genuine early check-in.</div>
             <div class="fq-actions">
-              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-2','approved','WKR-2298')">✓ Approve</button>
-              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-2','rejected','WKR-2298')">✗ Reject</button>
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-2','approved','WKR-2298')">✓ Approve + Release ₹200</button>
+              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-2','rejected','WKR-2298')">✗ Reject + Notify Worker</button>
             </div>
           </div>
           <div class="fq-item" id="fqi-3">
             <div class="fq-top">
-              <div><div class="fq-id">WKR-9901 · Guindy</div><div class="fq-meta">🌧️ Rain claim · Basic Plan · ₹90 · Score: 71</div></div>
+              <div><div class="fq-id">WKR-9901 · Guindy</div><div class="fq-meta">🌧️ Rain claim · Basic Plan · ₹90</div></div>
               <span class="fq-score-hi">Score: 71</span>
             </div>
             <div class="fq-signals">
-              <span class="fq-sig">2 accounts same device</span>
-              <span class="fq-sig">Crowd signal disagrees</span>
+              <span class="fq-sig">2 accounts on same device fingerprint</span>
+              <span class="fq-sig">Crowd signal disagrees — no zone inactivity</span>
               <span class="fq-sig">No pre-disruption zone activity</span>
+              <span class="fq-sig">Cell tower: possible home location mismatch</span>
             </div>
+            <div style="font-size:11px;color:var(--ghost);margin-bottom:8px;">High fraud probability. Multiple signals failed. Recommend rejection unless worker provides cell tower log via appeal.</div>
             <div class="fq-actions">
-              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-3','approved','WKR-9901')">✓ Approve</button>
-              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-3','rejected','WKR-9901')">✗ Reject</button>
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-3','approved','WKR-9901')">✓ Approve + Release ₹90</button>
+              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-3','rejected','WKR-9901')">✗ Reject + Notify Worker</button>
             </div>
           </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--mute);">Manual review SLA: 2 hours · Worker notified while pending · High-trust workers receive 50% provisional payout</div>
         </div>
-        <div style="margin-top:8px;font-size:11px;color:var(--mute);">Score 0–30: Auto-approve · 30–70: Manual review ← · 70+: Auto-reject</div>
+
+        <!-- AUTO-REJECTED PANEL -->
+        <div class="cp-panel" id="panel-rejected">
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-5583 · Porur</div><div class="cl-meta">🌧️ Rain claim · Standard Plan · Attempted ₹160</div><span class="cl-reason reason-rej">Hard reject: GPS pincode mismatch · Cell tower shows home location · 6-signal score: 1/10</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-2244 · Mylapore</div><div class="cl-meta">🌧️ Rain claim · Standard Plan · Attempted ₹160</div><span class="cl-reason reason-rej">Hard reject: Weekly cap already reached (4/4 hours used this week)</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-3381 · Ambattur</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹90</div><span class="cl-reason reason-rej">Hard reject: No IMD/CPCB threshold breach recorded in zone on claim date</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-8812 · Tambaram</div><div class="cl-meta">😷 AQI claim · Starter Plan · Attempted ₹50</div><span class="cl-reason reason-rej">Hard reject: Plan expired · No active weekly subscription at time of claim</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-4401 · Chromepet</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹90</div><span class="cl-reason reason-rej">Auto-reject: Isolation Forest score 78/100 · Accelerometer flat · Device fingerprint matched 3 prior flagged accounts</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-7720 · Pallavaram</div><div class="cl-meta">🌧️ Rain claim · Starter Plan · Attempted ₹50</div><span class="cl-reason reason-rej">Hard reject: Disruption persisted only 8 minutes — below 15-minute confirmation threshold</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-6612 · Anna Nagar</div><div class="cl-meta">🌡️ Heat claim · Standard Plan · Attempted ₹160</div><span class="cl-reason reason-rej">Hard reject: GPS outside disruption micro-zone · Worker was 8.2 km from nearest affected zone centroid</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div class="cl-row">
+            <div class="cl-left"><div class="cl-id">WKR-1199 · Avadi</div><div class="cl-meta">🌧️ Rain claim · Basic Plan · Attempted ₹90</div><span class="cl-reason reason-rej">Auto-reject: Isolation Forest score 82/100 · GPS spoofing detected · Accelerometer stationary · Cell tower mismatch</span></div>
+            <span class="pill p-x" style="background:rgba(239,68,68,0.15);color:var(--red);">Rejected</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--mute);">All rejected workers are notified · One-tap appeal available · Hard rejects = rule violation · Auto-rejects = ML fraud score ≥ 70</div>
+        </div>
       </div>
 
       <!-- DATA SOURCE STATUS -->
@@ -542,16 +654,32 @@ function resetSim(full=true){
 
 function refresh(){load();toast('Refreshed','All stats updated from worker records');}
 
+function switchTab(tab, btn){
+  document.querySelectorAll('.cp-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.cp-panel').forEach(p=>p.classList.remove('on'));
+  const panel=document.getElementById('panel-'+tab);
+  if(panel) panel.classList.add('on');
+}
+
 function resolveFQ(id, action, wkr){
   const el=document.getElementById(id);
   if(!el) return;
   el.classList.add('resolved');
-  const pending=document.querySelectorAll('.fq-item:not(.resolved)').length;
-  const badge=document.getElementById('fq-count-badge');
-  if(badge) badge.textContent=pending+' pending';
-  const col=action==='approved'?'var(--green)':'var(--red)';
+  // Update review count
+  const pending=document.querySelectorAll('#panel-review .fq-item:not(.resolved)').length;
+  const cnt=document.getElementById('cnt-review');
+  if(cnt) cnt.textContent=pending;
+  // If approved, increment approved count
+  if(action==='approved'){
+    const ca=document.getElementById('cnt-approved');
+    if(ca) ca.textContent=parseInt(ca.textContent)+1;
+  } else {
+    const cr=document.getElementById('cnt-rejected');
+    if(cr) cr.textContent=parseInt(cr.textContent)+1;
+  }
   const icon=action==='approved'?'✅':'❌';
-  showToast(icon+' '+wkr+' '+action, action==='approved'?'Payout released · Trust score +5':'Claim rejected · Worker notified');
+  showToast(icon+' '+wkr+' '+action, action==='approved'?'Payout released · Trust score +5':'Claim rejected · Worker notified with appeal option');
 }
 
 // Update API poll timer
