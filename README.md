@@ -1,4 +1,4 @@
-# GigShield 🛡️
+# GigWorkerShield 🛡️
 ### AI-Powered Parametric Income Protection for Food Delivery Workers
 ### Team ZenVyte | Guidewire DEVTrails 2026
 
