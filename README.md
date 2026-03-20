@@ -705,7 +705,9 @@ All claim liabilities handled by the licensed insurer partner.
 ## Live Demo
 
 🎥 **2-Minute Strategy Video →**
-[ADD YOUR VIDEO LINK HERE — YouTube (unlisted) or Google Drive]
+
+Youtube : https://youtu.be/DF-K0pmgruI?si=akcD-mIjib7q5Ws3
+Drive : https://drive.google.com/file/d/12bCFysC_7cdr0dpGpAVpBXCiEAqI--Vf/view?usp=sharing
 
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
