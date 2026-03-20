@@ -533,7 +533,7 @@ GigSecure is built as a **fully responsive web application** — workers access 
 | Payments | Razorpay Sandbox | Simulated near-real-time payout |
 | Notifications | Firebase Cloud Messaging | Real-time worker alerts |
 | Hosting | Railway / Render (free tier) | Fast hackathon deployment |
-|---|---|---|
+
 
 ---
 
