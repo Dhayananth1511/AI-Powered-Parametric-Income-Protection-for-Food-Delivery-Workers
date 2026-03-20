@@ -785,15 +785,20 @@ In production, GigSecure integrates with a licensed IRDAI insurance partner for 
 ## About This Project
 
 **Hackathon:** Guidewire DEVTrails 2026 Pan-India University Hackathon
+<br>
 **Team:** ZenVyte
+<br>
 **Members:** 
 Dhayananth N *(Lead)* 
 · Mowlieswaran G 
 · Arun Kumar S 
 · Karthick V 
 · Hardik Muthusamy
+<br>
 **Problem:** AI-Powered Insurance for India's Gig Economy
+<br>
 **Focus:** Food Delivery Workers — Zomato / Swiggy
+<br>
 **Platform:** Responsive Web — Mobile (Workers) + Desktop (Admin)
 
 ---
