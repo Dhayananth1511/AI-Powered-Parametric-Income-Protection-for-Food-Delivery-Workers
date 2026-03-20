@@ -789,7 +789,7 @@ In production, GigSecure integrates with a licensed IRDAI insurance partner for 
 **Team:** ZenVyte
 <br>
 **Members:** 
-Dhayananth N *(Lead)* 
+· Dhayananth N *(Lead)* 
 · Mowlieswaran G 
 · Arun Kumar S 
 · Karthick V 
