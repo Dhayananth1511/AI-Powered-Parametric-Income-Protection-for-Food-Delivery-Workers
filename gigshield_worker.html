@@ -134,6 +134,29 @@ select.inp{appearance:none;cursor:pointer;}
 .modal-cancel:hover{border-color:var(--mute);color:var(--text);}
 .change-btn{margin-top:10px;width:100%;padding:9px;border-radius:9px;border:1px solid rgba(59,130,246,0.3);background:rgba(59,130,246,0.07);color:var(--blue);font-family:'Geist',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;}
 .change-btn:hover{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.5);}
+
+/* ── PREDICTIVE ALERT ── */
+.alert-card{border-radius:12px;padding:1rem 1.25rem;background:linear-gradient(135deg,rgba(245,158,11,0.09),rgba(239,68,68,0.05));border:1px solid rgba(245,158,11,0.25);margin-bottom:8px;}
+.alert-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.alert-title{font-size:13px;font-weight:600;color:var(--amber);}
+.alert-prob{padding:2px 9px;border-radius:20px;background:rgba(245,158,11,0.15);color:var(--amber);font-size:11px;font-weight:700;}
+.alert-body{font-size:12px;color:var(--ghost);line-height:1.55;}
+.alert-safe{background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.2);}
+.alert-safe .alert-title{color:var(--green);}
+.alert-safe .alert-prob{background:rgba(16,185,129,0.15);color:var(--green);}
+/* ── DISRUPTIONS LIST ── */
+.disr-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border-radius:9px;border:1px solid var(--rim);margin-bottom:5px;font-size:12px;}
+.disr-ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.disr-name{font-weight:500;color:var(--text);}
+.disr-meta{font-size:11px;color:var(--mute);margin-top:1px;}
+.disr-amt{margin-left:auto;font-family:"Instrument Serif",serif;font-size:1rem;color:var(--green);flex-shrink:0;}
+/* ── PAYOUT HISTORY ── */
+.ph-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(36,51,84,0.3);}
+.ph-item:last-child{border-bottom:none;}
+.ph-ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ph-name{font-size:12px;font-weight:500;color:var(--text);}
+.ph-meta{font-size:11px;color:var(--mute);margin-top:1px;}
+.ph-amt{margin-left:auto;font-family:"Instrument Serif",serif;font-size:0.95rem;color:var(--green);flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -229,6 +252,67 @@ select.inp{appearance:none;cursor:pointer;}
           <div class="trow"><div style="display:flex;align-items:center;gap:7px;"><div class="tdot" style="background:var(--green)"></div>🚫 Curfew</div><span class="pill p-ok">No alert</span></div>
           <div style="margin-top:8px;font-size:11px;color:var(--mute);">Polled every 15 min · Next in <span id="poll-cd">14:32</span></div>
         </div>
+
+        <!-- PREDICTIVE ALERT -->
+        <div class="sec" style="margin-top:1rem;">⚡ Predictive Alert — XGBoost 48hr Forecast</div>
+        <div id="alert-panel">
+          <div class="alert-card">
+            <div class="alert-head">
+              <span class="alert-title">🌧️ Storm Alert — Tonight 6–9pm</span>
+              <span class="alert-prob">78% probability</span>
+            </div>
+            <div class="alert-body" id="alert-zone-text">Heavy rainfall forecast in your micro-zone. Your ₹<span id="alert-cap">160</span> weekly coverage is fully active and will trigger automatically if IMD threshold is confirmed.</div>
+          </div>
+          <div class="alert-card alert-safe">
+            <div class="alert-head">
+              <span class="alert-title">☀️ Tomorrow Daytime — Clear</span>
+              <span class="alert-prob">12% probability</span>
+            </div>
+            <div class="alert-body">Low disruption risk forecast for tomorrow morning. Safe window for high-earnings deliveries.</div>
+          </div>
+          <div style="font-size:11px;color:var(--mute);margin-top:5px;">Powered by XGBoost · IMD 7-day forecast · Updated every 6 hours</div>
+        </div>
+
+        <!-- THIS WEEK'S DISRUPTIONS -->
+        <div class="sec" style="margin-top:1rem;">📋 This Week's Disruptions</div>
+        <div class="card" id="disruptions-list">
+          <div class="disr-item">
+            <div class="disr-ico" style="background:rgba(59,130,246,0.15);">🌧️</div>
+            <div><div class="disr-name">Heavy Rainfall — Velachery</div><div class="disr-meta">Mon Mar 17 · 7:23pm · 2 hrs confirmed · Standard Plan</div></div>
+            <div class="disr-amt">+₹80</div>
+          </div>
+          <div class="disr-item">
+            <div class="disr-ico" style="background:rgba(245,158,11,0.15);">😷</div>
+            <div><div class="disr-name">Severe AQI — Chennai Zone</div><div class="disr-meta">Wed Mar 19 · 2:10pm · 1 hr confirmed · Standard Plan</div></div>
+            <div class="disr-amt">+₹40</div>
+          </div>
+          <div id="no-disruptions" style="display:none;text-align:center;padding:1rem;font-size:12px;color:var(--mute);">No disruptions detected this week ✅</div>
+          <div style="margin-top:8px;font-size:11px;color:var(--mute);">Week: Mon–Sun · IMD + CPCB verified · Payouts auto-credited</div>
+        </div>
+
+        <!-- PAYOUTS RECEIVED TIMELINE -->
+        <div class="sec" style="margin-top:1rem;">💰 Payouts Received</div>
+        <div class="card" id="payouts-history">
+          <div class="ph-item">
+            <div class="ph-ico" style="background:rgba(59,130,246,0.15);">🌧️</div>
+            <div><div class="ph-name">Heavy Rainfall · Velachery</div><div class="ph-meta">Mon Mar 17 · 2 hrs × ₹40/hr · Standard</div></div>
+            <div class="ph-amt">+₹80</div>
+          </div>
+          <div class="ph-item">
+            <div class="ph-ico" style="background:rgba(245,158,11,0.15);">😷</div>
+            <div><div class="ph-name">Severe AQI · Chennai</div><div class="ph-meta">Wed Mar 19 · 1 hr × ₹40/hr · Standard</div></div>
+            <div class="ph-amt">+₹40</div>
+          </div>
+          <div class="ph-item" id="sim-payout-row" style="display:none;">
+            <div class="ph-ico" style="background:rgba(16,185,129,0.15);">🎮</div>
+            <div><div class="ph-name" id="sim-ph-name">Simulated Payout</div><div class="ph-meta" id="sim-ph-meta">Simulation run</div></div>
+            <div class="ph-amt" id="sim-ph-amt">+₹0</div>
+          </div>
+          <div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,0.06);border-radius:8px;font-size:11px;color:var(--ghost);">
+            Total saved: <span id="ph-total" style="color:var(--green);font-weight:600;">₹120</span> this week · <span id="ph-total-month" style="color:var(--green);font-weight:600;">₹640</span> this month
+          </div>
+        </div>
+
       </div>
 
       <!-- RIGHT: SIMULATION -->
@@ -337,6 +421,19 @@ function init(){
   sel.innerHTML=Array.from({length:plan.maxHrs},(_,i)=>`<option value="${i+1}"${i+1===2?' selected':''}>${i+1} hour${i+1>1?'s':''} — ${GS.fmt((i+1)*plan.rate)}</option>`).join('');
 
   if(fresh.fresh){toast('🎉 Welcome to GigShield!','Your coverage is active. You are protected.');GS.updateWorker(fresh.id,{fresh:false});}
+  window.planRate=plan.rate;window.planCap=plan.cap;
+
+  // Update predictive alert with real zone + cap
+  const zn=fresh.zone||'Velachery';
+  const alertZ=document.getElementById('alert-zone-text');
+  if(alertZ) alertZ.innerHTML='Heavy rainfall forecast in '+zn+' micro-zone. Your '+GS.fmt(plan.cap)+' weekly coverage is fully active and will trigger automatically if IMD threshold is confirmed.';
+
+  // Update payouts history total
+  const totalW=(fresh.payouts||0)+(fresh.simPayouts||0);
+  const phTot=document.getElementById('ph-total');
+  const phMon=document.getElementById('ph-total-month');
+  if(phTot) phTot.textContent=GS.fmt(totalW);
+  if(phMon) phMon.textContent=GS.fmt(totalW);
 }
 
 function runSim(){
@@ -378,6 +475,22 @@ function runSim(){
       document.getElementById('rev-lbl').textContent=hrs+' hr'+(hrs>1?'s':'')+' × '+GS.fmt(planRate)+'/hr — '+document.getElementById('p-name').textContent;
       document.getElementById('rev-total').textContent=GS.fmt(newSim);
       document.getElementById('reveal').classList.add('on');
+
+      // Add to payouts history timeline
+      const row=document.getElementById('sim-payout-row');
+      const typeNames={rain:'🌧️ Heavy Rainfall',heat:'🌡️ Extreme Heat',aqi:'😷 Severe AQI',cyclone:'🌀 Cyclone Alert',hartal:'🚫 Curfew/Hartal'};
+      if(row){
+        document.getElementById('sim-ph-name').textContent=(typeNames[type]||'Disruption')+' · '+document.getElementById('p-name').textContent.split(' ').slice(0,2).join(' ');
+        document.getElementById('sim-ph-meta').textContent='Simulation · '+hrs+' hr'+(hrs>1?'s':'')+' × '+GS.fmt(planRate)+'/hr · Today';
+        document.getElementById('sim-ph-amt').textContent='+'+GS.fmt(payout);
+        row.style.display='flex';
+      }
+      // Update weekly total in history
+      const totalNow=(fresh?.payouts||0)+newSim;
+      const phTot=document.getElementById('ph-total');
+      const phMon=document.getElementById('ph-total-month');
+      if(phTot) phTot.textContent=GS.fmt(totalNow);
+      if(phMon) phMon.textContent=GS.fmt(totalNow);
 
       toast(labels[type]+' — Payout Credited',GS.fmt(payout)+' added to your account. Stay safe.');
       btn.disabled=false;

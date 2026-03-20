@@ -110,6 +110,35 @@ select.inp{appearance:none;cursor:pointer;}
 .toast-t{font-size:12px;font-weight:600;color:var(--bright);margin-bottom:2px;}
 .toast-m{font-size:11px;color:var(--ghost);}
 @media(max-width:900px){.g2,.g4,.g2r{grid-template-columns:1fr;}.body{padding:1rem;}.ntabs{display:none;}}
+
+/* FRAUD QUEUE */
+.fq-item{background:var(--surface);border:1px solid var(--rim);border-radius:10px;padding:12px;margin-bottom:7px;transition:border-color 0.2s;}
+.fq-item:hover{border-color:var(--mute);}
+.fq-item.resolved{opacity:0.35;pointer-events:none;}
+.fq-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.fq-id{font-size:13px;font-weight:500;color:var(--bright);}
+.fq-meta{font-size:11px;color:var(--mute);margin-top:2px;}
+.fq-score-hi{padding:2px 9px;border-radius:6px;font-size:12px;font-weight:700;background:rgba(239,68,68,0.15);color:var(--red);}
+.fq-score-lo{padding:2px 9px;border-radius:6px;font-size:12px;font-weight:700;background:rgba(245,158,11,0.15);color:var(--amber);}
+.fq-signals{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.fq-sig{padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600;background:rgba(239,68,68,0.1);color:var(--red);}
+.fq-actions{display:flex;gap:6px;}
+.fq-btn{padding:5px 13px;border-radius:7px;border:none;cursor:pointer;font-family:"Geist",sans-serif;font-size:12px;font-weight:600;transition:all 0.2s;}
+.fq-ok{background:rgba(16,185,129,0.15);color:var(--green);}
+.fq-ok:hover{background:rgba(16,185,129,0.25);}
+.fq-no{background:rgba(239,68,68,0.15);color:var(--red);}
+.fq-no:hover{background:rgba(239,68,68,0.25);}
+/* API STATUS */
+.api-row{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--surface);border-radius:8px;border:1px solid var(--rim);margin-bottom:5px;font-size:12px;}
+.api-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);box-shadow:0 0 5px rgba(16,185,129,0.5);}
+.dot-slow{background:var(--amber);animation:bl 1s ease-in-out infinite;}
+.dot-down{background:var(--red);}
+.api-name{flex:1;margin-left:8px;color:var(--text);font-weight:500;}
+.api-lat{color:var(--mute);font-size:11px;margin-right:8px;}
+.api-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;}
+.tag-ok{background:rgba(16,185,129,0.15);color:var(--green);}
+.tag-slow{background:rgba(245,158,11,0.15);color:var(--amber);}
 </style>
 </head>
 <body>
@@ -215,6 +244,74 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="card">
           <div class="pbd" id="plan-bd"></div>
         </div>
+
+      <!-- FRAUD REVIEW QUEUE -->
+      <div style="margin-top:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="sec" style="margin:0;flex:1;">🔍 Fraud Review Queue — Isolation Forest</div>
+          <span class="pill p-w" id="fq-count-badge">3 pending</span>
+        </div>
+        <div id="fraud-queue">
+          <div class="fq-item" id="fqi-1">
+            <div class="fq-top">
+              <div><div class="fq-id">WKR-7741 · T. Nagar</div><div class="fq-meta">😷 AQI claim · Standard Plan · ₹160 · Score: 47</div></div>
+              <span class="fq-score-lo">Score: 47</span>
+            </div>
+            <div class="fq-signals">
+              <span class="fq-sig">GPS velocity 7 km/h</span>
+              <span class="fq-sig">4 consecutive weeks</span>
+            </div>
+            <div class="fq-actions">
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-1','approved','WKR-7741')">✓ Approve</button>
+              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-1','rejected','WKR-7741')">✗ Reject</button>
+            </div>
+          </div>
+          <div class="fq-item" id="fqi-2">
+            <div class="fq-top">
+              <div><div class="fq-id">WKR-2298 · Mylapore</div><div class="fq-meta">🌧️ Rain claim · Premium Plan · ₹200 · Score: 52</div></div>
+              <span class="fq-score-lo">Score: 52</span>
+            </div>
+            <div class="fq-signals">
+              <span class="fq-sig">Claim filed 45 min before trigger</span>
+            </div>
+            <div class="fq-actions">
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-2','approved','WKR-2298')">✓ Approve</button>
+              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-2','rejected','WKR-2298')">✗ Reject</button>
+            </div>
+          </div>
+          <div class="fq-item" id="fqi-3">
+            <div class="fq-top">
+              <div><div class="fq-id">WKR-9901 · Guindy</div><div class="fq-meta">🌧️ Rain claim · Basic Plan · ₹90 · Score: 71</div></div>
+              <span class="fq-score-hi">Score: 71</span>
+            </div>
+            <div class="fq-signals">
+              <span class="fq-sig">2 accounts same device</span>
+              <span class="fq-sig">Crowd signal disagrees</span>
+              <span class="fq-sig">No pre-disruption zone activity</span>
+            </div>
+            <div class="fq-actions">
+              <button class="fq-btn fq-ok" onclick="resolveFQ('fqi-3','approved','WKR-9901')">✓ Approve</button>
+              <button class="fq-btn fq-no" onclick="resolveFQ('fqi-3','rejected','WKR-9901')">✗ Reject</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--mute);">Score 0–30: Auto-approve · 30–70: Manual review ← · 70+: Auto-reject</div>
+      </div>
+
+      <!-- DATA SOURCE STATUS -->
+      <div style="margin-top:1rem;">
+        <div class="sec">🔌 Data Source API Status</div>
+        <div>
+          <div class="api-row"><div class="api-dot dot-ok"></div><span class="api-name">IMD Weather API</span><span class="api-lat">142ms</span><span class="api-tag tag-ok">LIVE</span></div>
+          <div class="api-row"><div class="api-dot dot-ok"></div><span class="api-name">OpenWeatherMap</span><span class="api-lat">89ms</span><span class="api-tag tag-ok">LIVE</span></div>
+          <div class="api-row"><div class="api-dot dot-slow"></div><span class="api-name">CPCB AQI API</span><span class="api-lat">847ms</span><span class="api-tag tag-slow">SLOW</span></div>
+          <div class="api-row"><div class="api-dot dot-ok"></div><span class="api-name">NDMA Alert Feed</span><span class="api-lat">201ms</span><span class="api-tag tag-ok">LIVE</span></div>
+          <div class="api-row"><div class="api-dot dot-ok"></div><span class="api-name">Satellite Radar API</span><span class="api-lat">312ms</span><span class="api-tag tag-ok">LIVE</span></div>
+          <div class="api-row"><div class="api-dot dot-ok"></div><span class="api-name">Razorpay Sandbox</span><span class="api-lat">178ms</span><span class="api-tag tag-ok">LIVE</span></div>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--mute);">Polled every 15 min · <span id="api-last-poll">Last check: 2 min ago</span></div>
+      </div>
+
       </div>
 
       <!-- RIGHT: SIM PANEL -->
@@ -444,6 +541,26 @@ function resetSim(full=true){
 }
 
 function refresh(){load();toast('Refreshed','All stats updated from worker records');}
+
+function resolveFQ(id, action, wkr){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.add('resolved');
+  const pending=document.querySelectorAll('.fq-item:not(.resolved)').length;
+  const badge=document.getElementById('fq-count-badge');
+  if(badge) badge.textContent=pending+' pending';
+  const col=action==='approved'?'var(--green)':'var(--red)';
+  const icon=action==='approved'?'✅':'❌';
+  showToast(icon+' '+wkr+' '+action, action==='approved'?'Payout released · Trust score +5':'Claim rejected · Worker notified');
+}
+
+// Update API poll timer
+let apiPollMins=2;
+setInterval(()=>{
+  apiPollMins++;
+  const el=document.getElementById('api-last-poll');
+  if(el) el.textContent='Last check: '+apiPollMins+' min ago';
+},60000);
 
 function toast(t,m){
   document.getElementById('tt').textContent=t;document.getElementById('tm').textContent=m;
