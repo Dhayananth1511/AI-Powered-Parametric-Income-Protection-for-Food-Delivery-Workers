@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GigSecure — Worker Dashboard</title>
+<meta name="description" content="Your GigSecure worker dashboard — live disruption monitoring, payouts, and plan management.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
+html[data-theme="light"]{--bg:#f0f4ff;--surf:rgba(255,255,255,0.9);--border:rgba(99,102,241,0.25);--text:#0f172a;--muted:#475569;}
+html[data-theme="light"] body{background:var(--bg)}
+html[data-theme="light"] .nav{background:rgba(240,244,255,0.95)!important}
+html[data-theme="light"] .card,html[data-theme="light"] .stat-card,html[data-theme="light"] .hero{background:rgba(255,255,255,0.85);border-color:rgba(99,102,241,0.2)}
+html[data-theme="light"] .modal{background:rgba(240,244,255,0.98)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.bg-mesh{position:fixed;inset:0;background:radial-gradient(ellipse at 15% 40%,rgba(99,102,241,0.12) 0%,transparent 50%),radial-gradient(ellipse at 85% 70%,rgba(139,92,246,0.10) 0%,transparent 50%);pointer-events:none}
+/* NAV */
+.nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(2,8,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:17px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.nav-right{display:flex;align-items:center;gap:12px}
+.notif-wrap{position:relative}
+.notif-btn{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:18px;color:var(--text);position:relative;transition:all 0.2s}
+.notif-btn:hover{background:rgba(99,102,241,0.2)}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:#f87171;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center}
+.notif-drop{position:absolute;top:48px;right:0;width:340px;background:rgba(10,17,34,0.98);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(20px);box-shadow:0 16px 48px rgba(0,0,0,0.5);display:none;max-height:400px;overflow-y:auto;z-index:300}
+.notif-drop.open{display:block}
+.notif-hdr{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer}
+.logout-btn{background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:7px 14px;border-radius:9px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:600}
+/* MAIN */
+.main{max-width:768px;margin:0 auto;padding:20px;padding-bottom:100px;transition:all 0.3s ease}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(10,17,34,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:400;grid-template-columns:repeat(3,1fr);padding:12px 0;box-shadow:0 -10px 30px rgba(0,0,0,0.3)}
+.m-nav-item{text-align:center;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;gap:5px;cursor:pointer;transition:all 0.2s}
+.m-nav-item.active{color:var(--primary)}
+.m-nav-icon{font-size:22px}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .nav-btn-ghost { display: none !important; }
+  .nav-logo { font-size: 15px; }
+  .stats-grid { grid-template-columns: 1fr !important; }
+  .hero { padding: 24px 20px; text-align: center; }
+  .hero-badge { position: static; margin-bottom: 12px; display: block; font-size: 48px; }
+  .mobile-nav { display: grid; }
+  .main { padding: 16px 16px 110px; }
+  .plan-sel { grid-template-columns: repeat(3,1fr) !important; }
+  .triggers-grid { grid-template-columns: repeat(3,1fr) !important; }
+  .btn-primary { width: 100%; }
+}
+
+/* Hero Status Banner */
+.hero{border-radius:20px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+.hero.clear{background:linear-gradient(135deg,rgba(22,163,74,0.15),rgba(15,23,42,0.8));border:1px solid rgba(34,197,94,0.3)}
+.hero.alert{background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(15,23,42,0.8));border:1px solid rgba(99,102,241,0.4);animation:pulseBorder 2s ease-in-out infinite}
+@keyframes pulseBorder{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 0 0 6px rgba(99,102,241,0.1)}}
+.hero-status{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.hero-title{font-size:20px;font-weight:800;margin-bottom:4px}
+.hero-sub{font-size:13px;color:var(--muted)}
+.hero-badge{position:absolute;top:20px;right:20px;font-size:40px}
+/* Stats Grid */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:18px;backdrop-filter:blur(12px);transition:transform 0.2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-icon{font-size:20px;margin-bottom:8px}
+.stat-val{font-size:22px;font-weight:800}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:2px}
+/* Community Pulse Widget */
+.pulse-card{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(15,23,42,0.9));border:2px solid var(--border);border-radius:20px;padding:20px;margin-bottom:20px;position:relative;overflow:hidden}
+.pulse-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pulse-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.pulse-dot{width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 10px var(--success);animation:pulseDot 1.5s infinite}
+@keyframes pulseDot{0%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0.5}100%{transform:scale(1);opacity:1}}
+.pulse-stats{display:flex;gap:20px}
+.p-stat{flex:1}
+.p-val{font-size:18px;font-weight:800;color:var(--primary)}
+.p-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.pulse-radar{position:absolute;right:-20px;bottom:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(99,102,241,0.1) 0%,transparent 70%);border-radius:50%;border:1px solid rgba(99,102,241,0.1);animation:radar 4s linear infinite}
+@keyframes radar{0%{transform:scale(0);opacity:1}100%{transform:scale(2);opacity:0}}
+/* Cards */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:18px;padding:20px;backdrop-filter:blur(12px);margin-bottom:16px}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(99,102,241,0.15);color:var(--primary);border:1px solid rgba(99,102,241,0.3)}
+/* Plan Info */
+.plan-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;margin-bottom:10px}
+.plan-sel{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.plan-mini{padding:10px 6px;border-radius:10px;border:1px solid rgba(99,102,241,0.2);text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:var(--muted);transition:all 0.2s}
+.plan-mini:hover,.plan-mini.selected{border-color:var(--primary);color:var(--text);background:rgba(99,102,241,0.12)}
+.plan-mini .pm-price{font-size:13px;font-weight:800;color:var(--primary)}
+/* Trigger Status */
+.triggers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.trig-card{padding:12px;border-radius:12px;border:1px solid rgba(99,102,241,0.15);text-align:center;transition:all 0.3s}
+.trig-card.active{border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);animation:trigPulse 1.5s ease-in-out infinite}
+@keyframes trigPulse{0%,100%{opacity:1}50%{opacity:0.7}}
+.trig-icon{font-size:22px;margin-bottom:4px}
+.trig-name{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.trig-val{font-size:12px;font-weight:700;margin-top:2px}
+/* Claim Pipeline Steps */
+.pipeline{padding:12px 0}
+.p-step{display:flex;gap:14px;padding:10px 0;position:relative}
+.p-step:not(:last-child)::after{content:"";position:absolute;left:16px;top:48px;width:2px;height:calc(100% - 12px);background:rgba(99,102,241,0.15)}
+.p-step.pass::after{background:rgba(34,197,94,0.3)}
+.p-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:2px solid rgba(99,102,241,0.2)}
+.p-step.pass .p-icon{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.5)}
+.p-step.fail .p-icon{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.5)}
+.p-step.pending .p-icon{background:rgba(99,102,241,0.1)}
+.p-lbl{font-size:13px;font-weight:600;margin-bottom:2px}
+.p-detail{font-size:11px;color:var(--muted)}
+/* Claims List */
+.claim-item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center}
+.claim-item:last-child{border-bottom:none}
+/* Forecast */
+.forecast-bar{display:flex;align-items:flex-end;gap:3px;height:60px;margin:12px 0}
+.f-bar{flex:1;border-radius:3px 3px 0 0;transition:height 0.5s ease;min-height:3px;cursor:pointer}
+.f-bar:hover{opacity:0.8}
+/* Buttons */
+.btn{padding:11px 20px;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;transition:all 0.3s}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,0.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,0.45)}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:8px}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--primary);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+.btn-success{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--success)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:rgba(10,17,34,0.98);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px}
+.close-btn{float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px}
+/* Misc */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.divider{height:1px;background:rgba(99,102,241,0.12);margin:14px 0}
+.empty-state{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.hrs-bar{background:rgba(255,255,255,0.06);border-radius:100px;height:8px;overflow:hidden;margin-top:8px}
+.hrs-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width 0.6s ease}
+select{background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;min-width:120px}
+select:focus{border-color:var(--primary)}
+select option{background:#0f172a}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<div class="mobile-nav">
+  <div class="m-nav-item active" id="mnav-home" onclick="showDashboard()">
+    <span class="m-nav-icon">📊</span>
+    <span>Home</span>
+  </div>
+  <div class="m-nav-item" id="mnav-policy" onclick="openPlanModal()">
+    <span class="m-nav-icon">🛡️</span>
+    <span>Policy</span>
+  </div>
+  <div class="m-nav-item" id="mnav-claims" onclick="openClaimModal()">
+    <span class="m-nav-icon">📋</span>
+    <span>Claims</span>
+  </div>
+</div>
+
+<!-- NOTIFICATION MODAL -->
+<div class="modal-overlay" id="notifModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">🔔 Notifications <button class="close-btn" onclick="closeModal('notifModal')">✕</button></div>
+    <div id="notifList"></div>
+  </div>
+</div>
+
+<!-- CLAIM SIMULATION MODAL -->
+<div class="modal-overlay" id="claimModal">
+  <div class="modal">
+    <div class="modal-title">⚡ Simulate Disruption Claim <button class="close-btn" onclick="closeModal('claimModal')">✕</button></div>
+    <div style="margin-bottom:16px;font-size:13px;color:var(--muted)">Simulate a disruption event and watch the zero-touch 6-step claim pipeline execute automatically.</div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:8px;text-transform:uppercase">Disruption Type</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="triggerBtns"></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:8px;text-transform:uppercase">Disruption Duration</label>
+      <input type="range" id="hrsSlider" min="1" max="7" step="0.5" value="2.5" oninput="updateHrs()" style="width:100%;accent-color:#6366f1">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px">
+        <span>1 hr</span><span id="hrsLabel" style="color:var(--primary);font-weight:700">2.5 hrs</span><span>7 hrs</span>
+      </div>
+    </div>
+    <div id="payoutPreview" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:14px;margin-bottom:16px;font-size:13px"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="runClaimSim()" id="simBtn">⚡ Run Auto-Claim Pipeline</button>
+    <div id="pipelineResult" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- PLAN CHANGE MODAL -->
+<div class="modal-overlay" id="planModal">
+  <div class="modal">
+    <div class="modal-title">📋 Change Plan <button class="close-btn" onclick="closeModal('planModal')">✕</button></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Upgrades take effect immediately. Downgrades effective next Monday.</div>
+    <div class="plan-sel" id="planSelGrid"></div>
+    <div id="planChangePreview" style="margin-top:14px"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('planModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmPlanChange()" id="planChgBtn">Apply Change →</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">🛡️ GigSecure</div>
+  <div class="nav-right">
+    <div class="notif-wrap">
+      <button class="notif-btn" onclick="toggleNotif()" title="Notifications">
+        🔔<div class="notif-badge" id="notifBadge"></div>
+      </button>
+      <div class="notif-drop" id="notifDrop">
+        <div class="notif-hdr"><span>Notifications</span><button onclick="refreshNotifs()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px">Refresh</button></div>
+        <div id="notifList2"></div>
+      </div>
+    </div>
+    <button class="nav-btn nav-btn-ghost" onclick="window.location.href='gigsecure_features.html'" style="border:none;background:rgba(99,102,241,0.1);color:var(--primary);font-weight:700;padding:8px 14px;margin-right:8px;font-size:12px">🧪 Demos</button>
+    <!-- Theme Toggle -->
+    <button id="themeToggle" onclick="Theme.toggle()" title="Toggle theme" style="background:rgba(99,102,241,0.1);border:1px solid var(--border);border-radius:10px;padding:7px 10px;cursor:pointer;font-size:15px;color:var(--text);">
+      <span class="theme-toggle-knob">🌙</span>
+    </button>
+    <div class="avatar" id="avatarEl" title="Profile"></div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+  <main class="main" id="dashboard">
+    <!-- COMMUNITY PULSE (NEW Phase 3) -->
+    <div class="pulse-card" id="pulseWidget" style="display:none">
+      <div class="pulse-radar"></div>
+      <div class="pulse-header">
+        <div class="pulse-title"><span class="pulse-dot"></span> Community Pulse: <span id="pulseZone">Your Zone</span></div>
+        <div class="badge" id="pulseBadge">Live</div>
+      </div>
+      <div class="pulse-stats">
+        <div class="p-stat">
+          <div class="p-val" id="pActive">--</div>
+          <div class="p-lbl">Partners Active</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-val" id="pProtected">--</div>
+          <div class="p-lbl">Protected Partners</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-val" id="pStatus">Normal</div>
+          <div class="p-lbl">Zone Activity</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO STATUS -->
+  <div class="hero clear" id="heroEl">
+    <div class="hero-status" id="heroStatus"><span class="pulse-dot"></span> 🟢 ACTIVE COVERAGE</div>
+    <div class="hero-title" id="heroTitle">Loading...</div>
+    <div class="hero-sub" id="heroSub">Monitoring your zone for disruptions</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+      <div id="platformBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#a78bfa"></div>
+      <div id="workerIdBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8"></div>
+      <div id="upiBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#4ade80"></div>
+    </div>
+    <div class="hero-badge" id="heroBadge">🛡️</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-val" id="totalEarned">—</div>
+      <div class="stat-lbl">Total Earnings Protected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-val" id="totalClaims">—</div>
+      <div class="stat-lbl">Claims Processed</div>
+      <div class="stat-sub" id="claimsBreakdown">— approved · — rejected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🛡️</div>
+      <div class="stat-val" id="trustScore">—</div>
+      <div class="stat-lbl">Trust Score</div>
+      <div class="stat-sub" id="trustLabel">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏱️</div>
+      <div class="stat-val" id="hrsUsed">—</div>
+      <div class="stat-lbl">Hours Used This Week</div>
+      <div class="hrs-bar"><div class="hrs-fill" id="hrsFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- LIVE TRIGGER STATUS -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📡 Live Zone Status — <span id="zoneLabel" style="color:var(--primary)">Loading...</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="refreshZone()" id="refreshZoneBtn">↻ Refresh</button>
+    </div>
+    <div class="triggers-grid" id="triggersGrid">
+      <div class="trig-card"><div class="trig-icon">🌧️</div><div class="trig-name">Rainfall</div><div class="trig-val" id="tv-rainfall">—</div></div>
+      <div class="trig-card"><div class="trig-icon">🔥</div><div class="trig-name">Heat</div><div class="trig-val" id="tv-temp">—</div></div>
+      <div class="trig-card"><div class="trig-icon">💨</div><div class="trig-name">AQI</div><div class="trig-val" id="tv-aqi">—</div></div>
+      <div class="trig-card"><div class="trig-icon">🌀</div><div class="trig-name">Cyclone</div><div class="trig-val" id="tv-cyclone">Clear</div></div>
+      <div class="trig-card"><div class="trig-icon">🚫</div><div class="trig-name">Curfew</div><div class="trig-val" id="tv-curfew">Clear</div></div>
+      <div class="trig-card" id="overallTrigger"><div class="trig-icon">✅</div><div class="trig-name">Overall</div><div class="trig-val" style="color:var(--success)">All Clear</div></div>
+    </div>
+    <div id="triggerAlert" style="display:none"></div>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" style="width:100%" onclick="openClaimModal()">⚡ Simulate Disruption Claim</button>
+    </div>
+  </div>
+
+  <!-- ACTIVE POLICY -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📋 Active Policy</div>
+      <button class="btn btn-ghost btn-sm" onclick="openPlanModal()">Change Plan</button>
+    </div>
+    <div id="policyPanel">
+      <div class="empty-state">Loading policy...</div>
+    </div>
+  </div>
+
+  <!-- 48-HR FORECAST -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">⚡ 48-Hour Disruption Forecast</div>
+      <div class="badge" id="forecastAlert">Loading...</div>
+    </div>
+    <div class="forecast-bar" id="forecastBars"></div>
+    <div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">
+      <span><span style="color:#f87171">■</span> High Risk</span>
+      <span><span style="color:#fb923c">■</span> Medium Risk</span>
+      <span><span style="color:#4ade80">■</span> Low Risk</span>
+    </div>
+    <div id="forecastMsg" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+  </div>
+
+  <!-- CLAIMS HISTORY -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">💰 Payout History</div>
+      <div class="badge" id="claimsBadge">0 claims</div>
+    </div>
+    <div id="claimsList"><div class="empty-state">No claims yet</div></div>
+  </div>
+
+  <!-- POLICY HISTORY -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📜 Policy History</div>
+      <button class="btn btn-ghost btn-sm" onclick="renewPolicy()">🔄 Renew</button>
+    </div>
+    <div id="policyHistory"><div class="empty-state">Loading...</div></div>
+  </div>
+
+</div>
+
+<script src="gs_shared.js"></script>
+<script>
+const sess = Session.require();
+if(!sess) throw new Error("Not logged in");
+document.getElementById("avatarEl").textContent = (sess.name||"W").charAt(0);
+
+let workerData = sess;
+let selectedClaimTrigger = "rainfall";
+let selectedNewPlan = null;
+let weatherData = null;
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+async function init() {
+  await Promise.allSettled([
+    loadWorker(),
+    loadZoneStatus(),
+    loadPulse(),
+    loadClaims(),
+    loadPolicy(),
+    loadForecast(),
+    loadPolicyHistory(),
+  ]);
+  startNotifPolling(sess.id, document.getElementById("notifBadge"));
+  setInterval(loadPulse, 30000); // Pulse update every 30s
+}
+
+// ── Worker Data ──────────────────────────────────────────────────────────────
+async function loadWorker() {
+  try {
+    workerData = await GS.get("/auth/worker/" + sess.id);
+    Session.save({...sess, ...workerData, role:"worker"});
+    const hero = document.getElementById("heroEl");
+    document.getElementById("heroTitle").textContent = `${workerData.name} · ${capitalize(workerData.plan)} Plan`;
+    document.getElementById("heroSub").textContent = `Zone: ${workerData.zone} · ₹${PLANS[workerData.plan]?.rate||60}/hr coverage active`;
+    document.getElementById("zoneLabel").textContent = workerData.zone;
+    // Platform badge
+    const platBadge = document.getElementById("platformBadge");
+    if (platBadge && workerData.platform) {
+      const platIcons = {"Swiggy":"🧡","Zomato":"🍅","Dunzo":"🔵","Blinkit":"🟡"};
+      platBadge.textContent = (platIcons[workerData.platform]||"🛵") + " " + workerData.platform;
+      platBadge.style.display = "inline-flex";
+    }
+    const wIdBadge = document.getElementById("workerIdBadge");
+    if (wIdBadge) { wIdBadge.textContent = workerData.id; wIdBadge.style.display = "inline-flex"; }
+    const upiBadge = document.getElementById("upiBadge");
+    if (upiBadge && workerData.bank_upi_id) { upiBadge.textContent = "💳 Payout: " + workerData.bank_upi_id; upiBadge.style.display = "inline-flex"; }
+    document.getElementById("totalEarned").textContent = formatINR(workerData.earnings_protected || workerData.payouts + workerData.sim_payouts);
+    document.getElementById("totalClaims").textContent = workerData.claims_total || 0;
+    document.getElementById("claimsBreakdown").textContent = `${workerData.claims_approved||0} approved · ${workerData.claims_rejected||0} rejected`;
+    document.getElementById("trustScore").textContent = (workerData.trust_score||40) + "/100";
+    document.getElementById("trustLabel").textContent = trustLabel(workerData.trust_score||40);
+    document.getElementById("trustScore").style.color = trustColor(workerData.trust_score||40);
+    const plan = PLANS[workerData.plan] || PLANS.standard;
+    const hrsUsed = workerData.weekly_hrs_used || 0;
+    document.getElementById("hrsUsed").textContent = `${hrsUsed}/${plan.maxHrs}`;
+    document.getElementById("hrsFill").style.width = Math.min(100, (hrsUsed/plan.maxHrs)*100) + "%";
+  } catch(e) { console.warn("Worker load error:", e); }
+}
+
+// ── Zone Status ───────────────────────────────────────────────────────────────
+async function loadZoneStatus() {
+  const zone = (workerData||sess).zone;
+  if(!zone) return;
+  try {
+    const data = await GS.get("/weather/zone/" + encodeURIComponent(zone));
+    weatherData = data.weather;
+    // Update trigger cards
+    const rain = data.weather?.rainfall_3h || 0;
+    const temp = data.weather?.temperature || 0;
+    const aqi  = data.weather?.aqi || 0;
+    document.getElementById("tv-rainfall").textContent = rain.toFixed(1) + " mm";
+    document.getElementById("tv-temp").textContent = temp.toFixed(1) + "°C";
+    document.getElementById("tv-aqi").textContent = "AQI " + aqi;
+
+    // Highlight breached triggers
+    if(rain >= 35) document.getElementById("tv-rainfall").closest(".trig-card").classList.add("active");
+    if(temp >= 43) document.getElementById("tv-temp").closest(".trig-card").classList.add("active");
+    if(aqi >= 300) document.getElementById("tv-aqi").closest(".trig-card").classList.add("active");
+
+    if(data.triggers?.length > 0) {
+      const t = data.triggers[0];
+      document.getElementById("heroEl").className = "hero alert";
+      document.getElementById("heroStatus").textContent = "⚡ DISRUPTION DETECTED";
+      document.getElementById("heroBadge").textContent = TRIGGER_META[t.type]?.icon || "⚡";
+      const alertEl = document.getElementById("triggerAlert");
+      alertEl.style.display = "block";
+      alertEl.innerHTML = `<div style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px;margin-top:4px">
+        <div style="font-weight:700">${TRIGGER_META[t.type]?.icon} ${t.label} · ${t.value} ${t.unit}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Auto-claim pipeline ready to execute. Click simulate to process payout.</div></div>`;
+      document.getElementById("overallTrigger").innerHTML = `<div class="trig-icon">⚡</div><div class="trig-name">Overall</div><div class="trig-val" style="color:#f87171">ALERT!</div>`;
+      document.getElementById("overallTrigger").classList.add("active");
+      selectedClaimTrigger = t.type;
+    }
+  } catch(e) { console.warn("Zone status error:", e); }
+}
+
+async function loadPulse() {
+  const zone = (workerData||sess).zone;
+  if(!zone) return;
+  try {
+    const p = await GS.get("/policy/zone-activity?zone=" + encodeURIComponent(zone));
+    document.getElementById("pulseWidget").style.display = "block";
+    document.getElementById("pulseZone").textContent = p.zone;
+    document.getElementById("pActive").textContent = p.active_workers;
+    document.getElementById("pProtected").textContent = p.protected_partners;
+    document.getElementById("pStatus").textContent = p.status;
+  } catch(e) {}
+}
+
+async function refreshZone() {
+  const btn = document.getElementById("refreshZoneBtn");
+  btn.innerHTML = '<span class="spin"></span>';
+  await loadZoneStatus();
+  btn.innerHTML = '↻ Refresh';
+  toast("Zone status refreshed", "info");
+}
+
+// ── Policy ─────────────────────────────────────────────────────────────────
+async function loadPolicy() {
+  const el = document.getElementById("policyPanel");
+  const workerId = (workerData||sess).id;
+  if(!workerId) return;
+  try {
+    const p = await GS.get("/policy/active/" + workerId);
+    if(!p.has_policy) {
+      el.innerHTML = `<div class="empty-state">No active policy. <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="createDefaultPolicy()">Activate Plan</button></div>`;
+      return;
+    }
+    const plan = PLANS[p.plan] || PLANS.standard;
+    el.innerHTML = `
+      <div class="plan-row">
+        <div>
+          <div style="font-weight:700;font-size:15px">${plan.label} Plan</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:2px">Policy ID: ${p.policy_id} · Renewed ${p.renewal_count} times</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:var(--primary)">₹${p.premium}<span style="font-size:12px;font-weight:400;color:var(--muted)">/week</span></div>
+          <div style="font-size:11px;color:var(--success)">Active ✅</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12px">
+        ${[["Hourly Rate","₹"+p.hourly_rate+"/hr"],["Max Hours",p.max_hours+"hrs/week"],["Weekly Cap","₹"+p.weekly_cap],
+           ["Hours Used",p.hrs_used_this_week+"hrs"],["Hours Left",p.hrs_remaining+"hrs"],["Cap Remaining","₹"+p.payout_remaining]
+          ].map(([l,v])=>`<div style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:10px;padding:10px">
+            <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.5px">${l}</div>
+            <div style="font-weight:700;margin-top:3px">${v}</div></div>`).join("")}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="renewPolicy()">🔄 Renew</button>
+        <button class="btn btn-danger btn-sm" style="flex:1" onclick="cancelPolicy()">Cancel Policy</button>
+      </div>`;
+  } catch(e) { el.innerHTML = `<div class="empty-state">Failed to load policy</div>`; }
+}
+
+// ── Forecast ──────────────────────────────────────────────────────────────────
+async function loadForecast() {
+  const zone = (workerData||sess).zone;
+  if(!zone) return;
+  try {
+    const data = await GS.get("/ml/forecast/" + encodeURIComponent(zone));
+    const bars = document.getElementById("forecastBars");
+    bars.innerHTML = data.forecasts.slice(0,24).map(f => {
+      const pct = f.probability;
+      const col = pct >= 60 ? "#f87171" : pct >= 35 ? "#fb923c" : "#4ade80";
+      return `<div class="f-bar" style="height:${Math.max(4,pct)}%;background:${col};opacity:0.8" title="${f.hour}:00 — ${pct}%"></div>`;
+    }).join("");
+    document.getElementById("forecastAlert").textContent = data.alert ? `⚡ High Risk ~${data.peak_hour}:00` : "✅ Low Risk";
+    document.getElementById("forecastAlert").style.background = data.alert ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)";
+    document.getElementById("forecastAlert").style.color = data.alert ? "#f87171" : "#4ade80";
+    document.getElementById("forecastAlert").style.border = `1px solid ${data.alert ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`;
+    if(data.alert_message) document.getElementById("forecastMsg").innerHTML = `<div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px;">${data.alert_message}</div>`;
+  } catch(e) {}
+}
+
+// ── Claims ─────────────────────────────────────────────────────────────────
+async function loadClaims() {
+  const workerId = (workerData||sess).id;
+  if(!workerId) return;
+  try {
+    const claims = await GS.get("/claims/worker/" + workerId);
+    const el = document.getElementById("claimsList");
+    document.getElementById("claimsBadge").textContent = claims.length + " claims";
+    if(!claims.length) { el.innerHTML = `<div class="empty-state">No claims yet — simulate your first disruption!</div>`; return; }
+    el.innerHTML = claims.slice(0,10).map(c => `
+      <div class="claim-item">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px">${TRIGGER_META[c.trigger_type]?.icon||"⚡"}</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">${c.trigger_label||c.trigger_type} ${c.is_simulated?"<span style='font-size:10px;color:var(--muted)'>(sim)</span>":""}</div>
+            <div style="color:var(--muted);font-size:11px">${formatDateTime(c.created_at)} · ${c.disruption_hrs}hrs · Fraud: ${c.fraud_score}/100</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;color:${c.status==="approved"?"#4ade80":"#f87171"}">${c.status==="approved"?"+":""} ${formatINR(c.payout_amount)}</div>
+          <div style="margin-top:4px">${statusBadge(c.status)}</div>
+        </div>
+      </div>`).join("");
+  } catch(e) {}
+}
+
+// ── Policy History ─────────────────────────────────────────────────────────
+async function loadPolicyHistory() {
+  const workerId = (workerData||sess).id;
+  if(!workerId) return;
+  try {
+    const hist = await GS.get("/policy/history/" + workerId);
+    const el = document.getElementById("policyHistory");
+    if(!hist.length) { el.innerHTML = `<div class="empty-state">No policy history</div>`; return; }
+    el.innerHTML = hist.map(p => `
+      <div class="claim-item">
+        <div><div style="font-weight:600;font-size:13px">${capitalize(p.plan)} Plan · ₹${p.premium}/week</div>
+          <div style="color:var(--muted);font-size:11px">${formatDate(p.start_date)} ${p.end_date?"→ "+formatDate(p.end_date):""} · Renewed ${p.renewal_count}×</div></div>
+        ${statusBadge(p.status)}
+      </div>`).join("");
+  } catch(e) {}
+}
+
+// ── Claim Simulation Modal ─────────────────────────────────────────────────
+function openClaimModal() {
+  const el = document.getElementById("triggerBtns");
+  el.innerHTML = Object.entries(TRIGGER_META).map(([k,t]) => `
+    <div onclick="selectTrigger('${k}')" id="tb-${k}" style="padding:10px 6px;border-radius:10px;border:1px solid rgba(99,102,241,0.2);text-align:center;cursor:pointer;transition:all 0.2s;${k===selectedClaimTrigger?"border-color:var(--primary);background:rgba(99,102,241,0.15)":""}">
+      <div style="font-size:20px">${t.icon}</div><div style="font-size:10px;color:var(--muted);margin-top:4px;font-weight:600">${t.label.split(" ")[0]}</div>
+    </div>`).join("");
+  updatePayoutPreview();
+  document.getElementById("pipelineResult").innerHTML = "";
+  openModal("claimModal");
+}
+
+function selectTrigger(type) {
+  selectedClaimTrigger = type;
+  document.querySelectorAll("[id^='tb-']").forEach(el => {
+    const k = el.id.replace("tb-","");
+    el.style.borderColor = k===type ? "var(--primary)" : "rgba(99,102,241,0.2)";
+    el.style.background  = k===type ? "rgba(99,102,241,0.15)" : "transparent";
+  });
+  updatePayoutPreview();
+}
+
+function updateHrs() {
+  const hrs = parseFloat(document.getElementById("hrsSlider").value);
+  document.getElementById("hrsLabel").textContent = hrs + " hrs";
+  updatePayoutPreview();
+}
+
+function updatePayoutPreview() {
+  const plan = PLANS[(workerData||sess).plan] || PLANS.standard;
+  const hrs  = parseFloat(document.getElementById("hrsSlider")?.value || 2.5);
+  const meta = TRIGGER_META[selectedClaimTrigger] || TRIGGER_META.rainfall;
+  const payout = meta.label.includes("Cyclone") || meta.label.includes("Curfew")
+    ? plan.cap
+    : Math.min(hrs, plan.maxHrs) * plan.rate;
+  const el = document.getElementById("payoutPreview");
+  if(el) el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-weight:600">${meta.icon} ${meta.label}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:2px">${capitalize((workerData||sess).plan||"standard")} · ${hrs}hrs × ₹${plan.rate}/hr${payout===plan.cap?" → Full cap!":""}</div></div>
+      <div style="font-size:22px;font-weight:800;color:var(--success)">+${formatINR(payout)}</div>
+    </div>`;
+}
+
+async function runClaimSim() {
+  const btn = document.getElementById("simBtn");
+  const hrs = parseFloat(document.getElementById("hrsSlider").value);
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Processing pipeline...';
+  const resultEl = document.getElementById("pipelineResult");
+  resultEl.innerHTML = "";
+  try {
+    const data = await GS.post("/claims/trigger", {
+      worker_id: (workerData||sess).id,
+      trigger_type: selectedClaimTrigger,
+      disruption_hrs: hrs,
+      simulate: true,
+    });
+    // Animate pipeline steps
+    resultEl.innerHTML = `<div class="pipeline" id="pipeSteps"></div>`;
+    const pipeEl = document.getElementById("pipeSteps");
+    for(const step of data.steps) {
+      await new Promise(r => setTimeout(r, 400));
+      pipeEl.innerHTML += `
+        <div class="p-step ${step.status}">
+          <div class="p-icon">${step.icon||"→"}</div>
+          <div><div class="p-lbl">Step ${step.step}: ${step.label}</div>
+               <div class="p-detail">${step.detail}</div></div>
+        </div>`;
+      pipeEl.scrollTop = pipeEl.scrollHeight;
+    }
+    const statusColor = data.status==="approved"?"#4ade80":data.status==="manual_review"?"#facc15":"#f87171";
+    resultEl.innerHTML += `
+      <div style="margin-top:16px;padding:16px;background:rgba(${data.status==="approved"?"34,197,94":"99,102,241"},0.1);border:1px solid rgba(${data.status==="approved"?"34,197,94":"99,102,241"},0.3);border-radius:14px;text-align:center">
+        <div style="font-size:28px;font-weight:800;color:${statusColor}">${data.status==="approved"?"+"+formatINR(data.payout):"Under Review"}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">${data.status==="approved"?"Auto-approved · Razorpay: "+data.razorpay?.order_id:"Manual review required · 2hr SLA"}</div>
+        <div style="margin-top:8px">${statusBadge(data.status)}</div>
+      </div>`;
+    toast(data.status==="approved" ? `✅ +${formatINR(data.payout)} credited!` : "📋 Claim under review", data.status==="approved"?"success":"warning", 5000);
+    // Refresh claims list
+    await loadWorker();
+    await loadClaims();
+  } catch(e) { toast("Claim error: " + e.message, "error"); }
+  btn.disabled = false; btn.innerHTML = "⚡ Run Auto-Claim Pipeline";
+}
+
+// ── Plan Change Modal ──────────────────────────────────────────────────────
+function createDefaultPolicy() {
+  openPlanModal();
+}
+
+function openPlanModal() {
+  const currentPlan = (workerData||sess).plan || "standard";
+  const grid = document.getElementById("planSelGrid");
+  grid.innerHTML = Object.entries(PLANS).map(([k,p]) => `
+    <div class="plan-mini ${k===currentPlan?"selected":""}" id="pm-${k}" onclick="selectNewPlan('${k}','${currentPlan}')">
+      <div>${p.label.split(" ")[0]}</div>
+      <div class="pm-price">₹${p.premium}</div>
+      <div style="font-size:10px;color:var(--muted)">${p.cap}/wk cap</div>
+    </div>`).join("");
+  selectedNewPlan = currentPlan;
+  openModal("planModal");
+}
+
+function selectNewPlan(plan, current) {
+  selectedNewPlan = plan;
+  document.querySelectorAll("[id^='pm-']").forEach(el => el.classList.toggle("selected", el.id==="pm-"+plan));
+  const PLAN_ORDER = ["starter","basic","standard","premium","elite"];
+  const isUpgrade = PLAN_ORDER.indexOf(plan) > PLAN_ORDER.indexOf(current);
+  const p = PLANS[plan];
+  document.getElementById("planChangePreview").innerHTML = `
+    <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:12px;font-size:13px">
+      <div style="font-weight:700">${p.label} · ₹${p.premium}/week</div>
+      <div style="color:var(--muted);margin-top:4px">${isUpgrade?"⬆️ Upgrade — effective immediately":"⬇️ Downgrade — effective next Monday"}</div>
+      <div style="color:var(--muted);font-size:11px;margin-top:4px">₹${p.rate}/hr · ${p.maxHrs}hrs max · ₹${p.cap}/week cap</div>
+    </div>`;
+}
+
+async function confirmPlanChange() {
+  const btn = document.getElementById("planChgBtn");
+  const currentPlan = (workerData||sess).plan || "standard";
+  const PLAN_ORDER = ["starter","basic","standard","premium","elite"];
+  const endpoint = PLAN_ORDER.indexOf(selectedNewPlan) > PLAN_ORDER.indexOf(currentPlan) ? "/policy/upgrade" : "/policy/downgrade";
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Applying...';
+  try {
+    await GS.post(endpoint, { worker_id: (workerData||sess).id, new_plan: selectedNewPlan });
+    toast(`Plan changed to ${capitalize(selectedNewPlan)}!`, "success");
+    closeModal("planModal");
+    await loadWorker();
+    await loadPolicy();
+    await loadPolicyHistory();
+  } catch(e) { toast("Plan change error: " + e.message, "error"); }
+  btn.disabled = false; btn.innerHTML = "Apply Change →";
+}
+
+// ── Policy Actions ─────────────────────────────────────────────────────────
+async function renewPolicy() {
+  try {
+    await GS.post("/policy/renew", { worker_id: (workerData||sess).id });
+    toast("🔄 Policy renewed! Hours reset.", "success");
+    await loadPolicy();
+    await loadWorker();
+  } catch(e) { toast(e.message, "error"); }
+}
+async function cancelPolicy() {
+  if(!confirm("Cancel your active policy? Coverage continues until end of week.")) return;
+  try {
+    await GS.post("/policy/cancel", { worker_id: (workerData||sess).id, plan: "" });
+    toast("Policy cancelled. Coverage runs to end of week.", "warning");
+    await loadPolicy();
+  } catch(e) { toast(e.message, "error"); }
+}
+
+// ── Notifications ───────────────────────────────────────────────────────────
+function toggleNotif() {
+  const drop = document.getElementById("notifDrop");
+  drop.classList.toggle("open");
+  if(drop.classList.contains("open")) refreshNotifs();
+}
+async function refreshNotifs() {
+  await loadNotifications(sess.id, document.getElementById("notifList2"), document.getElementById("notifBadge"));
+}
+document.addEventListener("click", e => {
+  if(!e.target.closest(".notif-wrap")) document.getElementById("notifDrop").classList.remove("open");
+});
+
+// ── Utility ─────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+function showDashboard() {
+  // Just scroll to top and highlight home nav
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelectorAll('.m-nav-item').forEach(i => i.classList.remove('active'));
+  const h = document.getElementById('mnav-home');
+  if (h) h.classList.add('active');
+}
+function logout() { 
+  stopNotifPolling(); 
+  Session.logout(); 
+}
+
+init();
+</script>
+</body>
+</html>

@@ -6,6 +6,18 @@
 
 ---
 
+## 🎨 Quick Start — Phase 2
+
+**One-command Execution:**
+
+1. **Local (Simple):** Double-click `run.bat` (Windows) or run `bash run.sh` (Linux/macOS).
+2. **Local (Developer):** Run `python main.py` from the root directory.
+3. **Docker (Packaged):** Run `docker build -t gigsecure .` then `docker run -p 8000:8000 gigsecure`.
+
+**🔗 Access the App:** Open [http://localhost:8000](http://localhost:8000) (Unified Frontend+Backend)
+
+---
+
 ## 🚀 Judge Summary
 
 > **"GigSecure is the only system that doesn't trust GPS — and the only team that architecturally defeated the Market Crash spoofing attack."**
@@ -30,13 +42,20 @@ GigSecure solves a **₹5,880/year income loss problem** for 5 crore+ informal a
 
 | Feature | Status |
 |---|---|
-| ✅ Worker onboarding (40+ Tamil Nadu zones, ML zone risk, plan recommendation) | **Built** |
-| ✅ Plan selection with ML-recommended tier | **Built** |
-| ✅ Worker dashboard — disruptions, payouts, predictive alerts, plan change | **Built** |
-| ✅ Payout simulation — 5-step automated claim flow, persists to localStorage | **Built** |
-| ✅ Admin dashboard — policy list, 7 KPIs, claims pipeline, API status | **Built** |
-| ✅ Claims pipeline — Auto-Approved (131) · Manual Review (3) · Auto-Rejected (8) | **Built** |
-| ✅ 6 interactive feature demos — weather, fraud score, earnings calc, plan compare | **Built** |
+| ✅ Worker onboarding (40+ Tamil Nadu zones, ML zone risk, plan recommendation) | **Phase 1** |
+| ✅ Plan selection with ML-recommended tier | **Phase 1** |
+| ✅ Worker dashboard — disruptions, payouts, predictive alerts, plan change | **Phase 1** |
+| ✅ Payout simulation — 5-step automated claim flow, persists to localStorage | **Phase 1** |
+| ✅ Admin dashboard — policy list, 7 KPIs, claims pipeline, API status | **Phase 1** |
+| ✅ Claims pipeline — Auto-Approved · Manual Review · Auto-Rejected | **Phase 1** |
+| ✅ 6 interactive feature demos — weather, fraud score, earnings calc, plan compare | **Phase 1** |
+| 🛡️ **Phase 2: Automation & Unified Deployment** | **New Updates** |
+| ✅ **Unified Architecture** (FastAPI serving frontend at root `/`) | **Phase 2** |
+| ✅ **Aadhaar KYC Verification** (Simulated UIDAI OIDC flow) | **Phase 2** |
+| ✅ **Multi-Method Payment** (GPay, UPI, Cards, Order Summary) | **Phase 2** |
+| ✅ **Real-Time Monitoring** (15-second background polling + auto-trigger) | **Phase 2** |
+| ✅ **Zero-Touch Claims Pipeline** (End-to-end automation verified) | **Phase 2** |
+| ✅ **Mobile-First Responsiveness** (Worker BottomNav · Admin Mobile Sidebar) | **Phase 2** |
 
 ---
 
@@ -524,7 +543,7 @@ GigSecure is built as a **fully responsive web application** — workers access 
 | Mobile Frontend | HTML · CSS · JavaScript | Responsive mobile web — no install needed |
 | Web Frontend | HTML · CSS · JavaScript | Same codebase, shared components |
 | Backend | Python FastAPI | ML-friendly, async, high performance |
-| Database | PostgreSQL | Workers, policies, claims, payout records |
+| Database | SQLite / PostgreSQL Ready | Workers, policies, claims, payout records |
 | ML Models | Scikit-learn (Random Forest, Isolation Forest), XGBoost | Production-grade, well-documented |
 | Weather API (Primary) | OpenWeatherMap + IMD public data | Real-time + historical training data |
 | Weather API (Secondary) | Satellite/radar private API | Backup validation, handles IMD delays |
@@ -532,7 +551,7 @@ GigSecure is built as a **fully responsive web application** — workers access 
 | Disaster Alerts | NDMA public alert feed | Automated curfew detection (Trigger 5) |
 | Zone Mapping | Google Maps API + micro-zone segmentation (2–5 km) | Precise GPS zone verification |
 | Payments | Razorpay Sandbox | Simulated near-real-time payout |
-| Notifications | Firebase Cloud Messaging | Real-time worker alerts |
+| Notifications | Real-Time Push / FCM | Real-time worker alerts & updates |
 | Hosting | Railway / Render (free tier) | Fast hackathon deployment |
 
 ---
@@ -553,8 +572,8 @@ GigSecure is built as a **fully responsive web application** — workers access 
             ┌────────────┼────────────┐
             ▼            ▼            ▼
      ┌──────────┐  ┌──────────┐  ┌───────────────────┐
-     │PostgreSQL│  │ML Engine │  │Disruption Monitor │
-     │Workers,  │  │Risk,     │  │15-min poll at     │
+     │SQLite    │  │ML Engine │  │Disruption Monitor │
+     │Workers,  │  │Risk,     │  │15-second poll at  │
      │Policies, │  │Fraud,    │  │micro-zone level   │
      │Claims    │  │Predict   │  │(2–5 km zones)     │
      └──────────┘  └──────────┘  └────────┬──────────┘
@@ -583,7 +602,7 @@ GigSecure is built as a **fully responsive web application** — workers access 
               └──────────────┬───────────┘
                              ▼
               ┌──────────────────────────┐
-              │  Firebase FCM (Worker)   │
+              │  Push Notification Engine│
               └──────────────────────────┘
 ```
 
@@ -768,17 +787,18 @@ https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Foo
 - [x] Full HTML/CSS/JS prototype — Login · Onboarding · Worker Dashboard · Admin Dashboard · Feature Demo
 - [x] Strategy video (2 minutes) — to be submitted before deadline
 
-### Phase 2 — Automation (Weeks 3–4 | Mar 21–Apr 4)
-- [ ] Worker KYC flow (simulated Aadhaar verification)
-- [ ] Policy management (create, view, renew, upgrade/downgrade)
-- [ ] Zone Risk Classifier — trained + deployed for onboarding
-- [ ] Micro-zone segmentation — 2–5 km zones mapped per city
-- [ ] OpenWeatherMap + IMD + satellite radar API integration (15-min polling)
-- [ ] Time-based confirmation engine (15–30 min persistence)
-- [ ] Hourly payout engine (hours × rate, capped at plan max)
-- [ ] Auto-claim pipeline: confirm → verify → GPS + cell tower + accelerometer → fraud → approve → payout
-- [ ] Razorpay sandbox payout
-- [ ] Firebase push notifications
+### Phase 2 — Automation (Weeks 3–4 | Mar 21–Apr 4) ✅
+- [x] Worker KYC flow (Aadhaar verification simulation)
+- [x] Unified FastAPI Architecture (Frontend served at `/`)
+- [x] Policy management (create, view, renew, upgrade/downgrade)
+- [x] Zone Risk Classifier — trained + deployed for onboarding
+- [x] Micro-zone segmentation — 2–5 km zones mapped per city
+- [x] OpenWeatherMap + IMD + satellite radar API integration (15-second polling)
+- [x] Time-based confirmation engine (15–30 min persistence)
+- [x] Hourly payout engine (hours × rate, capped at plan max)
+- [x] Auto-claim pipeline: confirm → verify → GPS + cell tower + accelerometer → fraud → approve → payout
+- [x] Premium Payment System (GPay, UPI, Card checkout)
+- [x] Firebase push notifications (Simulated via toast)
 
 ### Phase 3 — Scale (Weeks 5–6 | Apr 5–17)
 - [ ] Isolation Forest fraud model with cell tower + accelerometer features

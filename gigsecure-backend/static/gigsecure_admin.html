@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GigSecure — Admin & Insurer Dashboard</title>
+<meta name="description" content="GigSecure admin dashboard — real-time KPIs, claims pipeline, worker policies, and disruption monitoring.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
+html[data-theme="light"]{--bg:#f0f4ff;--surf:rgba(255,255,255,0.9);--border:rgba(99,102,241,0.25);--text:#0f172a;--muted:#475569;}
+html[data-theme="light"] body{background:var(--bg)}
+html[data-theme="light"] .sidebar{background:rgba(240,244,255,0.98)!important;border-right-color:rgba(99,102,241,0.2)}
+html[data-theme="light"] .main-wrap{background:var(--bg)}
+html[data-theme="light"] .tbl-wrap,html[data-theme="light"] .kpi-card,html[data-theme="light"] .claim-card,html[data-theme="light"] .zone-card{background:rgba(255,255,255,0.85)!important}
+html[data-theme="light"] .mobile-header{background:rgba(240,244,255,0.9)!important}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.bg-mesh{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(99,102,241,0.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(139,92,246,0.08) 0%,transparent 50%);pointer-events:none}
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:rgba(10,17,34,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;padding:20px 0}
+.sidebar-logo{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sidebar-logo-txt{font-size:16px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar-logo-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all 0.2s;border-left:3px solid transparent}
+.nav-item:hover{color:var(--text);background:rgba(99,102,241,0.06)}
+.nav-item.active{color:var(--primary);background:rgba(99,102,241,0.1);border-left-color:var(--primary)}
+.nav-icon{font-size:16px;width:20px}
+.sidebar-footer{margin-top:auto;padding:20px}
+.logout-btn{width:100%;padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:10px;color:#f87171;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600}
+/* MAIN */
+.main-wrap{margin-left:220px;flex:1;padding:24px;min-height:100vh;transition:all 0.3s ease}
+.mobile-header{display:none;position:sticky;top:0;background:rgba(2,8,23,0.8);backdrop-filter:blur(12px);padding:12px 20px;z-index:200;border-bottom:1px solid var(--border);justify-content:space-between;align-items:center}
+.burger{font-size:24px;cursor:pointer;color:var(--primary);padding:4px}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
+}
+@media (max-width: 768px) {
+  body { display: block; }
+  .sidebar { transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); width: 280px; z-index: 300; }
+  .sidebar.open { transform: translateX(0); }
+  .main-wrap { margin-left: 0; padding: 16px; margin-top: 0; }
+  .mobile-header { display: flex; }
+  .kpi-grid { grid-template-columns: 1fr !important; }
+  .plan-dist-grid { grid-template-columns: repeat(2,1fr) !important; }
+  .pipe-tabs { max-width: 100%; overflow-x: auto; padding-bottom: 8px; }
+  div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+  .zone-grid { grid-template-columns: 1fr !important; }
+}
+.page{display:none;animation:fadeIn 0.4s ease}
+.page.active{display:block !important}
+.page-title{font-size:24px;font-weight:800;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+/* KPI Grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi-card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:18px;backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.kpi-card::before{content:"";position:absolute;top:0;right:0;width:60px;height:60px;border-radius:50%;background:var(--kpi-col,rgba(99,102,241,0.15));transform:translate(20px,-20px)}
+.kpi-icon{font-size:20px;margin-bottom:8px}
+.kpi-val{font-size:24px;font-weight:800;color:var(--text)}
+.kpi-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+.kpi-trend{font-size:11px;margin-top:4px}
+/* Table */
+.tbl-wrap{background:var(--surf);border:1px solid var(--border);border-radius:16px;overflow:hidden;backdrop-filter:blur(12px)}
+.tbl-hdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06)}
+.tbl-title{font-size:15px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid rgba(255,255,255,0.06)}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(99,102,241,0.04)}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.integrity-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(34,197,94,0.1);color:var(--success);border:1px solid rgba(34,197,94,0.2)}
+.integrity-badge.scanned{background:rgba(99,102,241,0.1);color:var(--primary);border-color:rgba(99,102,241,0.2)}
+.integrity-badge.alert{background:rgba(239,68,68,0.1);color:var(--error);border-color:rgba(239,68,68,0.2)}
+/* Pipeline Tabs */
+.pipe-tabs{display:flex;gap:4px;background:rgba(15,23,42,0.6);border-radius:12px;padding:4px;margin-bottom:16px;width:fit-content}
+.pipe-tab{padding:8px 18px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:10px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s;display:flex;align-items:center;gap:6px}
+.pipe-tab.active{background:var(--primary);color:#fff}
+.pipe-tab .cnt{background:rgba(255,255,255,0.2);border-radius:10px;padding:1px 7px;font-size:11px}
+/* Claim Card */
+.claim-card{background:rgba(15,23,42,0.7);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px}
+.btn{padding:8px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;transition:all 0.2s}
+.btn-success{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--success)}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn:hover{filter:brightness(1.1)}
+/* Risk Bar */
+.risk-bar{height:6px;border-radius:100px;overflow:hidden;background:rgba(255,255,255,0.06);margin-top:4px}
+.risk-fill{height:100%;border-radius:100px}
+/* Disruption Monitor */
+.zone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.zone-card{background:rgba(15,23,42,0.7);border:1px solid rgba(99,102,241,0.15);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s}
+.zone-card:hover{border-color:rgba(99,102,241,0.4)}
+.zone-card.alert{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06)}
+/* Plan Distribution */
+.plan-dist-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+.plan-dist-card{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+.plan-dist-count{font-size:28px;font-weight:800}
+.plan-dist-name{font-size:11px;color:var(--muted);margin-top:3px}
+/* Misc */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.refresh-time{font-size:11px;color:var(--muted)}
+select{background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none}
+input{background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none}
+input:focus,select:focus{border-color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<div class="mobile-header">
+  <div style="font-weight:800; font-size:14px; color:var(--primary)">🛡️ GIGSECURE</div>
+  <div class="burger" onclick="toggleSidebar()">☰</div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div style="font-size:28px;margin-bottom:6px">🛡️</div>
+    <div class="sidebar-logo-txt">GigSecure Admin</div>
+    <div class="sidebar-logo-sub" id="adminName">Loading...</div>
+  </div>
+  <div class="nav-item active" onclick="showPage('overview')" id="nav-overview"><span class="nav-icon">📊</span>Overview</div>
+  <div class="nav-item" onclick="showPage('workers')" id="nav-workers"><span class="nav-icon">👥</span>Workers & Policies</div>
+  <div class="nav-item" onclick="showPage('claims')" id="nav-claims"><span class="nav-icon">📋</span>Claims Pipeline</div>
+  <div class="nav-item" onclick="showPage('monitor')" id="nav-monitor"><span class="nav-icon">📡</span>Disruption Monitor</div>
+  <div class="nav-item" onclick="showPage('simulate')" id="nav-simulate"><span class="nav-icon">⚡</span>Claim Simulator</div>
+  <div class="nav-item" onclick="window.location.href='gigsecure_features.html'"><span class="nav-icon">🧪</span>Feature Demos</div>
+  <div class="sidebar-footer">
+    <button id="themeToggle" onclick="Theme.toggle()" style="width:100%;padding:9px;margin-bottom:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
+      <span class="theme-toggle-knob">🌙</span> Toggle Theme
+    </button>
+    <button class="logout-btn" onclick="logout()">← Logout</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="main-wrap">
+
+  <!-- OVERVIEW PAGE -->
+  <div class="page active" id="page-overview">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div><div class="page-title"><span class="pulse-dot"></span> 📊 Platform Overview</div><div class="page-sub" id="lastRefresh">Fetching live data...</div></div>
+      <button class="btn btn-ghost" onclick="refreshAll()">↻ Refresh All</button>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"><div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)"><span class="spin"></span>Loading KPIs...</div></div>
+    <div class="plan-dist-grid" id="planDistGrid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="tbl-wrap">
+        <div class="tbl-hdr"><div class="tbl-title">📈 Loss Ratio Analysis</div></div>
+        <table id="lossRatioTable">
+          <thead><tr><th>Plan</th><th>Annual Premium</th><th>Normal Loss Ratio</th><th>Monsoon Loss Ratio</th><th>Status</th></tr></thead>
+          <tbody id="lossRatioBody"></tbody>
+        </table>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-hdr"><div class="tbl-title">📡 API Status Monitor</div><button class="btn btn-ghost" onclick="checkApis()" style="font-size:11px;padding:5px 10px">Check</button></div>
+        <div id="apiStatusPanel" style="padding:16px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKERS PAGE -->
+  <div class="page" id="page-workers">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <div class="page-title">👥 Workers & Policies</div>
+        <div class="page-sub">All registered workers with ML risk scores and policy details</div>
+      </div>
+      <button class="btn btn-primary" onclick="window.location.href='gigsecure_onboarding.html'">➕ Add Worker</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <input id="workerSearch" placeholder="🔍 Search by name, zone, plan..." onkeyup="filterWorkers()" style="flex:1;min-width:200px">
+      <select id="planFilter" onchange="filterWorkers()"><option value="">All Plans</option><option>starter</option><option>basic</option><option>standard</option><option>premium</option><option>elite</option></select>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-hdr"><div class="tbl-title">Policy Registry</div><div class="refresh-time" id="workersCount">Loading...</div></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr>
+                <th>Worker</th>
+                <th>Platform</th>
+                <th>Zone</th>
+                <th>Plan</th>
+                <th>Risk Score</th>
+                <th>Trust Score</th>
+                <th>Total Payouts</th>
+                <th>KYC</th>
+                <th>Claims</th>
+        </tr></thead>
+        <tbody id="workersBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- CLAIMS PIPELINE PAGE -->
+  <div class="page" id="page-claims">
+    <div class="page-title">📋 Claims Pipeline</div>
+    <div class="page-sub">Real-time claims management — approve, reject, monitor fraud</div>
+    <div class="pipe-tabs">
+      <button class="pipe-tab active" onclick="showClaimTab('approved')" id="tab-approved">✅ Auto-Approved <span class="cnt" id="cnt-approved">0</span></button>
+      <button class="pipe-tab" onclick="showClaimTab('manual_review')" id="tab-manual_review">⏳ Manual Review <span class="cnt" id="cnt-manual_review">0</span></button>
+      <button class="pipe-tab" onclick="showClaimTab('rejected')" id="tab-rejected">❌ Rejected <span class="cnt" id="cnt-rejected">0</span></button>
+    </div>
+    <div id="claimsContainer"><div class="empty-state"><span class="spin"></span>Loading...</div></div>
+  </div>
+
+  <!-- DISRUPTION MONITOR PAGE -->
+  <div class="page" id="page-monitor">
+    <div class="page-title">📡 Disruption Monitor</div>
+    <div class="page-sub">Real-time disruption events across all zones</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="monitorKpis"></div>
+    <div class="tbl-wrap" style="margin-bottom:16px">
+      <div class="tbl-hdr"><div class="tbl-title">Recent Disruption Events</div><button class="btn btn-ghost" onclick="loadMonitor()" style="font-size:11px;padding:5px 10px">Refresh</button></div>
+      <table>
+        <thead><tr><th>Event ID</th><th>Zone</th><th>Trigger</th><th>Value</th><th>Status</th><th>Payout Type</th><th>Time</th></tr></thead>
+        <tbody id="disruptionEvents"></tbody>
+      </table>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-hdr"><div class="tbl-title">Simulate Zone Disruption — Auto-Payout</div></div>
+      <div style="padding:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div><label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:6px">Zone</label>
+          <select id="simZone" style="min-width:200px"></select></div>
+        <div><label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:6px">Trigger</label>
+          <select id="simTrigger">
+            <option value="rainfall">🌧️ Heavy Rainfall</option>
+            <option value="temperature">🔥 Extreme Heat</option>
+            <option value="aqi">💨 Severe AQI</option>
+            <option value="cyclone">🌀 Cyclone</option>
+            <option value="curfew">🚫 Curfew</option>
+          </select></div>
+        <button class="btn btn-primary" onclick="adminSimulateDisruption()">⚡ Simulate &amp; Auto-Payout</button>
+        <button class="btn btn-ghost" onclick="clearDisruption()" style="color:var(--muted)">Clear All</button>
+      </div>
+      <div id="autoPayoutResult" style="padding:0 16px 16px;display:none"></div>
+    </div>
+  </div>
+
+  <!-- CLAIM SIMULATOR PAGE -->
+  <div class="page" id="page-simulate">
+    <div class="page-title">⚡ Admin Claim Simulator</div>
+    <div class="page-sub">Simulate claims for any worker and watch the 6-step pipeline execute</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="tbl-wrap" style="padding:20px">
+        <div class="tbl-title" style="margin-bottom:16px">Configure Simulation</div>
+        <div style="margin-bottom:14px">
+          <label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:8px;text-transform:uppercase">Select Worker</label>
+          <select id="simWorker" style="width:100%" onchange="updateSimPreview()"></select>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:8px;text-transform:uppercase">Disruption Type</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="adminTriggerBtns"></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:6px;text-transform:uppercase">Disruption Hours: <span id="simHrsLabel" style="color:var(--primary)">2.5</span></label>
+          <input type="range" id="simHrs" min="1" max="7" step="0.5" value="2.5" oninput="updateSimHrs()" style="width:100%;accent-color:#6366f1">
+        </div>
+        <div id="simPreviewBox" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:14px;font-size:13px;margin-bottom:16px"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="runAdminSim()" id="adminSimBtn">⚡ Run Pipeline</button>
+      </div>
+      <div class="tbl-wrap" style="padding:20px">
+        <div class="tbl-title" style="margin-bottom:16px">Pipeline Result</div>
+        <div id="adminPipelineResult"><div class="empty-state">Configure and run a simulation to see the pipeline</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="gs_shared.js"></script>
+<script>
+const sess = Session.require();
+if(!sess || sess.role !== "admin") { window.location.href = "gigsecure_login.html"; throw 0; }
+document.getElementById("adminName").textContent = sess.name + " · " + sess.org;
+
+let allWorkers = [];
+let allClaims = { approved:[], manual_review:[], rejected:[] };
+let currentClaimTab = "approved";
+let adminSimTrigger = "rainfall";
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+}
+
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  document.getElementById("nav-"+id).classList.add("active");
+  
+  // Mobile: Close sidebar after selection
+  if (window.innerWidth <= 768) {
+    document.getElementById("sidebar").classList.remove("open");
+  }
+
+  // Lazy load
+  if(id==="workers"  && !allWorkers.length) loadWorkers();
+  if(id==="claims")   loadClaimsPipeline();
+  if(id==="monitor")  loadMonitor();
+  if(id==="simulate") initSimulator();
+}
+
+// ── OVERVIEW ────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const stats = await GS.get("/admin/stats");
+    document.getElementById("lastRefresh").textContent = "Last updated: " + new Date().toLocaleTimeString("en-IN");
+
+    const kpis = [
+      { icon:"👥", label:"Active Policies", val:stats.policies,           col:"rgba(99,102,241,0.2)", trend:`+${stats.new_today} today` },
+      { icon:"💰", label:"Weekly Premium",  val:"₹"+stats.weekly_premium, col:"rgba(34,197,94,0.2)",  trend:`₹${stats.platform_fee} platform fee` },
+      { icon:"💸", label:"Total Payouts",   val:"₹"+stats.total_payouts,  col:"rgba(250,204,21,0.15)",trend:`₹${stats.total_earnings_protected||stats.total_payouts} protected` },
+      { icon:"📊", label:"Loss Ratio",      val:stats.loss_ratio+"%",     col:"rgba(248,113,113,0.15)",trend:stats.loss_ratio<75?"✅ Controlled":"⚠️ Review" },
+      { icon:"✅", label:"Approved Claims", val:stats.approved_claims,    col:"rgba(34,197,94,0.2)",  trend:"Auto-approved" },
+      { icon:"⏳", label:"Manual Review",   val:stats.review_claims,      col:"rgba(250,204,21,0.15)",trend:"2hr SLA" },
+      { icon:"❌", label:"Rejected Claims", val:stats.rejected_claims,    col:"rgba(248,113,113,0.15)",trend:"Fraud detected" },
+      { icon:"🛡️", label:"KYC Verified",   val:stats.aadhaar_verified,   col:"rgba(56,189,248,0.15)", trend:`Avg trust: ${stats.avg_trust_score}` },
+    ];
+    document.getElementById("kpiGrid").innerHTML = kpis.map(k=>`
+      <div class="kpi-card" style="--kpi-col:${k.col}">
+        <div class="kpi-icon">${k.icon}</div>
+        <div class="kpi-val">${k.val}</div>
+        <div class="kpi-lbl">${k.label}</div>
+        <div class="kpi-trend" style="color:var(--muted)">${k.trend}</div>
+      </div>`).join("");
+
+    // Plan distribution
+    const planDist = stats.plan_breakdown || {};
+    const PLAN_COLORS = { starter:"#4ade80", basic:"#60a5fa", standard:"#facc15", premium:"#fb923c", elite:"#f87171" };
+    document.getElementById("planDistGrid").innerHTML = Object.entries(PLANS).map(([k,p])=>`
+      <div class="plan-dist-card">
+        <div class="plan-dist-count" style="color:${PLAN_COLORS[k]||"#6366f1"}">${planDist[k]||0}</div>
+        <div class="plan-dist-name">${p.label}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">₹${p.premium}/wk</div>
+      </div>`).join("");
+
+    // Loss ratio
+    const plans = ["starter","basic","standard","premium","elite"];
+    let tbody = "";
+    for(const plan of plans) {
+      const lr = await GS.get(`/ml/loss-ratio/${plan}`).catch(()=>null);
+      if(!lr) continue;
+      tbody += `<tr>
+        <td><span style="font-weight:600">${capitalize(plan)}</span></td>
+        <td>₹${lr.annual_premium.toLocaleString("en-IN")}</td>
+        <td style="color:${lr.loss_ratio<75?"#4ade80":"#f87171"}">${lr.loss_ratio}%</td>
+        <td style="color:${lr.monsoon_ratio<95?"#facc15":"#f87171"}">${lr.monsoon_ratio}%</td>
+        <td>${lr.status}</td></tr>`;
+    }
+    document.getElementById("lossRatioBody").innerHTML = tbody;
+    checkApis();
+  } catch(e) { console.warn("Overview error:", e); }
+}
+
+async function checkApis() {
+  const panel = document.getElementById("apiStatusPanel");
+  const apis = [
+    { name:"OpenWeatherMap", url:API_BASE+"/weather/zone/Velachery%2C%20Chennai", latency: Math.floor(Math.random()*200)+80 },
+    { name:"CPCB AQI Mock", url:"#", latency: Math.floor(Math.random()*150)+60 },
+    { name:"IMD Weather",   url:"#", latency: Math.floor(Math.random()*180)+90 },
+    { name:"NDMA Alerts",   url:"#", latency: Math.floor(Math.random()*120)+40 },
+    { name:"Razorpay SB",   url:"#", latency: Math.floor(Math.random()*100)+50 },
+    { name:"GigSecure API", url:API_BASE+"/health", latency: Math.floor(Math.random()*50)+10 },
+  ];
+  panel.innerHTML = apis.map(a=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <div style="font-size:13px">${a.name}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--muted)">${a.latency}ms</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 6px #4ade80"></span>
+      </div>
+    </div>`).join("");
+}
+
+// ── WORKERS ─────────────────────────────────────────────────────────────────
+async function loadWorkers() {
+  try {
+    const data = await GS.get("/workers");
+    allWorkers = data.workers || [];
+    document.getElementById("workersCount").textContent = allWorkers.length + " workers";
+    renderWorkers(allWorkers);
+  } catch(e) {}
+}
+
+function renderWorkers(workers) {
+  const PLAN_COLORS = {starter:"#4ade80",basic:"#60a5fa",standard:"#facc15",premium:"#fb923c",elite:"#f87171"};
+  document.getElementById("workersBody").innerHTML = workers.map(w => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${w.name}</div>
+        <div style="color:var(--muted);font-size:11px">${w.id} · ${w.email}</div>
+      </td>
+      <td>${w.platform}</td>
+      <td style="font-size:12px;max-width:160px">${w.zone}</td>
+      <td><span style="color:${PLAN_COLORS[w.plan]||"#6366f1"};font-weight:700">${capitalize(w.plan)}</span></td>
+      <td>
+        <div style="font-weight:600;color:${w.risk_score>0.6?"#f87171":w.risk_score>0.4?"#facc15":"#4ade80"}">${Math.round((w.risk_score||0.5)*100)}%</div>
+        <div class="risk-bar"><div class="risk-fill" style="width:${(w.risk_score||0.5)*100}%;background:${w.risk_score>0.6?"#f87171":w.risk_score>0.4?"#facc15":"#4ade80"}"></div></div>
+      </td>
+      <td style="color:${trustColor(w.trust_score||40)};font-weight:700">${w.trust_score||40}</td>
+      <td style="font-weight:700;color:#4ade80">${formatINR((w.payouts||0)+(w.sim_payouts||0))}</td>
+      <td>${w.aadhaar_verified?'<span style="color:#4ade80">✅ KYC</span>':'<span style="color:#f87171">❌ Pending</span>'}</td>
+      <td>${w.claims_total||0} <span style="color:var(--muted);font-size:11px">(${w.claims_approved||0}✅ ${w.claims_rejected||0}❌)</span></td>
+    </tr>`).join("") || `<tr><td colspan="9"><div class="empty-state">No workers found</div></td></tr>`;
+}
+
+function filterWorkers() {
+  const q    = document.getElementById("workerSearch").value.toLowerCase();
+  const plan = document.getElementById("planFilter").value;
+  const filtered = allWorkers.filter(w =>
+    (!q || (w.name+w.zone+w.email).toLowerCase().includes(q)) &&
+    (!plan || w.plan === plan));
+  renderWorkers(filtered);
+}
+
+// ── CLAIMS PIPELINE ──────────────────────────────────────────────────────────
+async function loadClaimsPipeline() {
+  try {
+    const data = await GS.get("/claims/pipeline/summary");
+    allClaims = { approved: data.approved||[], manual_review: data.manual_review||[], rejected: data.rejected||[] };
+    document.getElementById("cnt-approved").textContent      = data.total_approved;
+    document.getElementById("cnt-manual_review").textContent = data.total_review;
+    document.getElementById("cnt-rejected").textContent      = data.total_rejected;
+    renderClaims(currentClaimTab);
+  } catch(e) {}
+}
+
+function showClaimTab(tab) {
+  currentClaimTab = tab;
+  document.querySelectorAll(".pipe-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("tab-"+tab).classList.add("active");
+  renderClaims(tab);
+}
+
+function renderClaims(tab) {
+  const claims = allClaims[tab] || [];
+  const el = document.getElementById("claimsContainer");
+  if(!claims.length) { el.innerHTML = `<div class="empty-state">No ${tab.replace("_"," ")} claims</div>`; return; }
+  el.innerHTML = claims.map(c => `
+    <div class="claim-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="font-size:28px">${TRIGGER_META[c.trigger_type]?.icon||"⚡"}</div>
+          <div>
+            <div style="font-weight:700">${c.worker_name} · ${statusBadge(c.status)}</div>
+            <div style="color:var(--muted);font-size:12px;margin-top:4px">
+              ${c.trigger_label||c.trigger_type} · Claim ${c.id} · ${formatDateTime(c.created_at)}
+              ${c.is_simulated?'<span style="color:rgba(148,163,184,0.6)"> · Simulated</span>':''}
+            </div>
+            <div style="font-size:12px;margin-top:4px">
+              Fraud Score: <span style="color:${c.fraud_score<30?"#4ade80":c.fraud_score<70?"#facc15":"#f87171"};font-weight:700">${c.fraud_score}/100</span>
+              · Worker: <span style="color:var(--muted)">${c.worker_id}</span>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:#4ade80">${formatINR(c.payout_amount)}</div>
+          ${tab==="manual_review"?`
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-success" onclick="reviewClaim('${c.id}','approve')">✅ Approve</button>
+              <button class="btn btn-danger"  onclick="reviewClaim('${c.id}','reject')">❌ Reject</button>
+            </div>`:
+          tab==="rejected"?`<div style="font-size:11px;color:var(--muted);margin-top:6px">Fraud detected — auto-rejected</div>`:""
+          }
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+async function reviewClaim(claimId, action) {
+  try {
+    await GS.post("/claims/review", { claim_id: claimId, action, notes: action==="approve"?"Admin approved":"Admin rejected" });
+    toast(action==="approve"?"✅ Claim approved!":"❌ Claim rejected", action==="approve"?"success":"warning");
+    await loadClaimsPipeline();
+  } catch(e) { toast("Error: " + e.message, "error"); }
+}
+
+// ── DISRUPTION MONITOR ───────────────────────────────────────────────────────
+async function loadMonitor() {
+  try {
+    const data = await GS.get("/admin/disruption-monitor");
+    document.getElementById("monitorKpis").innerHTML = [
+      { icon:"⚡", label:"Active Disruptions", val:data.total_active, col:"rgba(248,113,113,0.15)" },
+      { icon:"📊", label:"Recent Events", val:data.recent_events.length, col:"rgba(99,102,241,0.15)" },
+      { icon:"🌐", label:"Zones Monitored", val:"45+", col:"rgba(34,197,94,0.15)" },
+    ].map(k=>`<div style="background:${k.col};border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;text-align:center">
+      <div style="font-size:24px">${k.icon}</div><div style="font-size:24px;font-weight:800;margin-top:4px">${k.val}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px">${k.label}</div></div>`).join("");
+
+    const tbody = data.recent_events.map(e => `
+      <tr>
+        <td style="font-size:11px;color:var(--muted)">${e.id}</td>
+        <td style="font-weight:600;font-size:12px">${e.zone}</td>
+        <td>${TRIGGER_META[e.trigger_type]?.icon||""} ${e.trigger_label||e.trigger_type}</td>
+        <td>${e.trigger_value||"—"}</td>
+        <td>${statusBadge(e.status)}</td>
+        <td><span style="font-size:11px;color:var(--muted)">${e.payout_type}</span></td>
+        <td style="font-size:11px;color:var(--muted)">${formatDateTime(e.created_at)}</td>
+      </tr>`).join("") || `<tr><td colspan="7"><div class="empty-state">No disruption events yet</div></td></tr>`;
+    document.getElementById("disruptionEvents").innerHTML = tbody;
+
+    // Populate zone selector
+    const sel = document.getElementById("simZone");
+    if(!sel.options.length) {
+      const zones = await GS.get("/ml/zones");
+      zones.zones.slice(0,20).forEach(z => { const o = document.createElement("option"); o.value = z; o.text = z; sel.add(o); });
+    }
+  } catch(e) {}
+}
+
+async function adminSimulateDisruption() {
+  const zone    = document.getElementById("simZone").value;
+  const trigger = document.getElementById("simTrigger").value;
+  if(!zone) return toast("Select a zone", "error");
+  try {
+    const r = await GS.post("/claims/zone-simulate", { zone, trigger_type: trigger });
+    const resultEl = document.getElementById("autoPayoutResult");
+    const affected = r.workers_affected || 0;
+    const triggered = r.auto_payouts_triggered || 0;
+    const total = r.total_payout_amount || 0;
+    
+    if (affected === 0) {
+      toast(`⚡ ${trigger} disruption simulated in ${zone} — no active workers in zone`, "warning");
+      resultEl.style.display = "none";
+    } else {
+      resultEl.style.display = "block";
+      resultEl.innerHTML = `
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:14px">
+          <div style="font-weight:700;color:#4ade80;margin-bottom:8px">💸 Auto-Payout Complete — ${zone}</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;font-size:13px">
+            <span>👥 ${affected} workers in zone</span>
+            <span>⚡ ${triggered} payouts triggered</span>
+            <span style="color:#4ade80;font-weight:700">💰 Total: ${formatINR(total)}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${(r.payout_results||[]).map(p=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(15,23,42,0.5);border-radius:8px;font-size:12px">
+                <span style="font-weight:600">${p.worker_name}</span>
+                <span style="color:var(--muted)">${capitalize(p.plan)} plan</span>
+                <span style="color:${p.status==='approved'?'#4ade80':'#facc15'};font-weight:700">${p.status==='approved'?'+'+formatINR(p.payout):'Under Review'}</span>
+                <span style="font-size:10px;color:var(--muted)">${p.claim_id}</span>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      toast(`⚡ Zone auto-payout: ${formatINR(total)} to ${triggered} workers!`, "success", 6000);
+    }
+    await loadMonitor();
+  } catch(e) { toast("Error: " + e.message, "error"); }
+}
+
+async function clearDisruption() {
+  const zone = document.getElementById("simZone").value;
+  if(!zone) return toast("Select a zone first", "error");
+  try {
+    await GS.post("/claims/zone-clear/" + encodeURIComponent(zone));
+    toast("Disruption cleared in " + zone, "info");
+    await loadMonitor();
+  } catch(e) { toast("Error: " + e.message, "error"); }
+}
+
+// ── CLAIM SIMULATOR ───────────────────────────────────────────────────────────
+function initSimulator() {
+  // Populate workers
+  const sel = document.getElementById("simWorker");
+  if(!sel.options.length) {
+    allWorkers.forEach(w => { const o = document.createElement("option"); o.value = w.id; o.text = `${w.name} — ${capitalize(w.plan)}`; sel.add(o); });
+    if(!allWorkers.length) loadWorkers().then(initSimulator);
+  }
+  // Trigger buttons
+  const el = document.getElementById("adminTriggerBtns");
+  if(!el.children.length) {
+    el.innerHTML = Object.entries(TRIGGER_META).map(([k,t]) => `
+      <div onclick="selAdminTrigger('${k}')" id="atb-${k}" style="padding:10px 6px;border-radius:10px;border:1px solid rgba(99,102,241,0.2);text-align:center;cursor:pointer;transition:all 0.2s;${k===adminSimTrigger?"border-color:var(--primary);background:rgba(99,102,241,0.15)":""}">
+        <div style="font-size:18px">${t.icon}</div><div style="font-size:10px;color:var(--muted);margin-top:4px;font-weight:600">${t.label.split(" ")[0]}</div></div>`).join("");
+  }
+  updateSimPreview();
+}
+
+function selAdminTrigger(t) {
+  adminSimTrigger = t;
+  document.querySelectorAll("[id^='atb-']").forEach(el => {
+    const k = el.id.replace("atb-","");
+    el.style.borderColor = k===t?"var(--primary)":"rgba(99,102,241,0.2)";
+    el.style.background  = k===t?"rgba(99,102,241,0.15)":"transparent";
+  });
+  updateSimPreview();
+}
+
+function updateSimHrs() {
+  const v = document.getElementById("simHrs").value;
+  document.getElementById("simHrsLabel").textContent = v;
+  updateSimPreview();
+}
+
+function updateSimPreview() {
+  const workerId = document.getElementById("simWorker")?.value;
+  const worker   = allWorkers.find(w => w.id === workerId) || allWorkers[0];
+  if(!worker) return;
+  const plan  = PLANS[worker.plan] || PLANS.standard;
+  const hrs   = parseFloat(document.getElementById("simHrs")?.value || 2.5);
+  const meta  = TRIGGER_META[adminSimTrigger];
+  const isFullCap = adminSimTrigger === "cyclone" || adminSimTrigger === "curfew";
+  const payout = isFullCap ? plan.cap : Math.min(hrs, plan.maxHrs) * plan.rate;
+  const el = document.getElementById("simPreviewBox");
+  if(el) el.innerHTML = `
+    <div style="font-weight:700">${meta.icon} ${meta.label} · ${capitalize(worker.plan)} Plan</div>
+    <div style="color:var(--muted);font-size:12px;margin-top:4px">Worker: ${worker.name} · ${worker.zone}</div>
+    <div style="font-size:20px;font-weight:800;color:#4ade80;margin-top:8px">Expected: +${formatINR(payout)}</div>`;
+}
+
+async function runAdminSim() {
+  const workerId = document.getElementById("simWorker").value;
+  const hrs      = parseFloat(document.getElementById("simHrs").value);
+  if(!workerId) return toast("Select a worker", "error");
+  const btn = document.getElementById("adminSimBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Running...';
+  const el = document.getElementById("adminPipelineResult");
+  el.innerHTML = "";
+  try {
+    const data = await GS.post("/claims/trigger", { worker_id: workerId, trigger_type: adminSimTrigger, disruption_hrs: hrs, simulate: true });
+    el.innerHTML = `<div style="font-weight:700;margin-bottom:12px;color:${data.status==="approved"?"#4ade80":"#f87171"}">
+      ${data.status==="approved"?"✅ APPROVED":"⚠️ "+data.status.replace("_"," ").toUpperCase()} · ${formatINR(data.payout)}</div>`;
+    for(const step of data.steps) {
+      el.innerHTML += `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="font-size:16px">${step.icon||"→"}</span>
+        <div><div style="font-size:13px;font-weight:600">${step.label}</div>
+             <div style="font-size:11px;color:var(--muted);margin-top:2px">${step.detail}</div></div>
+        <span style="margin-left:auto;font-size:12px;color:${step.status==="pass"?"#4ade80":"#f87171"}">${step.status==="pass"?"✅":"❌"}</span>
+      </div>`;
+    }
+    if(data.razorpay) el.innerHTML += `<div style="margin-top:12px;padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;font-size:12px;color:var(--muted)">
+      💳 Razorpay: <strong style="color:#4ade80">${data.razorpay.order_id}</strong> · ${data.razorpay.status}</div>`;
+    toast("Pipeline complete — " + formatINR(data.payout), data.status==="approved"?"success":"warning");
+  } catch(e) { el.innerHTML = `<div style="color:var(--error)">Error: ${e.message}</div>`; }
+  btn.disabled = false; btn.innerHTML = "⚡ Run Pipeline";
+}
+
+// ── Misc ───────────────────────────────────────────────────────────────────────
+function refreshAll() { loadOverview(); }
+function logout() { Session.logout(); }
+
+// Init
+loadOverview();
+loadWorkers();
+</script>
+</body>
+</html>

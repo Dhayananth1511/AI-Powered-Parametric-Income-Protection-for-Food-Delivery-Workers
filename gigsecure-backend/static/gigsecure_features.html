@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GigSecure — Feature Demos | AI Insurance Platform</title>
+<meta name="description" content="Live AI feature demonstrations: weather monitor, claim simulator, fraud visualizer, earnings calculator, disruption forecast, plan comparison.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
+html[data-theme="light"]{--bg:#f0f4ff;--surf:rgba(255,255,255,0.9);--border:rgba(99,102,241,0.25);--text:#0f172a;--muted:#475569}
+html[data-theme="light"] body{background:var(--bg)}
+html[data-theme="light"] .nav{background:rgba(240,244,255,0.95)!important}
+html[data-theme="light"] .card,.demo-tab{background:rgba(255,255,255,0.9)}
+html[data-theme="light"] select,html[data-theme="light"] input{background:rgba(255,255,255,0.9);color:#0f172a;border-color:rgba(99,102,241,0.25)}
+html[data-theme="light"] select option{background:#fff;color:#0f172a}
+html[data-theme="light"] .hero-title{background:linear-gradient(135deg,#1e1b4b,#4f46e5,#9333ea);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+html[data-theme="light"] .demo-tab:not(.active){color:var(--text);border-color:rgba(0,0,0,0.15)}
+html[data-theme="light"] .compare-tbl th{background:rgba(99,102,241,0.15);color:#1e1b4b}
+html[data-theme="light"] .signal-bar-wrap{background:rgba(0,0,0,0.1)}
+html[data-theme="light"] .compare-tbl td, html[data-theme="light"] .compare-tbl th {border-bottom: 1px solid rgba(0,0,0,0.05)}
+html[data-theme="light"] .signal-row {border-bottom: 1px solid rgba(0,0,0,0.05)}
+html[data-theme="light"] .p-step {border-bottom: 1px solid rgba(0,0,0,0.05)}
+html[data-theme="light"] .spin {border:2px solid rgba(99,102,241,0.2); border-top-color:var(--primary)}
+html[data-theme="light"] .f-bar:hover::after{background:rgba(255,255,255,0.95)}
+html[data-theme="light"] .bg-mesh{background:radial-gradient(ellipse at 20% 40%,rgba(99,102,241,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 70%,rgba(139,92,246,0.06) 0%,transparent 50%)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s}
+.bg-mesh{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 40%,rgba(99,102,241,0.13) 0%,transparent 50%),radial-gradient(ellipse at 80% 70%,rgba(139,92,246,0.1) 0%,transparent 50%);pointer-events:none}
+.nav{position:sticky;top:0;z-index:100;background:rgba(2,8,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:17px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.nav-btns{display:flex;gap:10px}
+.nav-btn{padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;transition:all 0.2s}
+.nav-btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.nav-btn-ghost:hover{border-color:var(--primary);color:var(--text)}
+.nav-btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+
+/* HERO */
+.hero-section{text-align:center;padding:60px 20px 40px;position:relative}
+.hero-badge{display:inline-block;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--primary);margin-bottom:20px}
+.hero-title{font-size:clamp(28px,5vw,48px);font-weight:800;line-height:1.1;background:linear-gradient(135deg,#f8fafc,#a78bfa,#60a5fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.hero-sub{font-size:16px;color:var(--muted);max-width:600px;margin:0 auto}
+
+/* DEMO TABS */
+.demo-tabs{display:flex;overflow-x:auto;gap:8px;padding:0 20px 20px;justify-content:center;flex-wrap:wrap}
+.demo-tab{padding:10px 20px;border-radius:12px;border:1px solid var(--border);background:var(--surf);color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;transition:all 0.3s;white-space:nowrap;backdrop-filter:blur(12px)}
+.demo-tab:hover{border-color:rgba(99,102,241,0.4);color:var(--text)}
+.demo-tab.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-color:transparent;color:#fff;box-shadow:0 4px 16px rgba(99,102,241,0.4)}
+
+/* CONTENT */
+.main{max-width:900px;margin:0 auto;padding:0 20px 60px}
+.demo-panel{display:none}
+.demo-panel.active{display:block}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:18px;padding:24px;backdrop-filter:blur(12px);margin-bottom:16px}
+.card-title{font-size:16px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.card-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* Form elements */
+label{display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px}
+select,input[type="text"],input[type="number"]{width:100%;background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:all 0.25s}
+select:focus,input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.15)}
+select option{background:#0f172a}
+.btn{padding:11px 20px;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;transition:all 0.3s}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,0.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,0.45)}
+.btn-full{width:100%}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+/* Metric tile */
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.metric{background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:12px;padding:14px;text-align:center}
+.metric-val{font-size:20px;font-weight:800}
+.metric-lbl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* Fraud radar */
+.signal-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.signal-row:last-child{border-bottom:none}
+.signal-bar-wrap{flex:1;background:rgba(255,255,255,0.06);border-radius:100px;height:8px;overflow:hidden}
+.signal-bar{height:100%;border-radius:100px;transition:width 0.6s ease}
+
+/* Plan compare table */
+.compare-tbl{width:100%;border-collapse:collapse}
+.compare-tbl th{padding:10px 14px;background:rgba(99,102,241,0.1);font-size:12px;font-weight:700;color:var(--muted);text-align:center}
+.compare-tbl th:first-child{text-align:left}
+.compare-tbl td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;text-align:center}
+.compare-tbl td:first-child{text-align:left;color:var(--muted);font-size:12px}
+.compare-tbl .highlight{color:var(--primary);font-weight:800}
+
+/* Forecast chart */
+.forecast-chart{display:flex;align-items:flex-end;gap:4px;height:80px;padding:8px 0}
+.f-bar{flex:1;border-radius:3px 3px 0 0;transition:height 0.5s;min-height:4px;cursor:pointer;position:relative}
+.f-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:10px;white-space:nowrap;color:var(--text)}
+
+/* Claim pipeline steps */
+.p-step{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.p-step:last-child{border-bottom:none}
+.p-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:2px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.1)}
+.p-step.pass .p-icon{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.5)}
+
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-box{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:16px;margin-top:14px}
+input[type="range"]{width:100%;accent-color:#6366f1}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="nav">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-logo">🛡️ GigSecure · Feature Demos</div>
+    <a href="index.html" style="font-size:11px;color:var(--muted);text-decoration:none;padding:3px 8px;border-radius:6px;border:1px solid rgba(99,102,241,0.2)">← Home</a>
+  </div>
+  <div class="nav-btns">
+    <button id="themeToggle" onclick="Theme.toggle()" title="Toggle theme" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:7px 10px;cursor:pointer;font-size:15px;">
+      <span class="theme-toggle-knob">🌙</span>
+    </button>
+    <button class="nav-btn nav-btn-ghost" onclick="window.location.href='gigsecure_login.html'">Login</button>
+    <button class="nav-btn nav-btn-primary" onclick="window.location.href='gigsecure_onboarding.html'">Register →</button>
+  </div>
+</nav>
+
+<div class="hero-section">
+  <div class="hero-badge">⚡ Phase 2 — Live Demos</div>
+  <h1 class="hero-title">GigSecure AI Features<br>In Action</h1>
+  <p class="hero-sub">Interactive demonstrations of every system powering zero-touch parametric insurance for 5 crore+ delivery workers.</p>
+</div>
+
+<div class="demo-tabs">
+  <button class="demo-tab active" onclick="showDemo('weather')">🌧️ Weather Monitor</button>
+  <button class="demo-tab" onclick="showDemo('claim')">⚡ Claim Simulator</button>
+  <button class="demo-tab" onclick="showDemo('fraud')">🛡️ Fraud Visualizer</button>
+  <button class="demo-tab" onclick="showDemo('earnings')">💰 Earnings Calculator</button>
+  <button class="demo-tab" onclick="showDemo('forecast')">📡 Disruption Forecast</button>
+  <button class="demo-tab" onclick="showDemo('compare')">📋 Plan Comparison</button>
+</div>
+
+<div class="main">
+
+  <!-- 1. WEATHER MONITOR -->
+  <div class="demo-panel active" id="d-weather">
+    <div class="card">
+      <div class="card-title">🌧️ Live Zone Weather Monitor</div>
+      <div class="card-sub">Real-time weather data from OpenWeatherMap + CPCB AQI feed. Checks all 5 parametric triggers every 15 minutes.</div>
+      <div class="two-col" style="margin-bottom:16px">
+        <div><label>Select Zone</label><select id="wZone"></select></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-primary btn-full" onclick="fetchWeatherDemo()">📡 Fetch Live Data</button></div>
+      </div>
+      <div id="weatherResult"></div>
+    </div>
+  </div>
+
+  <!-- 2. CLAIM SIMULATOR -->
+  <div class="demo-panel" id="d-claim">
+    <div class="card">
+      <div class="card-title">⚡ Zero-Touch Claim Pipeline Demo</div>
+      <div class="card-sub">Watch the 6-step automated pipeline execute in real-time: trigger → confirm → verify → fraud → payout → notify.</div>
+      <div class="two-col" style="margin-bottom:14px">
+        <div>
+          <label>Disruption Type</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="claimTrigBtns"></div>
+        </div>
+        <div>
+          <label>Duration: <span id="claimHrsLbl" style="color:var(--primary);font-weight:700">2.5 hrs</span></label>
+          <input type="range" id="claimHrs" min="1" max="7" step="0.5" value="2.5" oninput="updateClaimPrev()">
+          <div id="claimPrevBox" style="margin-top:10px;padding:10px;background:rgba(99,102,241,0.08);border-radius:10px;font-size:12px"></div>
+        </div>
+      </div>
+      <div class="two-col" style="margin-bottom:14px">
+        <div><label>Worker Plan</label>
+          <select id="claimPlan"><option value="starter">🌱 Starter</option><option value="basic">🔵 Basic</option><option value="standard" selected>🟡 Standard</option><option value="premium">🟠 Premium</option><option value="elite">🔴 Elite</option></select>
+        </div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-primary btn-full" onclick="runClaimDemo()" id="claimDemoBtn">⚡ Execute Pipeline</button></div>
+      </div>
+      <div id="claimPipeResult"></div>
+    </div>
+  </div>
+
+  <!-- 3. FRAUD VISUALIZER -->
+  <div class="demo-panel" id="d-fraud">
+    <div class="card">
+      <div class="card-title">🛡️ 6-Signal Fraud Detection Engine</div>
+      <div class="card-sub">Adjust trust score and claim count to see how the Isolation Forest + 6 signal scoring system responds in real-time.</div>
+      <div class="two-col" style="margin-bottom:16px">
+        <div>
+          <label>Trust Score: <span id="trustLbl" style="color:var(--primary);font-weight:700">72</span></label>
+          <input type="range" id="trustSlider" min="0" max="100" value="72" oninput="updateFraud()">
+        </div>
+        <div>
+          <label>Total Claims: <span id="claimsLbl" style="color:var(--primary);font-weight:700">8</span></label>
+          <input type="range" id="claimsSlider" min="0" max="30" value="8" oninput="updateFraud()">
+        </div>
+      </div>
+      <div id="fraudResult"></div>
+    </div>
+  </div>
+
+  <!-- 4. EARNINGS CALCULATOR -->
+  <div class="demo-panel" id="d-earnings">
+    <div class="card">
+      <div class="card-title">💰 Protected Earnings Calculator</div>
+      <div class="card-sub">Calculate how much income you'd save over a year with GigSecure vs. without protection. Based on real actuarial data.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+        <div>
+          <label>Your Zone</label>
+          <select id="earningsZone"></select>
+        </div>
+        <div>
+          <label>Your Plan</label>
+          <select id="earningsPlan">
+            <option value="starter">🌱 Starter (₹55/wk)</option>
+            <option value="basic">🔵 Basic (₹70/wk)</option>
+            <option value="standard" selected>🟡 Standard (₹90/wk)</option>
+            <option value="premium">🟠 Premium (₹115/wk)</option>
+            <option value="elite">🔴 Elite (₹135/wk)</option>
+          </select>
+        </div>
+        <div>
+          <label>Daily Earnings (₹)</label>
+          <input type="number" id="dailyEarnings" value="1000" min="500" max="3000" oninput="calcEarnings()">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="calcEarnings()" style="margin-bottom:16px">Calculate Protection</button>
+      <div id="earningsResult"></div>
+    </div>
+  </div>
+
+  <!-- 5. DISRUPTION FORECAST -->
+  <div class="demo-panel" id="d-forecast">
+    <div class="card">
+      <div class="card-title">📡 AI Disruption Forecast Engine</div>
+      <div class="card-sub">XGBoost-style 48-hour disruption probability forecast per zone. Powered by zone risk data + seasonal patterns + time-of-day weighting.</div>
+      <div style="display:flex;gap:12px;margin-bottom:16px">
+        <div style="flex:1"><label>Zone</label><select id="forecastZone"></select></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" onclick="loadForecastDemo()">📡 Generate Forecast</button></div>
+      </div>
+      <div id="forecastResult"></div>
+    </div>
+  </div>
+
+  <!-- 6. PLAN COMPARISON -->
+  <div class="demo-panel" id="d-compare">
+    <div class="card">
+      <div class="card-title">📋 Plan Comparison & Loss Ratio Analysis</div>
+      <div class="card-sub">Compare all 5 GigSecure plans with actuarially verified loss ratios under normal and heavy monsoon scenarios.</div>
+      <div style="overflow-x:auto;margin-bottom:20px">
+        <table class="compare-tbl">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th style="color:#4ade80">🌱 Starter</th>
+              <th style="color:#60a5fa">🔵 Basic</th>
+              <th style="color:#facc15">🟡 Standard</th>
+              <th style="color:#fb923c">🟠 Premium</th>
+              <th style="color:#f87171">🔴 Elite</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Weekly Premium</td>${Object.values(PLANS_DATA).map(p=>`<td class="highlight">₹${p.premium}</td>`).join("")}</tr>
+            <tr><td>Hourly Payout</td>${Object.values(PLANS_DATA).map(p=>`<td>₹${p.rate}/hr</td>`).join("")}</tr>
+            <tr><td>Max Hours/week</td>${Object.values(PLANS_DATA).map(p=>`<td>${p.maxHrs} hrs</td>`).join("")}</tr>
+            <tr><td>Weekly Cap</td>${Object.values(PLANS_DATA).map(p=>`<td>₹${p.cap}</td>`).join("")}</tr>
+            <tr><td>% of Earnings (₹7,500/wk)</td>${Object.values(PLANS_DATA).map(p=>`<td style="color:var(--muted)">${(p.premium/75).toFixed(1)}%</td>`).join("")}</tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="lossRatioCompare"><div style="text-align:center;padding:20px;color:var(--muted)"><span class="spin"></span>Loading loss ratios...</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="gs_shared.js"></script>
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+const PLANS_DATA = {
+  starter:  {premium:55, rate:35, maxHrs:3, cap:105},
+  basic:    {premium:70, rate:45, maxHrs:4, cap:180},
+  standard: {premium:90, rate:60, maxHrs:5, cap:300},
+  premium:  {premium:115,rate:75, maxHrs:6, cap:450},
+  elite:    {premium:135,rate:90, maxHrs:7, cap:630},
+};
+
+let selectedClaimTrigger = "rainfall";
+let allZones = [];
+
+function showDemo(id) {
+  document.querySelectorAll(".demo-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".demo-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("d-"+id).classList.add("active");
+  document.querySelectorAll(".demo-tab").forEach((t,i) => {
+    const ids = ["weather","claim","fraud","earnings","forecast","compare"];
+    if(ids[i] === id) t.classList.add("active");
+  });
+  if(id === "compare") loadLossRatios();
+  if(id === "forecast" && !document.getElementById("forecastZone").options.length) populateZone("forecastZone");
+}
+
+// ── Load Zones ───────────────────────────────────────────────────────────────
+async function loadAllZones() {
+  try {
+    const data = await GS.get("/ml/zones");
+    allZones = data.zones || [];
+    ["wZone","earningsZone","forecastZone"].forEach(id => populateZone(id));
+  } catch(e) {}
+}
+
+function populateZone(selectId) {
+  const sel = document.getElementById(selectId);
+  if(!sel || sel.options.length > 1) return;
+  allZones.slice(0,20).forEach(z => {
+    const o = document.createElement("option"); o.value = z; o.text = z;
+    sel.appendChild(o);
+  });
+  if(selectId === "wZone" || selectId === "earningsZone" || selectId === "forecastZone") {
+    sel.value = "Velachery, Chennai";
+  }
+}
+
+// ── 1. WEATHER ───────────────────────────────────────────────────────────────
+async function fetchWeatherDemo() {
+  const zone = document.getElementById("wZone").value;
+  const el = document.getElementById("weatherResult");
+  el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted)"><span class="spin"></span>Fetching from OpenWeatherMap...</div>`;
+  try {
+    const data = await GS.get("/weather/zone/" + encodeURIComponent(zone));
+    const w = data.weather;
+    const THRESH = {rainfall:35, temperature:43, aqi:300};
+    const triggered = data.triggers?.length > 0;
+    el.innerHTML = `
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-val" style="color:${(w.rainfall_3h||0)>=35?"#f87171":"#60a5fa"}">${w.rainfall_3h?.toFixed(1)||0}mm</div><div class="metric-lbl">Rainfall (3hr)</div></div>
+        <div class="metric"><div class="metric-val" style="color:${w.temperature>=43?"#f87171":"#fb923c"}">${w.temperature?.toFixed(1)||0}°C</div><div class="metric-lbl">Temperature</div></div>
+        <div class="metric"><div class="metric-val" style="color:${(w.aqi||0)>=300?"#f87171":"#a78bfa"}">${w.aqi||0}</div><div class="metric-lbl">AQI</div></div>
+        <div class="metric"><div class="metric-val">${w.humidity||0}%</div><div class="metric-lbl">Humidity</div></div>
+        <div class="metric"><div class="metric-val">${w.wind_speed?.toFixed(1)||0} m/s</div><div class="metric-lbl">Wind Speed</div></div>
+        <div class="metric"><div class="metric-val" style="font-size:14px">${triggered?"⚡ ALERT":"✅ Clear"}</div><div class="metric-lbl">Status</div></div>
+      </div>
+      ${triggered?`<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:14px;padding:16px;margin-bottom:12px">
+        <div style="font-weight:700;margin-bottom:6px">🚨 ${data.triggers.length} Trigger(s) Active!</div>
+        ${data.triggers.map(t=>`<div style="margin:4px 0;font-size:13px">${TRIGGER_META[t.type]?.icon||"⚡"} <strong>${t.label}</strong> — ${t.value} ${t.unit} (threshold: ${t.type==="rainfall"?35:t.type==="temperature"?43:300})</div>`).join("")}
+        <div style="margin-top:10px;font-size:12px;color:var(--muted)">15–30 min confirmation window starting. Auto-claim pipeline will execute if threshold persists.</div>
+      </div>`:""}
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);padding:6px 0">
+        <span>Source: ${w.source}</span>
+        <span>${w.description}</span>
+        <span>Updated: ${new Date(w.fetched_at).toLocaleTimeString("en-IN")}</span>
+      </div>`;
+  } catch(e) { el.innerHTML = `<div style="color:var(--error);text-align:center;padding:20px">Failed to fetch weather: ${e.message}</div>`; }
+}
+
+// ── 2. CLAIM SIMULATOR ───────────────────────────────────────────────────────
+function initClaimTrigBtns() {
+  const el = document.getElementById("claimTrigBtns");
+  el.innerHTML = Object.entries(TRIGGER_META).map(([k,t])=>`
+    <div onclick="selClaimTrig('${k}')" id="ctb-${k}" style="padding:10px 6px;border-radius:10px;border:1px solid ${k==="rainfall"?"var(--primary)":"rgba(99,102,241,0.2)"};background:${k==="rainfall"?"rgba(99,102,241,0.15)":"transparent"};text-align:center;cursor:pointer;transition:all 0.2s">
+      <div style="font-size:20px">${t.icon}</div><div style="font-size:10px;color:var(--muted);margin-top:4px;font-weight:600">${t.label.split(" ")[0]}</div></div>`).join("");
+  updateClaimPrev();
+}
+function selClaimTrig(k) {
+  selectedClaimTrigger = k;
+  document.querySelectorAll("[id^='ctb-']").forEach(el => {
+    const id = el.id.replace("ctb-","");
+    el.style.borderColor = id===k?"var(--primary)":"rgba(99,102,241,0.2)";
+    el.style.background  = id===k?"rgba(99,102,241,0.15)":"transparent";
+  });
+  updateClaimPrev();
+}
+function updateClaimPrev() {
+  const hrs  = parseFloat(document.getElementById("claimHrs")?.value||2.5);
+  const plan = document.getElementById("claimPlan")?.value||"standard";
+  const meta = TRIGGER_META[selectedClaimTrigger];
+  const p    = PLANS_DATA[plan] || PLANS_DATA.standard;
+  const isFullCap = selectedClaimTrigger === "cyclone" || selectedClaimTrigger === "curfew";
+  const payout = isFullCap ? p.cap : Math.min(hrs, p.maxHrs) * p.rate;
+  document.getElementById("claimHrsLbl").textContent = hrs + " hrs";
+  const el = document.getElementById("claimPrevBox");
+  if(el) el.innerHTML = `${meta.icon} ${meta.label} · ${capitalize(plan)} · <strong style="color:#4ade80">Expected payout: ₹${payout}</strong>`;
+}
+async function runClaimDemo() {
+  const btn = document.getElementById("claimDemoBtn");
+  const hrs = parseFloat(document.getElementById("claimHrs").value);
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Running pipeline...';
+  const el = document.getElementById("claimPipeResult");
+  el.innerHTML = "";
+  // Use first seeded worker for demo
+  try {
+    const data = await GS.post("/claims/trigger", {
+      worker_id:      "WKR-4821",
+      trigger_type:   selectedClaimTrigger,
+      disruption_hrs: hrs,
+      simulate:       true,
+    });
+    el.innerHTML = data.steps.map(s=>`
+      <div class="p-step pass">
+        <div class="p-icon">${s.icon||"→"}</div>
+        <div><div style="font-size:13px;font-weight:600">Step ${s.step}: ${s.label}</div>
+             <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.detail}</div></div>
+        <span style="margin-left:auto;color:#4ade80">✅</span>
+      </div>`).join("");
+    el.innerHTML += `
+      <div style="margin-top:14px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:14px;padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:800;color:#4ade80">+₹${data.payout}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Credited · Order: ${data.razorpay?.order_id}</div>
+        <div style="margin-top:6px">${statusBadge(data.status)}</div>
+      </div>`;
+    toast("✅ Pipeline complete — ₹"+data.payout+" credited!", "success", 5000);
+  } catch(e) { el.innerHTML = `<div style="color:var(--error);padding:20px;text-align:center">Error: ${e.message}<br><small style="color:var(--muted)">Make sure backend is running at localhost:8000</small></div>`; }
+  btn.disabled = false; btn.innerHTML = "⚡ Execute Pipeline";
+}
+
+// ── 3. FRAUD VISUALIZER ──────────────────────────────────────────────────────
+function updateFraud() {
+  const trust  = parseInt(document.getElementById("trustSlider").value);
+  const claims = parseInt(document.getElementById("claimsSlider").value);
+  document.getElementById("trustLbl").textContent  = trust;
+  document.getElementById("claimsLbl").textContent = claims;
+
+  const signals = {
+    "GPS in zone":           { val:true,           score:2 },
+    "Accelerometer OK":      { val:trust>50,        score:2, help:"Movement history confirms delivery activity" },
+    "Cell tower match":      { val:trust>30,        score:2, help:"Tower ID matches claimed GPS zone" },
+    "Prior zone activity":   { val:claims<25,       score:1, help:"Not exceeded reasonable claim count" },
+    "Crowd signal":          { val:true,            score:1, help:"Zone-level aggregate confirms inactivity spike" },
+    "Historical baseline OK":{ val:trust>25,        score:1, help:"Trust score within normal range" },
+  };
+  let totalScore = 0;
+  Object.values(signals).forEach(s => { if(s.val) totalScore += s.score; });
+  const fraudScore = Math.max(0, 100 - totalScore * 12);
+  const decision = fraudScore < 30 ? { label:"AUTO-APPROVED", color:"#4ade80" } : fraudScore < 70 ? { label:"MANUAL REVIEW", color:"#facc15" } : { label:"AUTO-REJECTED", color:"#f87171" };
+
+  document.getElementById("fraudResult").innerHTML = `
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span style="font-weight:700">Fraud Score</span>
+          <span style="font-weight:800;color:${fraudScore<30?"#4ade80":fraudScore<70?"#facc15":"#f87171"};font-size:20px">${fraudScore}/100</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:100px;height:10px;overflow:hidden">
+          <div style="height:100%;width:${fraudScore}%;background:${fraudScore<30?"#4ade80":fraudScore<70?"#facc15":"#f87171"};border-radius:100px;transition:width 0.5s"></div>
+        </div>
+        <div style="text-align:center;margin-top:10px;font-size:14px;font-weight:800;color:${decision.color}">${decision.label}</div>
+      </div>
+    </div>
+    ${Object.entries(signals).map(([name, s])=>`
+      <div class="signal-row">
+        <span style="font-size:14px">${s.val?"✅":"❌"}</span>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600">${name} (+${s.score}pts)</div>
+          ${s.help?`<div style="font-size:11px;color:var(--muted)">${s.help}</div>`:""}
+        </div>
+        <div class="signal-bar-wrap" style="width:80px">
+          <div class="signal-bar" style="width:${s.val?"100":"0"}%;background:${s.val?"#4ade80":"#f87171"}"></div>
+        </div>
+      </div>`).join("")}
+    <div style="margin-top:12px;background:rgba(99,102,241,0.08);border-radius:10px;padding:12px;font-size:12px;color:var(--muted)">
+      Signals passed: ${Object.values(signals).filter(s=>s.val).length}/6 · Total score: ${totalScore}/9 · Trust tier: ${trustLabel(trust)}
+    </div>`;
+}
+
+// ── 4. EARNINGS CALCULATOR ───────────────────────────────────────────────────
+async function calcEarnings() {
+  const zone  = document.getElementById("earningsZone")?.value || "Velachery, Chennai";
+  const plan  = document.getElementById("earningsPlan")?.value || "standard";
+  const daily = parseFloat(document.getElementById("dailyEarnings")?.value || 1000);
+  const p = PLANS_DATA[plan];
+  // Actuarial data
+  const disruption_hrs_year = 52.5;
+  const hourly_income = daily / 8;
+  const annual_loss = disruption_hrs_year * hourly_income;
+  const annual_premium = p.premium * 52;
+  const expected_payout = p.rate * disruption_hrs_year;
+  const net_saving = expected_payout - annual_premium;
+  const roi = ((net_saving / annual_premium) * 100).toFixed(0);
+
+  // Get live risk
+  let riskScore = 0.55;
+  try {
+    const r = await GS.get("/ml/risk/" + encodeURIComponent(zone));
+    riskScore = r.overall_risk;
+  } catch(e){}
+
+  document.getElementById("earningsResult").innerHTML = `
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-val" style="color:#f87171">₹${Math.round(annual_loss).toLocaleString("en-IN")}</div><div class="metric-lbl">Annual Income at Risk</div></div>
+      <div class="metric"><div class="metric-val" style="color:var(--primary)">₹${annual_premium.toLocaleString("en-IN")}</div><div class="metric-lbl">Annual Premium Cost</div></div>
+      <div class="metric"><div class="metric-val" style="color:#4ade80">₹${Math.round(expected_payout).toLocaleString("en-IN")}</div><div class="metric-lbl">Expected Annual Payout</div></div>
+    </div>
+    <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:20px;text-align:center;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Net Annual Protection</div>
+      <div style="font-size:32px;font-weight:800;color:${net_saving>0?"#4ade80":"#f87171"}">${net_saving>0?"+":""}₹${Math.round(Math.abs(net_saving)).toLocaleString("en-IN")}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">ROI: ${roi}% · Zone Risk: ${Math.round(riskScore*100)}%</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+      <div style="padding:12px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:10px">
+        <div style="color:var(--muted);font-size:11px;margin-bottom:4px">PAYS FOR ITSELF IN</div>
+        <div style="font-weight:700">${(p.premium/daily*100).toFixed(1)} deliveries/week</div>
+      </div>
+      <div style="padding:12px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:10px">
+        <div style="color:var(--muted);font-size:11px;margin-bottom:4px">MAX WEEKLY PAYOUT</div>
+        <div style="font-weight:700;color:#4ade80">₹${p.cap} (${p.maxHrs}hrs×₹${p.rate})</div>
+      </div>
+    </div>`;
+}
+
+// ── 5. DISRUPTION FORECAST ───────────────────────────────────────────────────
+async function loadForecastDemo() {
+  const zone = document.getElementById("forecastZone").value;
+  const el = document.getElementById("forecastResult");
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)"><span class="spin"></span>Generating 24-hour forecast...</div>`;
+  try {
+    const data = await GS.get("/ml/forecast/" + encodeURIComponent(zone));
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-weight:700">${zone}</div>
+          <div style="color:var(--muted);font-size:12px">24-hr disruption probability forecast</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:${data.peak_prob>60?"#f87171":data.peak_prob>35?"#fb923c":"#4ade80"}">${data.peak_prob}%</div>
+          <div style="font-size:11px;color:var(--muted)">Peak at ${data.peak_hour}:00</div>
+        </div>
+      </div>
+      <div class="forecast-chart">
+        ${data.forecasts.map(f=>{const col=f.probability>60?"#f87171":f.probability>35?"#fb923c":"#4ade80";return`<div class="f-bar" style="height:${Math.max(4,f.probability)}%;background:${col};opacity:0.85" data-tip="${f.hour}:00 — ${f.probability}%"></div>`}).join("")}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:14px">
+        <span>Now</span><span>12h</span><span>24h</span>
+      </div>
+      ${data.alert_message?`<div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:12px;padding:14px;font-size:13px">
+        ${data.alert_message}</div>`:""}
+      <div class="metric-grid" style="margin-top:14px">
+        <div class="metric"><div class="metric-val">${Math.round(data.base_risk*100)}%</div><div class="metric-lbl">Zone Base Risk</div></div>
+        <div class="metric"><div class="metric-val" style="color:${data.peak_prob>60?"#f87171":"#4ade80"}">${data.peak_prob}%</div><div class="metric-lbl">Peak Probability</div></div>
+        <div class="metric"><div class="metric-val">${data.forecasts.filter(f=>f.probability>35).length}h</div><div class="metric-lbl">High-Risk Hours</div></div>
+      </div>`;
+  } catch(e) { el.innerHTML = `<div style="color:var(--error);text-align:center;padding:20px">Error: ${e.message}</div>`; }
+}
+
+// ── 6. PLAN COMPARISON ───────────────────────────────────────────────────────
+async function loadLossRatios() {
+  const el = document.getElementById("lossRatioCompare");
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)"><span class="spin"></span>Loading actuarial data...</div>`;
+  try {
+    const PLAN_COLORS = {starter:"#4ade80",basic:"#60a5fa",standard:"#facc15",premium:"#fb923c",elite:"#f87171"};
+    const rows = await Promise.all(Object.keys(PLANS_DATA).map(p=>GS.get(`/ml/loss-ratio/${p}`)));
+    el.innerHTML = `
+      <div style="overflow-x:auto">
+        <table class="compare-tbl">
+          <thead>
+            <tr>
+              <th>Actuarial Metric</th>
+              <th style="color:#4ade80">🌱 Starter</th>
+              <th style="color:#60a5fa">🔵 Basic</th>
+              <th style="color:#facc15">🟡 Standard</th>
+              <th style="color:#fb923c">🟠 Premium</th>
+              <th style="color:#f87171">🔴 Elite</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Annual Premium</td>${rows.map(r=>`<td class="highlight">₹${r.annual_premium.toLocaleString("en-IN")}</td>`).join("")}</tr>
+            <tr><td>Expected Annual Claim</td>${rows.map(r=>`<td>₹${r.expected_claim.toLocaleString("en-IN")}</td>`).join("")}</tr>
+            <tr><td>Normal Loss Ratio</td>${rows.map(r=>`<td style="color:${r.loss_ratio<75?"var(--success)":"var(--error)"};font-weight:700">${r.loss_ratio}%</td>`).join("")}</tr>
+            <tr><td>Monsoon Loss Ratio</td>${rows.map(r=>`<td style="color:${r.monsoon_ratio<95?"var(--warn)":"var(--error)"};font-weight:700">${r.monsoon_ratio}%</td>`).join("")}</tr>
+            <tr><td>Plan Status</td>${rows.map(r=>`<td>${r.status}</td>`).join("")}</tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;padding:14px;background:rgba(99,102,241,0.06);border-radius:12px;font-size:12px;color:var(--muted)">
+        📊 Target: Normal year ≤ 75% · Monsoon year ≤ 95% · All plans maintained within IRDAI-acceptable thresholds.
+      </div>`;
+  } catch(e) { el.innerHTML = `<div style="color:var(--error);padding:20px;text-align:center">Error loading data: ${e.message}</div>`; }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+loadAllZones();
+initClaimTrigBtns();
+updateFraud();
+updateClaimPrev();
+calcEarnings();
+</script>
+</body>
+</html>

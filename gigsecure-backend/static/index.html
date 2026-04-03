@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GigSecure | AI-Powered Parametric Income Protection for Food Delivery Workers</title>
+<meta name="description" content="Zero-touch parametric income protection for gig workers. AI-driven weather monitoring triggers automatic payouts — no claims forms needed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#020617;--bg2:#0a1128;--surf:rgba(15,23,42,0.7);
+  --primary:#6366f1;--primary-glow:rgba(99,102,241,0.4);
+  --secondary:#8b5cf6;--accent:#38bdf8;
+  --border:rgba(255,255,255,0.08);--border2:rgba(99,102,241,0.2);
+  --text:#f8fafc;--text-dim:#94a3b8;--text-muted:#475569;
+  --success:#4ade80;--error:#f87171;--warn:#facc15;
+  --nav-h:72px;
+  --card-bg:rgba(15,23,42,0.65);
+  --shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+html[data-theme="light"]{
+  --bg:#f0f4ff;--bg2:#e8eef9;--surf:rgba(255,255,255,0.85);
+  --border:rgba(0,0,0,0.08);--border2:rgba(99,102,241,0.3);
+  --text:#0f172a;--text-dim:#475569;--text-muted:#94a3b8;
+  --card-bg:rgba(255,255,255,0.9);
+  --shadow:0 20px 60px rgba(99,102,241,0.12);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6;transition:background 0.3s,color 0.3s}
+
+/* ── ANIMATED BACKGROUND ── */
+.bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat 20s infinite ease-in-out}
+.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.15),transparent 70%);top:-200px;left:-200px;animation-delay:0s}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,0.12),transparent 70%);bottom:-100px;right:-100px;animation-delay:-7s}
+.orb3{width:400px;height:400px;background:radial-gradient(circle,rgba(56,189,248,0.08),transparent 70%);top:40%;left:50%;animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.95)}}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:var(--nav-h);display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;
+  background:rgba(2,6,23,0.8);
+  backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+  transition:all 0.4s;
+}
+html[data-theme="light"] nav{background:rgba(240,244,255,0.85)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer}
+.logo-icon{font-size:28px;filter:drop-shadow(0 0 12px rgba(99,102,241,0.6));animation:logoPulse 3s infinite}
+@keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(99,102,241,0.5))}50%{filter:drop-shadow(0 0 20px rgba(99,102,241,0.8))}}
+.logo-text{font-size:20px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.logo-badge{font-size:9px;font-weight:700;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);color:#a78bfa;padding:2px 7px;border-radius:20px;letter-spacing:0.5px;-webkit-text-fill-color:#a78bfa}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-link{color:var(--text-dim);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:10px;transition:all 0.2s}
+.nav-link:hover{color:var(--text);background:rgba(99,102,241,0.08)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+
+/* Theme Toggle */
+.theme-toggle{
+  width:52px;height:28px;border-radius:14px;border:1px solid var(--border2);
+  background:var(--surf);cursor:pointer;position:relative;transition:all 0.3s;
+  display:flex;align-items:center;padding:2px;
+}
+.theme-toggle-knob{
+  width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  transition:transform 0.3s;display:flex;align-items:center;justify-content:center;font-size:12px;
+}
+html[data-theme="light"] .theme-toggle-knob{transform:translateX(24px)}
+.btn-nav{padding:9px 20px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit';border:none;transition:all 0.3s}
+.btn-signin{background:transparent;border:1px solid var(--border2);color:var(--text);font-size:13px}
+.btn-signin:hover{background:rgba(99,102,241,0.1);border-color:var(--primary)}
+.btn-cta{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,0.35)}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,0.5)}
+
+/* User pill if logged in */
+.user-pill{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(99,102,241,0.12);border:1px solid var(--border2);border-radius:20px;cursor:pointer;transition:all 0.2s}
+.user-pill:hover{background:rgba(99,102,241,0.2)}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;padding:calc(var(--nav-h) + 60px) 80px 80px;
+  display:flex;align-items:center;gap:60px;position:relative;z-index:1;
+}
+.hero-content{flex:1;max-width:620px}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);
+  color:#a78bfa;padding:7px 16px;border-radius:30px;font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:28px;
+  animation:fadeUp 0.8s 0.2s both;
+}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:dot 1.5s infinite}
+@keyframes dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
+.hero h1{font-size:clamp(42px,5vw,72px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:24px;animation:fadeUp 0.8s 0.4s both}
+.hero h1 .grad{background:linear-gradient(135deg,#6366f1 0%,#a78bfa 50%,#38bdf8 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-desc{font-size:18px;color:var(--text-dim);margin-bottom:40px;line-height:1.7;animation:fadeUp 0.8s 0.6s both;max-width:520px}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;animation:fadeUp 0.8s 0.8s both}
+.btn-hero{padding:18px 36px;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Outfit';border:none;transition:all 0.3s}
+.btn-hero-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 10px 30px rgba(99,102,241,0.35)}
+.btn-hero-primary:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(99,102,241,0.5)}
+.btn-hero-outline{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-hero-outline:hover{background:rgba(99,102,241,0.08);border-color:var(--primary)}
+.hero-trust{display:flex;align-items:center;gap:16px;margin-top:32px;animation:fadeUp 0.8s 1s both}
+.hero-trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim)}
+.hero-sep{color:var(--border)}
+
+/* Hero Visual */
+.hero-visual{flex:1;display:flex;justify-content:center;align-items:center;animation:float 6s infinite ease-in-out;position:relative}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+.shield-wrap{position:relative;width:340px;height:340px}
+.shield-bg{
+  width:100%;height:100%;border-radius:50%;
+  background:conic-gradient(from 180deg at 50% 50%,rgba(99,102,241,0.2),rgba(139,92,246,0.3),rgba(56,189,248,0.2),rgba(99,102,241,0.2));
+  animation:spin 20s linear infinite;
+}
+.shield-inner{
+  position:absolute;inset:20px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,rgba(99,102,241,0.3),rgba(15,23,42,0.95));
+  border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;backdrop-filter:blur(20px);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.shield-main{font-size:80px;filter:drop-shadow(0 0 30px rgba(99,102,241,0.6))}
+.shield-label{font-size:14px;font-weight:700;color:#a78bfa}
+.shield-sub{font-size:11px;color:var(--text-dim);text-align:center}
+.float-pill{
+  position:absolute;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;
+  backdrop-filter:blur(16px);border:1px solid var(--border2);animation:floatPill 4s infinite ease-in-out;
+  white-space:nowrap;background:var(--card-bg);
+}
+.fp1{top:10px;right:-20px;animation-delay:0s;color:#4ade80}
+.fp2{bottom:40px;left:-40px;animation-delay:-1.5s;color:#60a5fa}
+.fp3{top:50%;left:-60px;animation-delay:-3s;color:#facc15}
+@keyframes floatPill{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* Live Stats Row */
+.live-stats{
+  position:relative;z-index:1;display:flex;justify-content:center;align-items:center;
+  gap:0;padding:28px 80px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,0.04),transparent);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.stat-item{flex:1;text-align:center;padding:0 24px}
+.stat-item:not(:last-child){border-right:1px solid var(--border)}
+.stat-num{font-size:30px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:4px}
+
+/* ── HOW IT WORKS ── */
+.section{padding:100px 80px;position:relative;z-index:1}
+.section-badge{display:inline-block;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:#a78bfa;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px}
+.section-title{font-size:clamp(32px,4vw,48px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--text-dim);max-width:540px;margin-bottom:60px}
+.steps-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.step-card{
+  background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:28px;
+  backdrop-filter:blur(16px);transition:all 0.4s;position:relative;overflow:hidden;
+}
+.step-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--primary),transparent);opacity:0;transition:opacity 0.4s}
+.step-card:hover{transform:translateY(-8px);border-color:var(--border2)}
+.step-card:hover::before{opacity:1}
+.step-num{font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.step-icon{font-size:36px;margin-bottom:16px;display:block}
+.step-card h4{font-size:17px;font-weight:700;margin-bottom:8px}
+.step-card p{font-size:13px;color:var(--text-dim);line-height:1.6}
+.step-connector{display:none}
+
+/* ── FEATURES GRID ── */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.feat-card{
+  background:var(--card-bg);border:1px solid var(--border);border-radius:24px;padding:32px;
+  backdrop-filter:blur(16px);transition:all 0.4s;cursor:default;
+}
+.feat-card:hover{transform:translateY(-6px);border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.06)}
+.feat-icon{font-size:38px;margin-bottom:20px;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))}
+.feat-card h4{font-size:19px;font-weight:700;margin-bottom:10px}
+.feat-card p{font-size:14px;color:var(--text-dim);line-height:1.65}
+.feat-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;background:rgba(99,102,241,0.1);color:var(--primary);border:1px solid rgba(99,102,241,0.2)}
+
+/* ── TRIGGERS SECTION ── */
+.triggers-wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.trig-card{
+  background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:24px 16px;
+  text-align:center;transition:all 0.3s;
+}
+.trig-card:hover{transform:scale(1.05);border-color:var(--border2)}
+.trig-icon{font-size:42px;margin-bottom:12px}
+.trig-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.trig-threshold{font-size:11px;color:var(--text-dim)}
+.trig-badge{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:10px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2);font-size:10px;font-weight:700}
+
+/* ── PLANS SECTION ── */
+.plans-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.plan-card{
+  background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:24px 16px;
+  text-align:center;transition:all 0.4s;position:relative;overflow:hidden;
+}
+.plan-card.highlighted{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.08)}
+.plan-card.highlighted::after{content:'POPULAR';position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:9px;font-weight:800;padding:3px 12px;border-radius:0 0 8px 8px;letter-spacing:0.5px}
+.plan-card:hover{transform:translateY(-6px);border-color:rgba(99,102,241,0.4)}
+.plan-emoji{font-size:30px;margin-bottom:10px}
+.plan-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.plan-price{font-size:28px;font-weight:800;color:var(--primary)}
+.plan-period{font-size:11px;color:var(--text-muted)}
+.plan-rate{font-size:13px;font-weight:600;margin:10px 0;color:var(--text-dim)}
+.plan-cap{font-size:11px;color:var(--text-muted);margin-bottom:16px}
+.plan-btn{width:100%;padding:10px;border-radius:12px;border:none;font-weight:700;font-family:'Outfit';cursor:pointer;font-size:13px;transition:all 0.3s;background:rgba(99,102,241,0.12);border:1px solid var(--border2);color:var(--text)}
+.plan-btn:hover,.plan-card.highlighted .plan-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(99,102,241,0.35)}
+
+/* ── TESTIMONIALS ── */
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.testi-card{background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:28px;backdrop-filter:blur(16px)}
+.testi-star{color:#facc15;font-size:14px;margin-bottom:12px}
+.testi-text{font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:16px;font-style:italic}
+.testi-author{display:flex;align-items:center;gap:12px}
+.testi-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:15px}
+.testi-name{font-size:13px;font-weight:700}
+.testi-role{font-size:11px;color:var(--text-dim)}
+
+/* ── CTA BANNER ── */
+.cta-section{
+  margin:0 80px;border-radius:28px;padding:64px;
+  background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.1));
+  border:1px solid rgba(99,102,241,0.3);text-align:center;position:relative;z-index:1;overflow:hidden;
+}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(99,102,241,0.1),transparent 70%)}
+.cta-section h2{font-size:clamp(28px,3vw,46px);font-weight:800;margin-bottom:16px;position:relative}
+.cta-section p{font-size:16px;color:var(--text-dim);margin-bottom:32px;position:relative}
+.cta-actions{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;position:relative}
+
+/* ── FOOTER ── */
+footer{
+  margin-top:80px;padding:48px 80px 32px;
+  border-top:1px solid var(--border);position:relative;z-index:1;
+}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{font-size:13px;color:var(--text-dim);margin-top:10px;max-width:200px;line-height:1.6}
+.footer-col h5{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:16px}
+.footer-col a{display:block;font-size:13px;color:var(--text-dim);text-decoration:none;margin-bottom:8px;transition:color 0.2s}
+.footer-col a:hover{color:var(--primary)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-muted);padding-top:24px;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.footer-badges{display:flex;gap:10px}
+.f-badge{padding:3px 10px;border-radius:8px;background:rgba(99,102,241,0.08);border:1px solid var(--border2);font-size:10px;font-weight:600;color:var(--text-dim)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── MOBILE ── */
+@media(max-width:1024px){
+  .hero{flex-direction:column;padding:calc(var(--nav-h)+40px) 32px 60px;text-align:center}
+  .hero-desc{margin:0 auto 32px;max-width:100%}
+  .hero-actions{justify-content:center}
+  .hero-trust{justify-content:center;flex-wrap:wrap}
+  .hero-visual{display:none}
+  .live-stats{padding:28px 32px;flex-wrap:wrap}
+  .steps-wrap{grid-template-columns:1fr 1fr}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .triggers-wrap,.plans-grid{grid-template-columns:1fr 1fr}
+  .testimonials-grid{grid-template-columns:1fr}
+  .cta-section{margin:0 24px;padding:48px 32px}
+  footer{padding:40px 32px}
+  .footer-top{grid-template-columns:1fr 1fr}
+  .section{padding:70px 32px}
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  .logo-badge{display:none}
+}
+@media(max-width:600px){
+  .steps-wrap,.plans-grid,.triggers-wrap,.features-grid{grid-template-columns:1fr}
+  .footer-top{grid-template-columns:1fr}
+  .live-stats{flex-direction:column}
+  .stat-item:not(:last-child){border-right:none;border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:20px}
+  .hero-actions{flex-direction:column}
+  .btn-hero{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<!-- NAVIGATION -->
+<nav id="navbar">
+  <a class="nav-logo" href="/">
+    <span class="logo-icon">🛡️</span>
+    <span class="logo-text">GigSecure</span>
+    <span class="logo-badge">BETA</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how" class="nav-link">How It Works</a>
+    <a href="#triggers" class="nav-link">Coverage Triggers</a>
+    <a href="#plans" class="nav-link">Plans</a>
+    <a href="#impact" class="nav-link">Impact</a>
+    <a href="gigsecure_features.html" class="nav-link">Live Demos</a>
+  </div>
+  <div class="nav-actions">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">
+      <div class="theme-toggle-knob" id="themeKnob">🌙</div>
+    </button>
+    <div id="loggedInNav" style="display:none">
+      <div class="user-pill" id="userPill" onclick="goToDashboard()">
+        <div class="user-avatar" id="userInitial">U</div>
+        <span id="userName" style="font-size:13px;font-weight:600"></span>
+        <span style="font-size:11px;color:var(--text-dim)">Dashboard →</span>
+      </div>
+    </div>
+    <div id="loggedOutNav" style="display:none">
+      <div style="display:flex;gap:10px">
+        <button class="btn-nav btn-signin" onclick="window.location.href='gigsecure_login.html'">Sign In</button>
+        <button class="btn-nav btn-cta" onclick="window.location.href='gigsecure_onboarding.html'">Get Protected →</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Phase 2 — Zero-Touch Automation Active
+    </div>
+    <h1>The AI Shield for <span class="grad">India's Gig Workers</span></h1>
+    <p class="hero-desc">Parametric income protection that pays you automatically when weather, AQI, or civic disruption hits your zone — no claims forms, no waiting, no hassle.</p>
+    <div class="hero-actions">
+      <button class="btn-hero btn-hero-primary" onclick="window.location.href='gigsecure_onboarding.html'">🛡️ Protect My Income</button>
+      <button class="btn-hero btn-hero-outline" onclick="window.location.href='gigsecure_features.html'">⚡ See Live Demo</button>
+    </div>
+    <div class="hero-trust">
+      <div class="hero-trust-item">✅ No claim forms</div>
+      <span class="hero-sep">·</span>
+      <div class="hero-trust-item">⚡ Instant UPI payout</div>
+      <span class="hero-sep">·</span>
+      <div class="hero-trust-item">🔒 IRDAI compliant</div>
+      <span class="hero-sep">·</span>
+      <div class="hero-trust-item">🇮🇳 Made in India</div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="shield-wrap">
+      <div class="shield-bg"></div>
+      <div class="shield-inner">
+        <div class="shield-main">🛡️</div>
+        <div class="shield-label">ACTIVE COVERAGE</div>
+        <div class="shield-sub">AI monitoring your zone 24/7</div>
+      </div>
+      <div class="float-pill fp1">✅ ₹300 Auto-Credited</div>
+      <div class="float-pill fp2">🌧️ Rainfall Alert Active</div>
+      <div class="float-pill fp3">🤖 0-Touch Pipeline</div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE STATS -->
+<div class="live-stats" id="impact">
+  <div class="stat-item">
+    <div class="stat-num" id="statPolicies">5</div>
+    <div class="stat-lbl">Active Policies</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="statPayouts">₹8,885</div>
+    <div class="stat-lbl">Payouts Delivered</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="statClaims">7</div>
+    <div class="stat-lbl">Claims Processed</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">45+</div>
+    <div class="stat-lbl">Zones Monitored</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">0</div>
+    <div class="stat-lbl">Forms Required</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="section-badge">How It Works</div>
+  <h2 class="section-title">4 Steps. Fully Automatic.</h2>
+  <p class="section-sub">From disruption detection to money in your UPI wallet — all within minutes.</p>
+  <div class="steps-wrap">
+    <div class="step-card">
+      <div class="step-num">Step 01</div>
+      <span class="step-icon">📡</span>
+      <h4>Real-Time Monitoring</h4>
+      <p>Our AI continuously polls OpenWeatherMap, CPCB AQI, IMD alerts, and NDMA disaster feeds across 45+ Chennai micro-zones.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Step 02</div>
+      <span class="step-icon">⚡</span>
+      <h4>Trigger Detection</h4>
+      <p>When rainfall exceeds 35mm/3hr, temperature hits 43°C, AQI crosses 300, or a cyclone/curfew alert fires — disruption is flagged.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Step 03</div>
+      <span class="step-icon">🤖</span>
+      <h4>AI Fraud Check</h4>
+      <p>A 6-signal Isolation Forest model cross-checks GPS, accelerometer data, trust score, and zone activity to validate the claim.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Step 04</div>
+      <span class="step-icon">💸</span>
+      <h4>Instant Payout</h4>
+      <p>Zero-touch UPI transfer lands in your Razorpay wallet before the storm passes. No forms. No waiting. No approval needed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COVERAGE TRIGGERS -->
+<section class="section" style="padding-top:0" id="triggers">
+  <div class="section-badge">Parametric Triggers</div>
+  <h2 class="section-title">5 Events That Trigger Your Payout</h2>
+  <p class="section-sub">Verified real-world data sources power every trigger. No subjectivity, no disputes.</p>
+  <div class="triggers-wrap">
+    <div class="trig-card">
+      <div class="trig-icon">🌧️</div>
+      <div class="trig-name">Heavy Rainfall</div>
+      <div class="trig-threshold">Threshold: ≥35mm/3hr</div>
+      <div class="trig-badge">IMD + OWM</div>
+    </div>
+    <div class="trig-card">
+      <div class="trig-icon">🔥</div>
+      <div class="trig-name">Extreme Heat</div>
+      <div class="trig-threshold">Threshold: ≥43°C</div>
+      <div class="trig-badge">OWM Real-time</div>
+    </div>
+    <div class="trig-card">
+      <div class="trig-icon">💨</div>
+      <div class="trig-name">Severe AQI</div>
+      <div class="trig-threshold">Threshold: ≥300 AQI</div>
+      <div class="trig-badge">CPCB Live Feed</div>
+    </div>
+    <div class="trig-card">
+      <div class="trig-icon">🌀</div>
+      <div class="trig-name">Cyclone / Flood</div>
+      <div class="trig-threshold">Any active alert</div>
+      <div class="trig-badge">NDMA Alerts</div>
+    </div>
+    <div class="trig-card">
+      <div class="trig-icon">🚫</div>
+      <div class="trig-name">Curfew / Hartal</div>
+      <div class="trig-threshold">Civic shutdown flag</div>
+      <div class="trig-badge">Verified Sources</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" style="padding-top:0">
+  <div class="section-badge">Platform Features</div>
+  <h2 class="section-title">Engineered for the Gig Economy</h2>
+  <p class="section-sub">Every feature is purpose-built for India's 5 crore+ delivery partners.</p>
+  <div class="features-grid">
+    <div class="feat-card">
+      <span class="feat-icon">🧠</span>
+      <h4>ML Risk Profiling</h4>
+      <p>XGBoost-style zone risk scores updated daily. Premiums dynamically calibrated based on monsoon season, local history, and micro-zone vulnerability.</p>
+      <span class="feat-tag">AI Powered</span>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🛡️</span>
+      <h4>6-Signal Fraud Detection</h4>
+      <p>Isolation Forest anomaly detection using GPS, accelerometer, cell tower validation, crowd signals, and historical baseline checks.</p>
+      <span class="feat-tag">Zero False Claims</span>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📱</span>
+      <h4>UPI Instant Settlement</h4>
+      <p>Razorpay-powered zero-touch wallet credits. Approved payouts land in your account within 2 minutes of trigger confirmation.</p>
+      <span class="feat-tag">Instant</span>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📋</span>
+      <h4>Aadhaar-Verified KYC</h4>
+      <p>OTP-based onboarding with DigiLocker integration. Fully IRDAI-compliant eKYC to get you covered in under 90 seconds.</p>
+      <span class="feat-tag">Compliant</span>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🏆</span>
+      <h4>Trust Score Engine</h4>
+      <p>Real-time trust scores based on claim history, GPS behavior, and integrity fingerprints. Rewards honest workers with lower premiums.</p>
+      <span class="feat-tag">Dynamic</span>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📡</span>
+      <h4>Community Pulse</h4>
+      <p>Live zone-level activity feed shows how many of your fellow delivery partners are active, and whether disruption has been flagged nearby.</p>
+      <span class="feat-tag">Collaborative</span>
+    </div>
+  </div>
+</section>
+
+<!-- PLANS -->
+<section class="section" style="padding-top:0" id="plans">
+  <div class="section-badge">Protection Plans</div>
+  <h2 class="section-title">Choose Your Shield Level</h2>
+  <p class="section-sub">From ₹55/week to full elite coverage — all plans auto-renew weekly with no lock-ins.</p>
+  <div class="plans-grid">
+    <div class="plan-card">
+      <div class="plan-emoji">🌱</div>
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">₹55</div>
+      <div class="plan-period">/week</div>
+      <div class="plan-rate">₹35/hr payout</div>
+      <div class="plan-cap">Up to 3hrs · ₹105 weekly cap</div>
+      <button class="plan-btn" onclick="window.location.href='gigsecure_onboarding.html'">Get Started</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-emoji">🔵</div>
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">₹70</div>
+      <div class="plan-period">/week</div>
+      <div class="plan-rate">₹45/hr payout</div>
+      <div class="plan-cap">Up to 4hrs · ₹180 weekly cap</div>
+      <button class="plan-btn" onclick="window.location.href='gigsecure_onboarding.html'">Get Started</button>
+    </div>
+    <div class="plan-card highlighted">
+      <div class="plan-emoji">🟡</div>
+      <div class="plan-name">Standard</div>
+      <div class="plan-price">₹90</div>
+      <div class="plan-period">/week</div>
+      <div class="plan-rate">₹60/hr payout</div>
+      <div class="plan-cap">Up to 5hrs · ₹300 weekly cap</div>
+      <button class="plan-btn" onclick="window.location.href='gigsecure_onboarding.html'">Get Started</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-emoji">🟠</div>
+      <div class="plan-name">Premium</div>
+      <div class="plan-price">₹115</div>
+      <div class="plan-period">/week</div>
+      <div class="plan-rate">₹75/hr payout</div>
+      <div class="plan-cap">Up to 6hrs · ₹450 weekly cap</div>
+      <button class="plan-btn" onclick="window.location.href='gigsecure_onboarding.html'">Get Started</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-emoji">🔴</div>
+      <div class="plan-name">Elite</div>
+      <div class="plan-price">₹135</div>
+      <div class="plan-period">/week</div>
+      <div class="plan-rate">₹90/hr payout</div>
+      <div class="plan-cap">Up to 7hrs · ₹630 weekly cap</div>
+      <button class="plan-btn" onclick="window.location.href='gigsecure_onboarding.html'">Get Started</button>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" style="padding-top:0">
+  <div class="section-badge">Worker Stories</div>
+  <h2 class="section-title">What Riders Are Saying</h2>
+  <p class="section-sub" style="margin-bottom:40px">Real stories from Swiggy and Zomato delivery partners across Chennai.</p>
+  <div class="testimonials-grid">
+    <div class="testi-card">
+      <div class="testi-star">★★★★★</div>
+      <p class="testi-text">"During the November cyclone last year I lost 3 days of earnings. With GigSecure, ₹630 was already in my account the same evening — before the rain even stopped."</p>
+      <div class="testi-author">
+        <div class="testi-avatar">🛵</div>
+        <div><div class="testi-name">Ravi Kumar</div><div class="testi-role">Swiggy Partner · Velachery</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-star">★★★★★</div>
+      <p class="testi-text">"The AQI was 350 for 3 days straight and none of us could work. I got ₹1,200 automatically. No app submission, no waiting on call centre. Just money in my wallet."</p>
+      <div class="testi-author">
+        <div class="testi-avatar">🏍️</div>
+        <div><div class="testi-name">Arjun Raj</div><div class="testi-role">Zomato Partner · Marina Beach</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-star">★★★★☆</div>
+      <p class="testi-text">"Premium is worth it for us who do 8–10 deliveries a day. Last summer heat wave, I was protected. My colleagues without GigSecure lost 4 days of income."</p>
+      <div class="testi-author">
+        <div class="testi-avatar">⚡</div>
+        <div><div class="testi-name">Priya Devi</div><div class="testi-role">Zomato Partner · Adyar</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA SECTION -->
+<section class="cta-section" style="margin-bottom:0;padding-bottom:80px">
+  <h2>Ready to Protect Your Income?</h2>
+  <p>Join Chennai's delivery workers already covered by AI-powered parametric insurance. Takes 90 seconds to activate.</p>
+  <div class="cta-actions">
+    <button class="btn-hero btn-hero-primary" onclick="window.location.href='gigsecure_onboarding.html'">🛡️ Get Protected Now</button>
+    <button class="btn-hero btn-hero-outline" onclick="window.location.href='gigsecure_login.html'">👤 Partner Login</button>
+    <button class="btn-hero btn-hero-outline" onclick="window.location.href='gigsecure_features.html'">⚡ View Live Demos</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo" style="margin-bottom:10px;cursor:default">
+        <span style="font-size:22px">🛡️</span>
+        <span class="logo-text">GigSecure</span>
+      </div>
+      <p>AI-powered parametric income protection for India's 5 crore+ food delivery workers. Zero-touch. Instant payouts.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Platform</h5>
+      <a href="gigsecure_login.html">Worker Login</a>
+      <a href="gigsecure_onboarding.html">Register</a>
+      <a href="gigsecure_features.html">Live Demos</a>
+      <a href="/docs">API Docs</a>
+    </div>
+    <div class="footer-col">
+      <h5>Coverage</h5>
+      <a href="#triggers">Triggers</a>
+      <a href="#plans">Plans</a>
+      <a href="#how">How It Works</a>
+      <a href="#impact">Our Impact</a>
+    </div>
+    <div class="footer-col">
+      <h5>Company</h5>
+      <a href="#">About ZenVyte</a>
+      <a href="#">IRDAI Compliance</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>© 2026 GigSecure by ZenVyte · All rights reserved</div>
+    <div class="footer-badges">
+      <span class="f-badge">🔒 SSL Secured</span>
+      <span class="f-badge">🇮🇳 Made in India</span>
+      <span class="f-badge">✅ IRDAI Compliant</span>
+      <span class="f-badge">🤖 AI Powered</span>
+    </div>
+  </div>
+</footer>
+
+<script src="gs_shared.js"></script>
+<script>
+// ── Theme Toggle ──────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  html.setAttribute('data-theme', newTheme);
+  document.getElementById('themeKnob').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('gs_theme', newTheme);
+}
+// Apply saved theme
+const savedTheme = localStorage.getItem('gs_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+document.getElementById('themeKnob').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+
+// ── Session-aware Nav ─────────────────────────────────────────────────────────
+const sess = Session.get();
+if (sess) {
+  document.getElementById('loggedInNav').style.display = 'block';
+  document.getElementById('loggedOutNav').style.display = 'none';
+  document.getElementById('userInitial').textContent = (sess.name || 'U').charAt(0);
+  document.getElementById('userName').textContent = sess.name?.split(' ')[0] || 'Portal';
+} else {
+  document.getElementById('loggedInNav').style.display = 'none';
+  document.getElementById('loggedOutNav').style.display = 'block';
+}
+function goToDashboard() {
+  const s = Session.get();
+  if (!s) { window.location.href = 'gigsecure_login.html'; return; }
+  window.location.href = s.role === 'admin' ? 'gigsecure_admin.html' : 'gigsecure_worker.html';
+}
+
+// ── Scroll Nav Effect ─────────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('navbar');
+  if (window.scrollY > 60) {
+    nav.style.height = '60px';
+  } else {
+    nav.style.height = 'var(--nav-h)';
+  }
+});
+
+// ── Live Stats from API ───────────────────────────────────────────────────────
+async function loadLiveStats() {
+  try {
+    const stats = await GS.get('/admin/stats');
+    document.getElementById('statPolicies').textContent = stats.policies || 5;
+    document.getElementById('statPayouts').textContent = '₹' + Number(stats.total_payouts||8885).toLocaleString('en-IN');
+    document.getElementById('statClaims').textContent = stats.total_claims || 7;
+  } catch(e) { /* keep defaults */ }
+}
+loadLiveStats();
+</script>
+</body>
+</html>
