@@ -140,3 +140,47 @@ class NotificationLog(Base):
     icon        = Column(String, nullable=True)
     amount      = Column(Float, nullable=True)
     created_at  = Column(DateTime, server_default=func.now())
+
+class Payment(Base):
+    """Payment records tracking Razorpay integration."""
+    __tablename__ = "payments"
+    id                  = Column(String, primary_key=True, default=lambda: gen_id("PAY-"))
+    claim_id            = Column(String, nullable=False)  # References claim
+    worker_id           = Column(String, nullable=False)
+    
+    # Razorpay identifiers
+    razorpay_order_id   = Column(String, unique=True, nullable=True)
+    razorpay_payment_id = Column(String, unique=True, nullable=True)
+    signature           = Column(String, nullable=True)
+    
+    # Amount (stored in rupees and paise for accuracy)
+    amount_rupees       = Column(Float, nullable=False)
+    amount_paise        = Column(Integer, nullable=False)
+    
+    # State tracking
+    status              = Column(String, default="pending")
+    # pending → created → confirmed → captured → success / failed → retry
+    retry_count         = Column(Integer, default=0)
+    max_retries         = Column(Integer, default=3)
+    
+    # Error tracking
+    error_message       = Column(String(500), nullable=True)
+    error_code          = Column(String(50), nullable=True)
+    
+    # Timestamps
+    created_at          = Column(DateTime, server_default=func.now())
+    order_created_at    = Column(DateTime, nullable=True)
+    payment_received_at = Column(DateTime, nullable=True)
+    
+    # Metadata
+    initiated_by        = Column(String(50), default="system")  # system, admin, worker
+
+class PaymentEvent(Base):
+    """Audit trail for all payment state changes and webhook events."""
+    __tablename__ = "payment_events"
+    id              = Column(String, primary_key=True, default=lambda: gen_id("PEV-"))
+    payment_id      = Column(String, nullable=False)
+    event_type      = Column(String, nullable=False)
+    # order_created, webhook_received, capture_initiated, payment_success, payment_failed, retry_initiated
+    event_data      = Column(JSON, nullable=True)
+    created_at      = Column(DateTime, server_default=func.now())

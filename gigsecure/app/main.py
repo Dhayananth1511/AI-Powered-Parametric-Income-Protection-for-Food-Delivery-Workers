@@ -1,12 +1,18 @@
 import sys
 import os
 from pathlib import Path
+import io
 
 # Fix sys.path if run directly as python app/main.py
 current_dir = Path(__file__).resolve().parent
 backend_dir = current_dir.parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
+
+# Fix stdout encoding on Windows
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,12 +21,28 @@ from fastapi.responses import RedirectResponse
 from app.database import engine, Base, SessionLocal
 from app.models import Worker, Admin, Policy, Claim, WeatherLog
 from app import routes_auth, routes_policy, routes_claims, routes_weather
-from app import routes_kyc, routes_notifications
+from app import routes_kyc, routes_notifications, routes_payments
 from app.ml_engine import compute_risk_score, recommend_plan, calculate_dynamic_premium
 from app.trigger_monitor import get_active_events, get_all_disruption_events_db
+from app.background_jobs import start_scheduler, stop_scheduler, get_scheduler_status
+from app.scheduler import initialize_scheduler, stop_scheduler as stop_bg_scheduler
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 import os
+import logging
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Configure Logging
+# ─────────────────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("gigsecure.log", encoding='utf-8'),
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Create all tables
@@ -45,19 +67,33 @@ with engine.connect() as conn:
 # ─────────────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="GigSecure API",
-    description="AI-Powered Parametric Income Protection for Food Delivery Workers — Phase 2",
-    version="2.0.0",
+    description="AI-Powered Parametric Income Protection for Food Delivery Workers — Phase 2 (PRODUCTION READY)",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Security: Proper CORS Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,  # Fixed: not "all origins"
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Security: Rate Limiting Middleware
+# ─────────────────────────────────────────────────────────────────────────────
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Register Routers
@@ -68,6 +104,7 @@ app.include_router(routes_claims.router)
 app.include_router(routes_weather.router)
 app.include_router(routes_kyc.router)
 app.include_router(routes_notifications.router)
+app.include_router(routes_payments.router)  # Phase 2A: Payment integration
 
 # Static Frontend (Mount after all routes)
 static_path = os.path.join(os.path.dirname(__file__), "..", "static")
@@ -79,10 +116,11 @@ def seed_db():
     db: Session = SessionLocal()
     try:
         if db.query(Worker).count() == 0:
+            from app.security import hash_password
             workers = [
                 Worker(
                     id="WKR-4821", name="Ravi Kumar", phone="+91 98765 43210",
-                    email="ravi.kumar@swiggy.in", password="demo1234",
+                    email="ravi.kumar@swiggy.in", password=hash_password("demo1234"),
                     platform="Swiggy", zone="Velachery, Chennai", pincode="600042",
                     plan="standard", risk_score=0.58, trust_score=92,
                     payouts=640, sim_payouts=1240, claims_total=12,
@@ -91,7 +129,7 @@ def seed_db():
                 ),
                 Worker(
                     id="WKR-3302", name="Arjun Raj", phone="+91 90123 45678",
-                    email="arjun.raj@zomato.in", password="demo1234",
+                    email="arjun.raj@zomato.in", password=hash_password("demo1234"),
                     platform="Zomato", zone="Marina Beach, Chennai", pincode="600005",
                     plan="elite", risk_score=0.85, trust_score=88,
                     payouts=1200, sim_payouts=2430, claims_total=18,
@@ -100,7 +138,7 @@ def seed_db():
                 ),
                 Worker(
                     id="WKR-7741", name="Suresh Murugan", phone="+91 87654 32109",
-                    email="suresh.m@swiggy.in", password="demo1234",
+                    email="suresh.m@swiggy.in", password=hash_password("demo1234"),
                     platform="Swiggy", zone="T. Nagar, Chennai", pincode="600017",
                     plan="basic", risk_score=0.45, trust_score=61,
                     payouts=270, sim_payouts=540, claims_total=6,
@@ -109,7 +147,7 @@ def seed_db():
                 ),
                 Worker(
                     id="WKR-5593", name="Priya Devi", phone="+91 76543 21098",
-                    email="priya.d@zomato.in", password="demo1234",
+                    email="priya.d@zomato.in", password=hash_password("demo1234"),
                     platform="Zomato", zone="Adyar, Chennai", pincode="600020",
                     plan="premium", risk_score=0.72, trust_score=78,
                     payouts=900, sim_payouts=1350, claims_total=10,
@@ -118,7 +156,7 @@ def seed_db():
                 ),
                 Worker(
                     id="WKR-8847", name="Karthik Selvam", phone="+91 65432 10987",
-                    email="karthik.s@swiggy.in", password="demo1234",
+                    email="karthik.s@swiggy.in", password=hash_password("demo1234"),
                     platform="Swiggy", zone="Guindy, Chennai", pincode="600032",
                     plan="starter", risk_score=0.32, trust_score=45,
                     payouts=105, sim_payouts=210, claims_total=3,
@@ -130,15 +168,16 @@ def seed_db():
                 db.add(w)
 
         if db.query(Admin).count() == 0:
+            from app.security import hash_password
             admins = [
                 Admin(
                     id="ADM-001", name="Karthik Sundaram",
-                    email="admin@digit.com", password="admin123",
+                    email="admin@digit.com", password=hash_password("admin123"),
                     org="Digit Insurance Pvt Ltd", designation="Portfolio Manager",
                 ),
                 Admin(
                     id="ADM-002", name="Priya Nair",
-                    email="ops@gigsecure.in", password="admin123",
+                    email="ops@gigsecure.in", password=hash_password("admin123"),
                     org="GigSecure Platform Admin", designation="Platform Admin",
                 ),
             ]
@@ -182,13 +221,36 @@ def seed_db():
                 db.add(c)
 
         db.commit()
+        logger.info("✅ Database seeded successfully")
     except Exception as e:
-        print(f"[SEED] Error: {e}")
+        logger.error(f"❌ Seed error: {e}")
         db.rollback()
     finally:
         db.close()
 
 seed_db()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Startup & Shutdown Events (Lifecycle Management)
+# ─────────────────────────────────────────────────────────────────────────────
+@app.on_event("startup")
+async def startup_event():
+    """Start background jobs on application startup."""
+    logger.info("🚀 GigSecure API Starting...")
+    print("━" * 70)
+    print("🛡️  GigSecure — AI-Powered Parametric Income Protection")
+    print("━" * 70)
+    start_scheduler()
+    initialize_scheduler()  # Phase 2A: Initialize new scheduler
+    logger.info("✅ Startup complete — Background jobs active")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop background jobs on application shutdown."""
+    logger.info("⛔ GigSecure API Shutting Down...")
+    stop_scheduler()
+    stop_bg_scheduler()  # Phase 2A: Stop new scheduler
+    logger.info("✅ Shutdown complete")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Root & Health
@@ -205,7 +267,12 @@ def api_root():
 
 @app.get("/health")
 def health():
-    return {"status": "healthy", "version": "2.0.0", "python": "3.13"}
+    return {"status": "healthy", "version": "2.1.0", "python": "3.13"}
+
+@app.get("/scheduler/status")
+def get_scheduler_info():
+    """Get background job scheduler status."""
+    return get_scheduler_status()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Admin Stats (7 KPIs)

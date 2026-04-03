@@ -382,62 +382,84 @@ async function init() {
     loadForecast(),
     loadPolicyHistory(),
   ]);
-  startNotifPolling(sess.id, document.getElementById("notifBadge"));
+  startNotifPolling(sess.worker_id, document.getElementById("notifBadge"));
   setInterval(loadPulse, 30000); // Pulse update every 30s
 }
 
 // ── Worker Data ──────────────────────────────────────────────────────────────
 async function loadWorker() {
   try {
-    workerData = await GS.get("/auth/worker/" + sess.id);
+    const data = await GS.get("/auth/worker/" + sess.worker_id);
+    if(!data) throw new Error("No worker data returned");
+    workerData = {...workerData, ...data};
     Session.save({...sess, ...workerData, role:"worker"});
-    const hero = document.getElementById("heroEl");
-    document.getElementById("heroTitle").textContent = `${workerData.name} · ${capitalize(workerData.plan)} Plan`;
-    document.getElementById("heroSub").textContent = `Zone: ${workerData.zone} · ₹${PLANS[workerData.plan]?.rate||60}/hr coverage active`;
-    document.getElementById("zoneLabel").textContent = workerData.zone;
-    // Platform badge
-    const platBadge = document.getElementById("platformBadge");
-    if (platBadge && workerData.platform) {
+    
+    // Safely update UI with fallbacks
+    document.getElementById("heroTitle").textContent = `${data.name || "Worker"} · ${capitalize(data.plan || "standard")} Plan`;
+    document.getElementById("heroSub").textContent = `Zone: ${data.zone || "Unknown"} · ₹${PLANS[data.plan]?.rate||60}/hr coverage active`;
+    document.getElementById("zoneLabel").textContent = data.zone || "---";
+    
+    if (document.getElementById("platformBadge") && data.platform) {
       const platIcons = {"Swiggy":"🧡","Zomato":"🍅","Dunzo":"🔵","Blinkit":"🟡"};
-      platBadge.textContent = (platIcons[workerData.platform]||"🛵") + " " + workerData.platform;
-      platBadge.style.display = "inline-flex";
+      document.getElementById("platformBadge").textContent = (platIcons[data.platform]||"🛵") + " " + data.platform;
+      document.getElementById("platformBadge").style.display = "inline-flex";
     }
-    const wIdBadge = document.getElementById("workerIdBadge");
-    if (wIdBadge) { wIdBadge.textContent = workerData.id; wIdBadge.style.display = "inline-flex"; }
-    const upiBadge = document.getElementById("upiBadge");
-    if (upiBadge && workerData.bank_upi_id) { upiBadge.textContent = "💳 Payout: " + workerData.bank_upi_id; upiBadge.style.display = "inline-flex"; }
-    document.getElementById("totalEarned").textContent = formatINR(workerData.earnings_protected || workerData.payouts + workerData.sim_payouts);
-    document.getElementById("totalClaims").textContent = workerData.claims_total || 0;
-    document.getElementById("claimsBreakdown").textContent = `${workerData.claims_approved||0} approved · ${workerData.claims_rejected||0} rejected`;
-    document.getElementById("trustScore").textContent = (workerData.trust_score||40) + "/100";
-    document.getElementById("trustLabel").textContent = trustLabel(workerData.trust_score||40);
-    document.getElementById("trustScore").style.color = trustColor(workerData.trust_score||40);
-    const plan = PLANS[workerData.plan] || PLANS.standard;
-    const hrsUsed = workerData.weekly_hrs_used || 0;
+    
+    if (document.getElementById("workerIdBadge")) {
+      document.getElementById("workerIdBadge").textContent = data.id || "---";
+      document.getElementById("workerIdBadge").style.display = "inline-flex";
+    }
+    
+    if (document.getElementById("upiBadge") && data.bank_upi_id) {
+      document.getElementById("upiBadge").textContent = "💳 Payout: " + data.bank_upi_id;
+      document.getElementById("upiBadge").style.display = "inline-flex";
+    }
+    
+    document.getElementById("totalEarned").textContent = formatINR(data.earnings_protected || (data.payouts||0) + (data.sim_payouts||0) || 0);
+    document.getElementById("totalClaims").textContent = data.claims_total || 0;
+    document.getElementById("claimsBreakdown").textContent = `${data.claims_approved||0} approved · ${data.claims_rejected||0} rejected`;
+    document.getElementById("trustScore").textContent = (data.trust_score||40) + "/100";
+    document.getElementById("trustLabel").textContent = trustLabel(data.trust_score||40);
+    document.getElementById("trustScore").style.color = trustColor(data.trust_score||40);
+    
+    const plan = PLANS[data.plan] || PLANS.standard;
+    const hrsUsed = data.weekly_hrs_used || 0;
     document.getElementById("hrsUsed").textContent = `${hrsUsed}/${plan.maxHrs}`;
     document.getElementById("hrsFill").style.width = Math.min(100, (hrsUsed/plan.maxHrs)*100) + "%";
-  } catch(e) { console.warn("Worker load error:", e); }
+  } catch(e) { 
+    console.error("Worker load error:", e.message);
+    // Set defaults
+    ["totalEarned", "totalClaims", "claimsBreakdown", "trustScore", "hrsUsed"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = "---";
+    });
+  }
 }
 
 // ── Zone Status ───────────────────────────────────────────────────────────────
 async function loadZoneStatus() {
   const zone = (workerData||sess).zone;
-  if(!zone) return;
+  if(!zone) {
+    document.getElementById("tv-rainfall").textContent = "---";
+    document.getElementById("tv-temp").textContent = "---";
+    document.getElementById("tv-aqi").textContent = "---";
+    return;
+  }
   try {
     const data = await GS.get("/weather/zone/" + encodeURIComponent(zone));
-    weatherData = data.weather;
-    // Update trigger cards
-    const rain = data.weather?.rainfall_3h || 0;
-    const temp = data.weather?.temperature || 0;
-    const aqi  = data.weather?.aqi || 0;
+    if(!data || !data.weather) throw new Error("No weather data");
+    weatherData = data.weather || {};
+    
+    const rain = data.weather.rainfall_3h || 0;
+    const temp = data.weather.temperature || 0;
+    const aqi  = data.weather.aqi || 0;
     document.getElementById("tv-rainfall").textContent = rain.toFixed(1) + " mm";
     document.getElementById("tv-temp").textContent = temp.toFixed(1) + "°C";
     document.getElementById("tv-aqi").textContent = "AQI " + aqi;
 
-    // Highlight breached triggers
-    if(rain >= 35) document.getElementById("tv-rainfall").closest(".trig-card").classList.add("active");
-    if(temp >= 43) document.getElementById("tv-temp").closest(".trig-card").classList.add("active");
-    if(aqi >= 300) document.getElementById("tv-aqi").closest(".trig-card").classList.add("active");
+    if(rain >= 35) document.getElementById("tv-rainfall").closest(".trig-card")?.classList.add("active");
+    if(temp >= 43) document.getElementById("tv-temp").closest(".trig-card")?.classList.add("active");
+    if(aqi >= 300) document.getElementById("tv-aqi").closest(".trig-card")?.classList.add("active");
 
     if(data.triggers?.length > 0) {
       const t = data.triggers[0];
@@ -453,20 +475,33 @@ async function loadZoneStatus() {
       document.getElementById("overallTrigger").classList.add("active");
       selectedClaimTrigger = t.type;
     }
-  } catch(e) { console.warn("Zone status error:", e); }
+  } catch(e) { 
+    console.error("Zone status error:", e.message);
+    document.getElementById("tv-rainfall").textContent = "---";
+    document.getElementById("tv-temp").textContent = "---";
+    document.getElementById("tv-aqi").textContent = "---";
+  }
 }
 
 async function loadPulse() {
   const zone = (workerData||sess).zone;
-  if(!zone) return;
+  if(!zone) {
+    document.getElementById("pulseWidget").style.display = "none";
+    return;
+  }
   try {
     const p = await GS.get("/policy/zone-activity?zone=" + encodeURIComponent(zone));
-    document.getElementById("pulseWidget").style.display = "block";
-    document.getElementById("pulseZone").textContent = p.zone;
-    document.getElementById("pActive").textContent = p.active_workers;
-    document.getElementById("pProtected").textContent = p.protected_partners;
-    document.getElementById("pStatus").textContent = p.status;
-  } catch(e) {}
+    if(p && p.zone) {
+      document.getElementById("pulseWidget").style.display = "block";
+      document.getElementById("pulseZone").textContent = p.zone || "---";
+      document.getElementById("pActive").textContent = p.active_workers || 0;
+      document.getElementById("pProtected").textContent = p.protected_partners || 0;
+      document.getElementById("pStatus").textContent = p.status || "---";
+    }
+  } catch(e) { 
+    console.error("Pulse load error:", e.message);
+    document.getElementById("pulseWidget").style.display = "none";
+  }
 }
 
 async function refreshZone() {
@@ -480,11 +515,11 @@ async function refreshZone() {
 // ── Policy ─────────────────────────────────────────────────────────────────
 async function loadPolicy() {
   const el = document.getElementById("policyPanel");
-  const workerId = (workerData||sess).id;
-  if(!workerId) return;
+  const workerId = (workerData||sess).id || (workerData||sess).worker_id;
+  if(!workerId) { el.innerHTML = `<div class="empty-state">---</div>`; return; }
   try {
     const p = await GS.get("/policy/active/" + workerId);
-    if(!p.has_policy) {
+    if(!p || !p.has_policy) {
       el.innerHTML = `<div class="empty-state">No active policy. <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="createDefaultPolicy()">Activate Plan</button></div>`;
       return;
     }
@@ -493,54 +528,51 @@ async function loadPolicy() {
       <div class="plan-row">
         <div>
           <div style="font-weight:700;font-size:15px">${plan.label} Plan</div>
-          <div style="color:var(--muted);font-size:12px;margin-top:2px">Policy ID: ${p.policy_id} · Renewed ${p.renewal_count} times</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:2px">Policy ID: ${p.policy_id || "---"} · Renewed ${p.renewal_count || 0} times</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:20px;font-weight:800;color:var(--primary)">₹${p.premium}<span style="font-size:12px;font-weight:400;color:var(--muted)">/week</span></div>
+          <div style="font-size:20px;font-weight:800;color:var(--primary)">₹${p.premium || "---"}<span style="font-size:12px;font-weight:400;color:var(--muted)">/week</span></div>
           <div style="font-size:11px;color:var(--success)">Active ✅</div>
         </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12px">
-        ${[["Hourly Rate","₹"+p.hourly_rate+"/hr"],["Max Hours",p.max_hours+"hrs/week"],["Weekly Cap","₹"+p.weekly_cap],
-           ["Hours Used",p.hrs_used_this_week+"hrs"],["Hours Left",p.hrs_remaining+"hrs"],["Cap Remaining","₹"+p.payout_remaining]
-          ].map(([l,v])=>`<div style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:10px;padding:10px">
-            <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.5px">${l}</div>
-            <div style="font-weight:700;margin-top:3px">${v}</div></div>`).join("")}
-      </div>
-      <div style="display:flex;gap:10px;margin-top:14px">
-        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="renewPolicy()">🔄 Renew</button>
-        <button class="btn btn-danger btn-sm" style="flex:1" onclick="cancelPolicy()">Cancel Policy</button>
       </div>`;
-  } catch(e) { el.innerHTML = `<div class="empty-state">Failed to load policy</div>`; }
+  } catch(e) { 
+    console.error("Policy load error:", e.message);
+    el.innerHTML = `<div class="empty-state">Failed to load policy. Try again later.</div>`; 
+  }
 }
 
 // ── Forecast ──────────────────────────────────────────────────────────────────
 async function loadForecast() {
   const zone = (workerData||sess).zone;
-  if(!zone) return;
+  if(!zone) { document.getElementById("forecastAlert").textContent = "---"; return; }
   try {
     const data = await GS.get("/ml/forecast/" + encodeURIComponent(zone));
+    if(!data || !data.forecasts) throw new Error("No forecast data");
     const bars = document.getElementById("forecastBars");
-    bars.innerHTML = data.forecasts.slice(0,24).map(f => {
-      const pct = f.probability;
+    bars.innerHTML = (data.forecasts || []).slice(0,24).map(f => {
+      const pct = f.probability || 0;
       const col = pct >= 60 ? "#f87171" : pct >= 35 ? "#fb923c" : "#4ade80";
-      return `<div class="f-bar" style="height:${Math.max(4,pct)}%;background:${col};opacity:0.8" title="${f.hour}:00 — ${pct}%"></div>`;
+      return `<div class="f-bar" style="height:${Math.max(4,pct)}%;background:${col};opacity:0.8" title="${f.hour || "?"}: 00 — ${pct}%"></div>`;
     }).join("");
-    document.getElementById("forecastAlert").textContent = data.alert ? `⚡ High Risk ~${data.peak_hour}:00` : "✅ Low Risk";
+    document.getElementById("forecastAlert").textContent = data.alert ? `⚡ High Risk ~${data.peak_hour || "?"}:00` : "✅ Low Risk";
     document.getElementById("forecastAlert").style.background = data.alert ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)";
     document.getElementById("forecastAlert").style.color = data.alert ? "#f87171" : "#4ade80";
     document.getElementById("forecastAlert").style.border = `1px solid ${data.alert ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`;
     if(data.alert_message) document.getElementById("forecastMsg").innerHTML = `<div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px;">${data.alert_message}</div>`;
-  } catch(e) {}
+  } catch(e) { 
+    console.error("Forecast load error:", e.message);
+    document.getElementById("forecastAlert").textContent = "---"; 
+  }
 }
 
 // ── Claims ─────────────────────────────────────────────────────────────────
 async function loadClaims() {
-  const workerId = (workerData||sess).id;
+  const workerId = (workerData||sess).id || (workerData||sess).worker_id;
   if(!workerId) return;
   try {
     const claims = await GS.get("/claims/worker/" + workerId);
     const el = document.getElementById("claimsList");
+    if(!claims || !Array.isArray(claims)) throw new Error("Invalid claims data");
     document.getElementById("claimsBadge").textContent = claims.length + " claims";
     if(!claims.length) { el.innerHTML = `<div class="empty-state">No claims yet — simulate your first disruption!</div>`; return; }
     el.innerHTML = claims.slice(0,10).map(c => `
@@ -549,32 +581,43 @@ async function loadClaims() {
           <div style="font-size:24px">${TRIGGER_META[c.trigger_type]?.icon||"⚡"}</div>
           <div>
             <div style="font-weight:600;font-size:13px">${c.trigger_label||c.trigger_type} ${c.is_simulated?"<span style='font-size:10px;color:var(--muted)'>(sim)</span>":""}</div>
-            <div style="color:var(--muted);font-size:11px">${formatDateTime(c.created_at)} · ${c.disruption_hrs}hrs · Fraud: ${c.fraud_score}/100</div>
+            <div style="color:var(--muted);font-size:11px">${formatDateTime(c.created_at)} · ${c.disruption_hrs||"?"}hrs · Fraud: ${c.fraud_score||"?"}%</div>
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-weight:800;color:${c.status==="approved"?"#4ade80":"#f87171"}">${c.status==="approved"?"+":""} ${formatINR(c.payout_amount)}</div>
+          <div style="font-weight:800;color:${c.status==="approved"?"#4ade80":"#f87171"}">${c.status==="approved"?"+":""} ${formatINR(c.payout_amount||0)}</div>
           <div style="margin-top:4px">${statusBadge(c.status)}</div>
         </div>
       </div>`).join("");
-  } catch(e) {}
+  } catch(e) { 
+    console.error("Claims load error:", e.message);
+    document.getElementById("claimsList").innerHTML = `<div class="empty-state">Unable to load claims</div>`;
+  }
 }
 
 // ── Policy History ─────────────────────────────────────────────────────────
 async function loadPolicyHistory() {
-  const workerId = (workerData||sess).id;
+  const workerId = (workerData||sess).id || (workerData||sess).worker_id;
   if(!workerId) return;
   try {
     const hist = await GS.get("/policy/history/" + workerId);
     const el = document.getElementById("policyHistory");
-    if(!hist.length) { el.innerHTML = `<div class="empty-state">No policy history</div>`; return; }
+    if(!hist || !Array.isArray(hist) || !hist.length) { 
+      el.innerHTML = `<div class="empty-state">No policy history</div>`; 
+      return; 
+    }
     el.innerHTML = hist.map(p => `
       <div class="claim-item">
-        <div><div style="font-weight:600;font-size:13px">${capitalize(p.plan)} Plan · ₹${p.premium}/week</div>
-          <div style="color:var(--muted);font-size:11px">${formatDate(p.start_date)} ${p.end_date?"→ "+formatDate(p.end_date):""} · Renewed ${p.renewal_count}×</div></div>
-        ${statusBadge(p.status)}
+        <div>
+          <div style="font-weight:600;font-size:13px">${capitalize(p.plan || "unknown")} Plan · ₹${p.premium || "?"}/week</div>
+          <div style="color:var(--muted);font-size:11px">${formatDate(p.start_date) || "---"} ${p.end_date?"→ "+formatDate(p.end_date):""} · Renewed ${p.renewal_count || 0}×</div>
+        </div>
+        ${statusBadge(p.status||"active")}
       </div>`).join("");
-  } catch(e) {}
+  } catch(e) { 
+    console.error("Policy history error:", e.message);
+    document.getElementById("policyHistory").innerHTML = `<div class="empty-state">Unable to load history</div>`; 
+  }
 }
 
 // ── Claim Simulation Modal ─────────────────────────────────────────────────
@@ -736,7 +779,7 @@ function toggleNotif() {
   if(drop.classList.contains("open")) refreshNotifs();
 }
 async function refreshNotifs() {
-  await loadNotifications(sess.id, document.getElementById("notifList2"), document.getElementById("notifBadge"));
+  await loadNotifications(sess.worker_id, document.getElementById("notifList2"), document.getElementById("notifBadge"));
 }
 document.addEventListener("click", e => {
   if(!e.target.closest(".notif-wrap")) document.getElementById("notifDrop").classList.remove("open");

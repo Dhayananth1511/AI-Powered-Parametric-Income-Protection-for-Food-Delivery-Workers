@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, validator
 from app.database import get_db
 from app.models import Worker, Admin
 from app.ml_engine import compute_risk_score, recommend_plan, calculate_dynamic_premium
+from app.security import hash_password, verify_password, create_access_token, verify_token
 import uuid, random
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -20,6 +24,18 @@ class RegisterRequest(BaseModel):
     aadhaar:  str
     bank_upi_id: str = None
     plan:     str = None
+    
+    @validator("password")
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        return v
+    
+    @validator("phone")
+    def validate_phone(cls, v):
+        if not v.startswith("+91") and len(v.replace(" ", "")) < 10:
+            raise ValueError("Invalid phone number")
+        return v
 
 class LoginRequest(BaseModel):
     email:    str
@@ -33,6 +49,12 @@ class OTPRequest(BaseModel):
 class OTPVerify(BaseModel):
     phone: str
     otp:   str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    worker_id: str
+    role: str
 
 # In-memory OTP store (mock)
 OTP_STORE = {}
@@ -60,82 +82,120 @@ def verify_otp(req: OTPVerify):
 
 @router.post("/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    """Register new worker with secure password hashing."""
     # Check duplicate
     if db.query(Worker).filter(Worker.email == req.email).first():
         raise HTTPException(400, "Email already registered")
     if db.query(Worker).filter(Worker.phone == req.phone).first():
         raise HTTPException(400, "Phone already registered")
 
-    month      = datetime.now().month
-    risk_score = compute_risk_score(req.zone, month)
-    rec_plan   = recommend_plan(risk_score)
-    final_plan = req.plan if req.plan else rec_plan
-    premium    = calculate_dynamic_premium(req.zone, final_plan, month)
+    try:
+        month      = datetime.now().month
+        risk_score = compute_risk_score(req.zone, month)
+        rec_plan   = recommend_plan(risk_score)
+        final_plan = req.plan if req.plan else rec_plan
+        premium    = calculate_dynamic_premium(req.zone, final_plan, month)
 
-    worker = Worker(
-        id               = "WKR-" + uuid.uuid4().hex[:4].upper(),
-        name             = req.name,
-        phone            = req.phone,
-        email            = req.email,
-        password         = req.password,
-        platform         = req.platform,
-        zone             = req.zone,
-        pincode          = req.pincode,
-        aadhaar_verified = True,
-        plan             = final_plan,
-        risk_score       = risk_score,
-        trust_score      = 40,
-        bank_upi_id      = req.bank_upi_id,
-    )
-    db.add(worker)
-    db.commit()
-    db.refresh(worker)
+        # Hash password securely
+        hashed_pwd = hash_password(req.password)
 
-    return {
-        "success":          True,
-        "worker_id":        worker.id,
-        "name":             worker.name,
-        "zone":             worker.zone,
-        "plan":             final_plan,
-        "risk_score":       risk_score,
-        "recommended_plan": rec_plan,
-        "premium":          premium,
-        "trust_score":      40,
-        "role":             "worker",
-        "message":          f"Welcome to GigSecure, {worker.name}!",
-    }
+        worker = Worker(
+            id               = "WKR-" + uuid.uuid4().hex[:4].upper(),
+            name             = req.name,
+            phone            = req.phone,
+            email            = req.email,
+            password         = hashed_pwd,  # Store hashed password
+            platform         = req.platform,
+            zone             = req.zone,
+            pincode          = req.pincode,
+            aadhaar_verified = True,
+            plan             = final_plan,
+            risk_score       = risk_score,
+            trust_score      = 40,
+            bank_upi_id      = req.bank_upi_id,
+            plan_effective_date = datetime.now(),
+        )
+        db.add(worker)
+        db.commit()
+        db.refresh(worker)
+        
+        # Generate JWT token
+        token = create_access_token({"worker_id": worker.id, "role": "worker"})
 
-@router.post("/login")
+        logger.info(f"✅ Worker registered: {worker.id} | {worker.name}")
+
+        return {
+            "success":          True,
+            "access_token":     token,
+            "token_type":       "bearer",
+            "worker_id":        worker.id,
+            "name":             worker.name,
+            "zone":             worker.zone,
+            "plan":             final_plan,
+            "risk_score":       risk_score,
+            "recommended_plan": rec_plan,
+            "premium":          premium,
+            "trust_score":      40,
+            "role":             "worker",
+            "message":          f"✅ Welcome to GigSecure, {worker.name}!",
+        }
+    except ValueError as e:
+        logger.error(f"❌ Registration validation error: {e}")
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        logger.error(f"❌ Registration error: {e}")
+        db.rollback()
+        raise HTTPException(500, "Registration failed")
+
+@router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    from app.tasks import verify_worker_integrity
-    if req.role == "admin":
-        user = db.query(Admin).filter(Admin.email == req.email).first()
-        if not user or user.password != req.password:
-            raise HTTPException(401, "Invalid credentials")
-        return {
-            "success": True, "role": "admin",
-            "id": user.id, "name": user.name,
-            "email": user.email, "org": user.org,
-        }
-    else:
-        user = db.query(Worker).filter(Worker.email == req.email).first()
-        if not user or user.password != req.password:
-            raise HTTPException(401, "Invalid credentials")
+    """Login with JWT token generation."""
+    try:
+        if req.role == "admin":
+            user = db.query(Admin).filter(Admin.email == req.email).first()
+            if not user:
+                logger.warning(f"⚠️  Admin login attempt - user not found: {req.email}")
+                raise HTTPException(401, "Invalid credentials")
+            
+            # Verify password hash
+            if not verify_password(req.password, user.password):
+                logger.warning(f"⚠️  Admin login attempt - invalid password: {req.email}")
+                raise HTTPException(401, "Invalid credentials")
+            
+            # Generate JWT token
+            token = create_access_token({"admin_id": user.id, "role": "admin"})
+            
+            logger.info(f"✅ Admin logged in: {user.id} | {user.name}")
+            
+            return TokenResponse(access_token=token, token_type="bearer", worker_id=user.id, role="admin")
         
-        # Trigger background integrity scan
-        background_tasks.add_task(verify_worker_integrity, user.id)
-        
-        return {
-            "success":     True, "role": "worker",
-            "id":          user.id, "name": user.name,
-            "email":       user.email, "phone": user.phone,
-            "zone":        user.zone, "plan": user.plan,
-            "risk_score":  user.risk_score, "trust_score": user.trust_score,
-            "payouts":     user.payouts, "sim_payouts": user.sim_payouts,
-            "claims_total":user.claims_total, "platform": user.platform,
-            "pincode":     user.pincode, "weekly_hrs_used": user.weekly_hrs_used,
-            "bank_upi_id": user.bank_upi_id,
-        }
+        else:
+            user = db.query(Worker).filter(Worker.email == req.email).first()
+            if not user:
+                logger.warning(f"⚠️  Worker login attempt - user not found: {req.email}")
+                raise HTTPException(401, "Invalid credentials")
+            
+            # Verify password hash
+            if not verify_password(req.password, user.password):
+                logger.warning(f"⚠️  Worker login attempt - invalid password: {req.email}")
+                raise HTTPException(401, "Invalid credentials")
+            
+            # Generate JWT token
+            token = create_access_token({"worker_id": user.id, "role": "worker"})
+            
+            logger.info(f"✅ Worker logged in: {user.id} | {user.name}")
+            
+            # Trigger background integrity scan
+            from app.tasks import verify_worker_integrity
+            background_tasks.add_task(verify_worker_integrity, user.id)
+            
+            return TokenResponse(access_token=token, token_type="bearer", worker_id=user.id, role="worker")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Login error: {e}")
+        raise HTTPException(500, "Login failed")
 
 @router.get("/worker/{worker_id}")
 def get_worker(worker_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -151,7 +211,11 @@ def get_worker(worker_id: str, background_tasks: BackgroundTasks, db: Session = 
         "email": w.email, "zone": w.zone, "plan": w.plan,
         "risk_score": w.risk_score, "trust_score": w.trust_score,
         "payouts": w.payouts, "sim_payouts": w.sim_payouts,
-        "claims_total": w.claims_total, "platform": w.platform,
+        "earnings_protected": w.earnings_protected,
+        "claims_total": w.claims_total, 
+        "claims_approved": w.claims_approved,
+        "claims_rejected": w.claims_rejected,
+        "platform": w.platform,
         "joined": str(w.joined), "weekly_hrs_used": w.weekly_hrs_used,
         "aadhaar_verified": w.aadhaar_verified, "bank_upi_id": w.bank_upi_id,
     }
