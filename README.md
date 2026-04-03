@@ -38,26 +38,6 @@ GigSecure solves a **₹5,880/year income loss problem** for 5 crore+ informal a
 
 ---
 
-## What is Actually Working (Phase 1 Prototype)
-
-| Feature | Status |
-|---|---|
-| ✅ Worker onboarding (40+ Tamil Nadu zones, ML zone risk, plan recommendation) | **Phase 1** |
-| ✅ Plan selection with ML-recommended tier | **Phase 1** |
-| ✅ Worker dashboard — disruptions, payouts, predictive alerts, plan change | **Phase 1** |
-| ✅ Payout simulation — 5-step automated claim flow, persists to localStorage | **Phase 1** |
-| ✅ Admin dashboard — policy list, 7 KPIs, claims pipeline, API status | **Phase 1** |
-| ✅ Claims pipeline — Auto-Approved · Manual Review · Auto-Rejected | **Phase 1** |
-| ✅ 6 interactive feature demos — weather, fraud score, earnings calc, plan compare | **Phase 1** |
-| 🛡️ **Phase 2: Automation & Unified Deployment** | **New Updates** |
-| ✅ **Unified Architecture** (FastAPI serving frontend at root `/`) | **Phase 2** |
-| ✅ **Aadhaar KYC Verification** (Simulated UIDAI OIDC flow) | **Phase 2** |
-| ✅ **Multi-Method Payment** (GPay, UPI, Cards, Order Summary) | **Phase 2** |
-| ✅ **Real-Time Monitoring** (15-second background polling + auto-trigger) | **Phase 2** |
-| ✅ **Zero-Touch Claims Pipeline** (End-to-end automation verified) | **Phase 2** |
-| ✅ **Mobile-First Responsiveness** (Worker BottomNav · Admin Mobile Sidebar) | **Phase 2** |
-
----
 
 ## Table of Contents
 
@@ -768,6 +748,26 @@ https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Foo
 - Features: weather monitor, claim simulator, fraud visualizer, earnings calc, disruption chart, plan compare
 
 > Prototype built for Guidewire DEVTrails 2026. All data simulated. No real money transacted.
+
+---
+## What is Actually Working (Phase 1 Prototype)
+
+| Feature | Status |
+|---|---|
+| ✅ Worker onboarding (40+ Tamil Nadu zones, ML zone risk, plan recommendation) | **Phase 1** |
+| ✅ Plan selection with ML-recommended tier | **Phase 1** |
+| ✅ Worker dashboard — disruptions, payouts, predictive alerts, plan change | **Phase 1** |
+| ✅ Payout simulation — 5-step automated claim flow, persists to localStorage | **Phase 1** |
+| ✅ Admin dashboard — policy list, 7 KPIs, claims pipeline, API status | **Phase 1** |
+| ✅ Claims pipeline — Auto-Approved · Manual Review · Auto-Rejected | **Phase 1** |
+| ✅ 6 interactive feature demos — weather, fraud score, earnings calc, plan compare | **Phase 1** |
+| 🛡️ **Phase 2: Automation & Unified Deployment** | **New Updates** |
+| ✅ **Unified Architecture** (FastAPI serving frontend at root `/`) | **Phase 2** |
+| ✅ **Aadhaar KYC Verification** (Simulated UIDAI OIDC flow) | **Phase 2** |
+| ✅ **Multi-Method Payment** (GPay, UPI, Cards, Order Summary) | **Phase 2** |
+| ✅ **Real-Time Monitoring** (15-second background polling + auto-trigger) | **Phase 2** |
+| ✅ **Zero-Touch Claims Pipeline** (End-to-end automation verified) | **Phase 2** |
+| ✅ **Mobile-First Responsiveness** (Worker BottomNav · Admin Mobile Sidebar) | **Phase 2** |
 
 ---
 
