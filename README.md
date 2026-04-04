@@ -32,7 +32,7 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 
 1. [Problem Statement](#problem-statement)
 2. [Our Solution](#our-solution)
-3. [Why ZenVyte GigPulse Is Innovative](#why-gigpulse-is-innovative)
+3. [Why ZenVyte GigPulse Is Innovative](#Why-ZenVyte-GigPulse-Is-Innovative)
 4. [Delivery Worker Persona](#delivery-worker-persona)
 5. [Adversarial Defense & Anti-Spoofing Strategy](#adversarial-defense--anti-spoofing-strategy)
 6. [Parametric Triggers](#parametric-triggers)
