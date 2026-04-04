@@ -51,8 +51,8 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 19. [Coverage Scope & Exclusions](#coverage-scope--exclusions)
 20. [Plan Cancellation & Refund Policy](#plan-cancellation--refund-policy)
 21. [Financial & Business Model](#financial--business-model)
-22. [Why ZenVyte GigPulse Wins](#why-gigpulse-wins)
-23. [Live Demo](#live-demo)
+22. [Why ZenVyte GigPulse Wins](#Why-ZenVyte-GigPulse-Wins)
+23. [Live Website](#Live-Website(Render-Deployed))
 24. [45-Day Development Roadmap](#45-day-development-roadmap)
 
 ---
