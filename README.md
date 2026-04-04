@@ -39,7 +39,7 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 7. [Actuarial Basis](#actuarial-basis)
 8. [Weekly Premium Model — Corrected & Verified](#weekly-premium-model--corrected--verified)
 9. [Weekly Payout Per Disruption Type](#weekly-payout-per-disruption-type)
-10. [Loss Ratio Analysis — All Plans Under Control](#Loss-Ratio-Analysis-—-All-Plans-Under-Control--)
+10. [Loss Ratio Analysis — All Plans Under Control](#Loss-Ratio-Analysis)
 11. [Worker Affordability Check](#worker-affordability-check)
 12. [AI/ML Architecture](#aiml-architecture)
 13. [Smart Validation Layer](#smart-validation-layer)
@@ -52,7 +52,7 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 20. [Plan Cancellation & Refund Policy](#plan-cancellation--refund-policy)
 21. [Financial & Business Model](#financial--business-model)
 22. [Why ZenVyte GigPulse Wins](#Why-ZenVyte-GigPulse-Wins)
-23. [Live Website](#Live-Website(Render-Deployed))
+23. [Live Website](#Live-Website-Render-Deployed)
 24. [45-Day Development Roadmap](#45-day-development-roadmap)
 
 ---
@@ -277,7 +277,7 @@ ZenVyte GigPulse is a **partial income top-up** — not full replacement. All pr
 
 ---
 
-## Loss Ratio Analysis — All Plans Under Control ✅
+## Loss Ratio Analysis
 
 ### Normal Year (52.5 disruption hrs/year)
 
@@ -729,7 +729,7 @@ All claim liabilities handled by the licensed insurer partner.
 
 ---
 
-## Live Website(Render Deployed)
+## Live Website Render Deployed
 
 🎥 **2-Minute Strategy Video →**
 
