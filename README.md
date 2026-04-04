@@ -2,7 +2,8 @@
 ### Zero-Trust Financial Infrastructure for the Gig Economy
 ### Team ZenVyte | Guidewire DEVTrails 2026
 
-> *"Parametric insurance is broken. API triggers are blind to on-the-ground fraud. ZenVyte GigPulse isn't just an insurance app—it's a multi-signal risk validation engine built to algorithmically guarantee that only a real worker in a real disruption gets paid."*
+> *"ZenVyte GigPulse is an AI-powered parametric micro-insurance platform built for food delivery partners on Zomato and Swiggy — platform independent.
+Parametric insurance is broken. API triggers are blind to on-the-ground fraud. ZenVyte GigPulse isn't just an insurance app—it's a multi-signal risk validation engine built to algorithmically guarantee that only a real worker in a real disruption gets paid."*
 
 ---
 
