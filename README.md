@@ -728,19 +728,22 @@ All claim liabilities handled by the licensed insurer partner.
 
 ---
 
-## Live Demo
+## Live Website(Render Deployed)
 
 🎥 **2-Minute Strategy Video →**
 
-Youtube : 
+Youtube : <br><br>
 Drive : 
 
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
+📱 **Home →**
+https://zenvyte-gigpulse.onrender.com
+
 📱 **Login →**
 https://zenvyte-gigpulse.onrender.com/gigpulse_login.html
 
-🧪 **Feature Demo →**
+🧪 **Feature Demo →**(optional)
 https://zenvyte-gigpulse.onrender.com/gigpulse_features.html
 
 💡 **What to explore:**
