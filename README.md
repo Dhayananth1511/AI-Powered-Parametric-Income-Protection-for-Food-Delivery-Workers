@@ -732,16 +732,16 @@ All claim liabilities handled by the licensed insurer partner.
 
 🎥 **2-Minute Strategy Video →**
 
-Youtube : https://youtu.be/DF-K0pmgruI?si=akcD-mIjib7q5Ws3
-Drive : https://drive.google.com/file/d/12bCFysC_7cdr0dpGpAVpBXCiEAqI--Vf/view?usp=sharing
+Youtube : 
+Drive : 
 
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
 📱 **Login →**
-[INSERT_YOUR_RENDER_URL]/gigpulse_login.html
+https://zenvyte-gigpulse.onrender.com/gigpulse_login.html
 
 🧪 **Feature Demo →**
-[INSERT_YOUR_RENDER_URL]/gigpulse_features.html
+https://zenvyte-gigpulse.onrender.com/gigpulse_features.html
 
 💡 **What to explore:**
 - Worker onboarding with zone risk ML (40+ Tamil Nadu zones)
