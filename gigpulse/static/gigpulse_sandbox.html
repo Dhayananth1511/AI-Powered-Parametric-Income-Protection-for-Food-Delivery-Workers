@@ -150,7 +150,7 @@
             log(`X_fraud = [${payload.gps_distance}, ${payload.motion_var}, ${payload.signal_dbm}, ${payload.latency}, ${payload.trust_score}]`);
 
             try {
-                const res = await fetch("http://localhost:8000/claims/sandbox/evaluate", {
+                const res = await fetch("/claims/sandbox/evaluate", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(payload)
@@ -179,7 +179,7 @@
                     log("Isolation Forest: Outlier detected. Market Crash signature matched.", "error");
                 }
             } catch(e) {
-                log("API Error: Make sure backend is running on port 8000", "error");
+                log("API Error: " + e.message, "error");
             }
         }
 
@@ -187,7 +187,7 @@
             const out = document.getElementById("api-output");
             out.innerText = "Fetching live from OpenWeatherMap...\nGET /weather/live-demo/Velachery, Chennai\n";
             try {
-                const res = await fetch("http://localhost:8000/weather/live-demo/Velachery, Chennai");
+                const res = await fetch("/weather/live-demo/Velachery, Chennai");
                 const data = await res.json();
                 out.innerText += "\nHTTP " + (data.http_status || res.status) + " " + res.statusText + "\n" + JSON.stringify(data, null, 2);
             } catch(e) {

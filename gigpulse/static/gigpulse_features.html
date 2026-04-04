@@ -414,7 +414,7 @@ async function runClaimDemo() {
         <div style="margin-top:6px">${statusBadge(data.status)}</div>
       </div>`;
     toast("✅ Pipeline complete — ₹"+data.payout+" credited!", "success", 5000);
-  } catch(e) { el.innerHTML = `<div style="color:var(--error);padding:20px;text-align:center">Error: ${e.message}<br><small style="color:var(--muted)">Make sure backend is running at localhost:8000</small></div>`; }
+  } catch(e) { el.innerHTML = `<div style="color:var(--error);padding:20px;text-align:center">Error: ${e.message}<br><small style="color:var(--muted)">Please try again in a moment</small></div>`; }
   btn.disabled = false; btn.innerHTML = "⚡ Execute Pipeline";
 }
 
