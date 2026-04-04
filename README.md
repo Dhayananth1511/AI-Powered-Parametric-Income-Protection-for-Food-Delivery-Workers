@@ -753,6 +753,52 @@ Drive : https://drive.google.com/file/d/12bCFysC_7cdr0dpGpAVpBXCiEAqI--Vf/view?u
 > Prototype built for Guidewire DEVTrails 2026. All data simulated. No real money transacted.
 
 ---
+
+## 🛠️ How to Run Locally
+
+If the live Render deployment is asleep or you want to run the full simulation engine locally, follow these steps:
+
+### 1. Prerequisites
+- **Python 3.10+** (Python 3.13 is fully supported)
+- Git
+
+### 2. Auto-Start (Windows Only)
+The easiest way to run the platform on Windows is to double-click:
+```bash
+START_GIGPULSE.bat
+```
+*This script will automatically create a virtual environment, install all dependencies, and launch the server in one click.*
+
+### 3. Manual Setup (Mac / Linux / Windows Manual)
+If you prefer to set it up manually via the terminal:
+
+```bash
+# Clone the repository
+git clone https://github.com/Dhayananth1511/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers.git
+cd AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers
+
+# Create and activate virtual environment
+python -m venv .venv
+# Mac/Linux:
+source .venv/bin/activate
+# Windows:
+.venv\Scripts\activate
+
+# Install dependencies and run
+pip install -r requirements.txt
+python main.py
+```
+
+### 4. Access the Dashboards
+Once the server says `Open: http://localhost:8000`:
+- **Landing Page**: http://localhost:8000/index.html
+- **Worker Login**: http://localhost:8000/gigpulse_login.html 
+- **Interactive Sandbox & Features**: http://localhost:8000/gigpulse_features.html
+- **Admin Dashboard**: http://localhost:8000/gigpulse_admin.html
+
+> **Note:** The SQLite database (`gigpulse.db`) will be automatically created and securely seeded with test data upon the first launch!
+
+---
 ## What is Actually Working (Phase 1 Prototype)
 
 | Feature | Status |

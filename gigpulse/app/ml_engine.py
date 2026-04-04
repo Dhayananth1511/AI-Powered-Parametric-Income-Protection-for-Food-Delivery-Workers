@@ -265,7 +265,7 @@ def compute_fraud_score(worker_data: dict) -> dict:
         X_fraud = [[gps_dist, motion_var, signal_dbm, latency, float(worker_data.get("trust_score", 40))]]
         
         # Isolation Forest: 1 is inlier (normal), -1 is outlier (fraud)
-        prediction = fraud_model.predict(X_fraud)[0]
+        prediction = int(fraud_model.predict(X_fraud)[0])
         
         if prediction == 1:
             score += 4  # Normal
@@ -294,13 +294,13 @@ def compute_fraud_score(worker_data: dict) -> dict:
     )
 
     return {
-        "fraud_score": fraud_score,
-        "decision":    decision,
-        "signals":     signals,
-        "score_raw":   score,
-        "trust_tier":  trust_tier,
-        "signals_passed": sum(1 for v in signals.values() if v),
-        "signals_total":  len(signals),
+        "fraud_score": int(fraud_score),
+        "decision":    str(decision),
+        "signals":     {k: bool(v) for k,v in signals.items()},
+        "score_raw":   int(score),
+        "trust_tier":  str(trust_tier),
+        "signals_passed": int(sum(1 for v in signals.values() if v)),
+        "signals_total":  int(len(signals)),
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -341,9 +341,9 @@ def predict_disruption_probability(zone: str, hour: int = None, month: int = Non
         noise = rng.uniform(-0.08, 0.08)
         prob = min(1.0, max(0.0, base_risk * tw + noise))
         forecasts.append({
-            "hour_offset": h_offset,
-            "hour": forecast_hour,
-            "probability": round(prob * 100, 1),
+            "hour_offset": int(h_offset),
+            "hour": int(forecast_hour),
+            "probability": float(round(prob * 100, 1)),
             "risk_level": "High" if prob > 0.6 else "Medium" if prob > 0.35 else "Low",
         })
 

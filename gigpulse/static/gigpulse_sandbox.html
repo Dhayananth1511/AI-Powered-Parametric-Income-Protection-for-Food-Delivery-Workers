@@ -30,6 +30,15 @@
         .log-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 16px; margin-top: 24px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--success); height: 160px; overflow-y: auto; }
         .log-error { color: var(--error); }
         .log-warn { color: #facc15; }
+        
+        @media (max-width: 768px) {
+            body { padding: 20px; }
+            .container { grid-template-columns: 1fr; }
+            h1 { font-size: 24px; }
+            .score-circle { width: 150px; height: 150px; }
+            .score-val { font-size: 36px; }
+            .panel { padding: 16px; }
+        }
     </style>
 </head>
 <body>

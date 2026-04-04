@@ -40,13 +40,19 @@ html[data-theme="light"] .premium-input { background: #fff; }
 .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer}
 .logout-btn{background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:7px 14px;border-radius:9px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:600}
 /* MAIN */
-.main{max-width:768px;margin:0 auto;padding:20px;padding-bottom:100px;transition:all 0.3s ease}
+.main{max-width:1024px;margin:0 auto;padding:20px;padding-bottom:100px;transition:all 0.3s ease}
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(10,17,34,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:400;grid-template-columns:repeat(3,1fr);padding:12px 0;box-shadow:0 -10px 30px rgba(0,0,0,0.3)}
 .m-nav-item{text-align:center;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;gap:5px;cursor:pointer;transition:all 0.2s}
 .m-nav-item.active{color:var(--primary)}
 .m-nav-icon{font-size:22px}
 
 /* RESPONSIVE */
+@media (max-width: 1024px) {
+  .plan-sel { grid-template-columns: repeat(3,1fr); }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .triggers-grid { grid-template-columns: repeat(3,1fr); }
+}
+
 @media (max-width: 600px) {
   .nav-btn-ghost { display: none !important; }
   .nav-logo { font-size: 15px; }
@@ -70,7 +76,7 @@ html[data-theme="light"] .premium-input { background: #fff; }
 .hero-sub{font-size:13px;color:var(--muted)}
 .hero-badge{position:absolute;top:20px;right:20px;font-size:40px}
 /* Stats Grid */
-.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:18px;backdrop-filter:blur(12px);transition:transform 0.2s}
 .stat-card:hover{transform:translateY(-2px)}
 .stat-icon{font-size:20px;margin-bottom:8px}
