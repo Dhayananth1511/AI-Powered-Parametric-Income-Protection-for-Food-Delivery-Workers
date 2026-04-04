@@ -52,12 +52,12 @@ const Session = {
   clear()    { localStorage.removeItem("gs_session"); },
   require()  {
     const s = this.get();
-    if (!s) { window.location.href = "gigpulse_login.html"; return null; }
+    if (!s) { window.location.href = "/gigpulse_login.html"; return null; }
     return s;
   },
   logout() {
     this.clear();
-    window.location.href = "gigpulse_login.html";
+    window.location.href = "/gigpulse_login.html";
   }
 };
 
