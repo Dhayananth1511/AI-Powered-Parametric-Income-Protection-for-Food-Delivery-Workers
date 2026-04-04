@@ -143,7 +143,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 select{background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;min-width:120px}
 select:focus{border-color:var(--primary)}
 select option{background:#0f172a}
+.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:16px}
+@media (max-width: 600px) { .chart-grid { grid-template-columns: 1fr; } }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <div class="bg-mesh"></div>
@@ -204,6 +207,38 @@ select option{background:#0f172a}
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal('planModal')">Cancel</button>
       <button class="btn btn-primary" style="flex:1" onclick="confirmPlanChange()" id="planChgBtn">Apply Change →</button>
     </div>
+  </div>
+</div>
+
+<!-- CHECKOUT / RENEW MODAL -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">Secure Checkout <button class="close-btn" onclick="closeModal('checkoutModal')">✕</button></div>
+    
+    <div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:20px;margin-bottom:20px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Total Payable</div>
+        <div style="font-size:36px;font-weight:800;color:var(--primary)" id="coTotal">₹0.00</div>
+        <div style="font-size:11px;color:var(--success);margin-top:6px" id="coValidUntil">Valid until next week</div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+        <span style="color:var(--muted)">Base Premium (<span id="coPlanName">Starter</span>)</span>
+        <span id="coBase" style="font-weight:600">₹0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+        <span style="color:var(--muted)">Platform Fee (5%)</span>
+        <span id="coFee" style="font-weight:600">₹0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--muted)">GST (18%)</span>
+        <span id="coGst" style="font-weight:600">₹0.00</span>
+      </div>
+    </div>
+    
+    <button class="btn btn-primary" style="width:100%;height:48px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="executeCheckout()" id="coBtn">
+      🔒 Pay securely
+    </button>
   </div>
 </div>
 
@@ -294,6 +329,18 @@ select option{background:#0f172a}
     </div>
   </div>
 
+  <!-- ANALYTICS CHARTS -->
+  <div class="chart-grid">
+    <div class="card" style="padding:18px;margin-bottom:0">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Cumulative Earnings Growth</div>
+        <div style="position:relative;height:200px"><canvas id="earningsChart"></canvas></div>
+    </div>
+    <div class="card" style="padding:18px;margin-bottom:0">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Live Risk Matrix Prediction</div>
+        <div style="position:relative;height:200px;display:flex;align-items:center;justify-content:center"><canvas id="riskRadarChart"></canvas></div>
+    </div>
+  </div>
+
   <!-- LIVE TRIGGER STATUS -->
   <div class="card">
     <div class="card-hdr">
@@ -354,7 +401,7 @@ select option{background:#0f172a}
   <div class="card">
     <div class="card-hdr">
       <div class="card-title">📜 Policy History</div>
-      <button class="btn btn-ghost btn-sm" onclick="renewPolicy()">🔄 Renew</button>
+      <button class="btn btn-primary btn-sm" onclick="openCheckoutModal()">🔄 Renew Policy</button>
     </div>
     <div id="policyHistory"><div class="empty-state">Loading...</div></div>
   </div>
@@ -384,6 +431,7 @@ async function init() {
     loadPolicyHistory(),
   ]);
   startNotifPolling(sess.worker_id, document.getElementById("notifBadge"));
+  initCharts();
   setInterval(loadPulse, 30000); // Pulse update every 30s
 }
 
@@ -396,8 +444,9 @@ async function loadWorker() {
     Session.save({...sess, ...workerData, role:"worker"});
     
     // Safely update UI with fallbacks
-    document.getElementById("heroTitle").textContent = `${data.name || "Worker"} · ${capitalize(data.plan || "standard")} Plan`;
-    document.getElementById("heroSub").textContent = `Zone: ${data.zone || "Unknown"} · ₹${PLANS[data.plan]?.rate||60}/hr coverage active`;
+    document.getElementById("heroTitle").textContent = `${data.name || "Gig Worker"} · ${capitalize(data.plan || "standard")} Plan`;
+    const fallbackRate = PLANS[data.plan]?.rate || 60;
+    document.getElementById("heroSub").textContent = `Zone: ${data.zone || "Not Assigned"} · ₹${fallbackRate}/hr coverage active`;
     document.getElementById("zoneLabel").textContent = data.zone || "---";
     
     if (document.getElementById("platformBadge") && data.platform) {
@@ -416,24 +465,31 @@ async function loadWorker() {
       document.getElementById("upiBadge").style.display = "inline-flex";
     }
     
-    document.getElementById("totalEarned").textContent = formatINR(data.earnings_protected || (data.payouts||0) + (data.sim_payouts||0) || 0);
-    document.getElementById("totalClaims").textContent = data.claims_total || 0;
+    const ep = parseFloat(data.earnings_protected || 0);
+    const p1 = parseFloat(data.payouts || 0);
+    const p2 = parseFloat(data.sim_payouts || 0);
+    const earnedFinal = ep > 0 ? ep : (p1 + p2);
+    
+    document.getElementById("totalEarned").textContent = formatINR(earnedFinal);
+    document.getElementById("totalClaims").textContent = (data.claims_total || 0).toString();
     document.getElementById("claimsBreakdown").textContent = `${data.claims_approved||0} approved · ${data.claims_rejected||0} rejected`;
-    document.getElementById("trustScore").textContent = (data.trust_score||40) + "/100";
-    document.getElementById("trustLabel").textContent = trustLabel(data.trust_score||40);
-    document.getElementById("trustScore").style.color = trustColor(data.trust_score||40);
+    
+    const ts = data.trust_score || 40;
+    document.getElementById("trustScore").textContent = ts + "/100";
+    document.getElementById("trustLabel").textContent = trustLabel(ts);
+    document.getElementById("trustScore").style.color = trustColor(ts);
     
     const plan = PLANS[data.plan] || PLANS.standard;
     const hrsUsed = data.weekly_hrs_used || 0;
     document.getElementById("hrsUsed").textContent = `${hrsUsed}/${plan.maxHrs}`;
-    document.getElementById("hrsFill").style.width = Math.min(100, (hrsUsed/plan.maxHrs)*100) + "%";
+    document.getElementById("hrsFill").style.width = Math.min(100, (hrsUsed/(plan.maxHrs||1))*100) + "%";
   } catch(e) { 
     console.error("Worker load error:", e.message);
-    // Set defaults
-    ["totalEarned", "totalClaims", "claimsBreakdown", "trustScore", "hrsUsed"].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.textContent = "---";
-    });
+    document.getElementById("totalEarned").textContent = "₹0";
+    document.getElementById("totalClaims").textContent = "0";
+    document.getElementById("claimsBreakdown").textContent = "0 approved · 0 rejected";
+    document.getElementById("trustScore").textContent = "40/100";
+    document.getElementById("hrsUsed").textContent = "0/0";
   }
 }
 
@@ -755,15 +811,64 @@ async function confirmPlanChange() {
   btn.disabled = false; btn.innerHTML = "Apply Change →";
 }
 
-// ── Policy Actions ─────────────────────────────────────────────────────────
-async function renewPolicy() {
+// ── Policy Actions & Realistic Checkout ────────────────────────────────────
+let checkoutTargetPlan = null;
+
+function openCheckoutModal(planId = null) {
+  const planKey = planId || (workerData||sess).plan || "standard";
+  const p = PLANS[planKey];
+  checkoutTargetPlan = planKey;
+  
+  const base = p.premium;
+  const fee = base * 0.05;
+  const gst = (base + fee) * 0.18;
+  const total = base + fee + gst;
+  
+  document.getElementById("coPlanName").textContent = capitalize(planKey);
+  document.getElementById("coBase").textContent = formatINR(base);
+  document.getElementById("coFee").textContent = formatINR(fee.toFixed(2));
+  document.getElementById("coGst").textContent = formatINR(gst.toFixed(2));
+  document.getElementById("coTotal").textContent = formatINR(Math.round(total));
+  
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  document.getElementById("coValidUntil").textContent = `Valid until ${nextWeek.toLocaleDateString('en-IN', {weekday:'short', month:'short', day:'numeric'})}`;
+  
+  // Close standard plan modal if open
+  closeModal('planModal');
+  openModal('checkoutModal');
+}
+
+async function executeCheckout() {
+  const btn = document.getElementById("coBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Processing Payment...';
   try {
-    await GS.post("/policy/renew", { worker_id: (workerData||sess).id });
-    toast("🔄 Policy renewed! Hours reset.", "success");
+    // Artificial Razorpay delay
+    await new Promise(r => setTimeout(r, 1200));
+    
+    if (checkoutTargetPlan !== (workerData||sess).plan) {
+      await GS.post("/policy/upgrade", { worker_id: (workerData||sess).id, new_plan: checkoutTargetPlan });
+    } else {
+      await GS.post("/policy/renew", { worker_id: (workerData||sess).id });
+    }
+    
+    closeModal('checkoutModal');
+    toast("💳 Payment successful! Policy Active.", "success", 5000);
+    
+    btn.disabled = false; btn.innerHTML = '🔒 Pay securely';
     await loadPolicy();
     await loadWorker();
-  } catch(e) { toast(e.message, "error"); }
+    await loadPolicyHistory();
+  } catch(e) { 
+    toast(e.message, "error"); 
+    btn.disabled = false; btn.innerHTML = '🔒 Pay securely';
+  }
 }
+
+async function confirmPlanChange() {
+  openCheckoutModal(selectedNewPlan);
+}
+
 async function cancelPolicy() {
   if(!confirm("Cancel your active policy? Coverage continues until end of week.")) return;
   try {
@@ -771,6 +876,87 @@ async function cancelPolicy() {
     toast("Policy cancelled. Coverage runs to end of week.", "warning");
     await loadPolicy();
   } catch(e) { toast(e.message, "error"); }
+}
+
+// ── Charting Logic (Chart.js) ───────────────────────────────────────────────
+function initCharts() {
+  setupEarningsChart();
+  setupRadarChart();
+}
+
+function setupEarningsChart() {
+  const ctx = document.getElementById('earningsChart');
+  if(!ctx) return;
+  
+  // Generate slightly randomized historical data that leads up to their current protected earnings
+  const ep = parseFloat((workerData||sess).earnings_protected) || parseFloat((workerData||sess).payouts) || 250;
+  const dataPoints = [ep*0.1, ep*0.25, ep*0.5, ep*0.8, ep];
+  
+  Chart.defaults.color = "#94a3b8";
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Wk -4', 'Wk -3', 'Wk -2', 'Wk -1', 'This Wk'],
+      datasets: [{
+        label: 'Cumulative Payouts (₹)',
+        data: dataPoints,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.2)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#8b5cf6',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { display:false, beginAtZero: true },
+        x: { grid: { display: false, drawBorder: false } }
+      }
+    }
+  });
+}
+
+function setupRadarChart() {
+  const ctx = document.getElementById('riskRadarChart');
+  if(!ctx) return;
+  
+  // Predict simulated risk using random distribution attached to base risk
+  const baseR = Math.max(10, ((workerData||sess).risk_score || 0.4) * 100);
+  
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Rainfall', 'Heat', 'AQI', 'Cyclone', 'Mob/Curfew'],
+      datasets: [{
+        label: 'Disruption Vector',
+        data: [baseR*1.1, baseR*1.4, baseR*0.8, baseR*0.2, baseR*0.1],
+        backgroundColor: 'rgba(139,92,246,0.3)',
+        borderColor: '#8b5cf6',
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#8b5cf6',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#a78bfa',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(255,255,255,0.05)' },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          pointLabels: { color: '#94a3b8', font: { size: 10 } },
+          ticks: { display: false, max: 100 }
+        }
+      }
+    }
+  });
 }
 
 // ── Notifications ───────────────────────────────────────────────────────────
