@@ -765,7 +765,7 @@ If the live Render deployment is asleep or you want to run the full simulation e
 ### 2. Auto-Start (Windows Only)
 The easiest way to run the platform on Windows is to double-click:
 ```bash
-START_GIGPULSE.bat
+.\START_GIGPULSE.bat
 ```
 *This script will automatically create a virtual environment, install all dependencies, and launch the server in one click.*
 
