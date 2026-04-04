@@ -733,8 +733,8 @@ All claim liabilities handled by the licensed insurer partner.
 
 🎥 **2-Minute Strategy Video →**
 
-Youtube : <br><br>
-Drive : 
+Youtube : https://youtu.be/XK3wGCvJ5v4 <br><br>
+Drive : https://drive.google.com/file/d/1PdthvPOd5pq_jYmLhIaiZLGzqfBc8aIk/view?usp=drivesdk
 
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
