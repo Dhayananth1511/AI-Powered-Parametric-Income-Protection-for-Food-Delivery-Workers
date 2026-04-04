@@ -110,10 +110,58 @@ tr:hover td{background:rgba(99,102,241,0.04)}
 select{background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none}
 input{background:rgba(2,8,23,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none}
 input:focus,select:focus{border-color:var(--primary)}
+.btn-secondary{background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);color:var(--text)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:rgba(10,17,34,0.98);border:1px solid var(--border);border-radius:20px;padding:24px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px}
+.close-btn{float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.field label{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
 </style>
 </head>
 <body>
 <div class="bg-mesh"></div>
+
+<div class="modal-overlay" id="workerModal">
+  <div class="modal">
+    <div class="modal-title">Add Worker <button class="close-btn" onclick="closeModal('workerModal')">×</button></div>
+    <div class="form-grid">
+      <div class="field"><label>Name</label><input id="aw-name" placeholder="Ravi Kumar"></div>
+      <div class="field"><label>Phone</label><input id="aw-phone" placeholder="+91 98765 43210"></div>
+      <div class="field"><label>Email</label><input id="aw-email" placeholder="worker@example.com"></div>
+      <div class="field"><label>Password</label><input id="aw-password" type="password" placeholder="demo1234"></div>
+      <div class="field"><label>Platform</label><select id="aw-platform"><option>Swiggy</option><option>Zomato</option><option>Blinkit</option><option>Dunzo</option></select></div>
+      <div class="field"><label>Plan</label><select id="aw-plan"><option value="">Auto Recommend</option><option>starter</option><option>basic</option><option>standard</option><option>premium</option><option>elite</option></select></div>
+      <div class="field full"><label>Zone</label><input id="aw-zone" placeholder="Velachery, Chennai"></div>
+      <div class="field"><label>Pincode</label><input id="aw-pincode" placeholder="600042"></div>
+      <div class="field"><label>UPI ID</label><input id="aw-upi" placeholder="worker@gpay"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('workerModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="createWorker()" id="createWorkerBtn">Create Worker</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <div class="modal-title">Add Admin <button class="close-btn" onclick="closeModal('adminModal')">×</button></div>
+    <div class="form-grid">
+      <div class="field"><label>Name</label><input id="aa-name" placeholder="Priya Nair"></div>
+      <div class="field"><label>Email</label><input id="aa-email" placeholder="admin@example.com"></div>
+      <div class="field"><label>Password</label><input id="aa-password" type="password" placeholder="admin123"></div>
+      <div class="field"><label>Phone</label><input id="aa-phone" placeholder="+91 90000 00000"></div>
+      <div class="field full"><label>Organization</label><input id="aa-org" placeholder="GigSecure Platform Admin"></div>
+      <div class="field full"><label>Designation</label><input id="aa-designation" placeholder="Platform Admin"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('adminModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="createAdmin()" id="createAdminBtn">Create Admin</button>
+    </div>
+  </div>
+</div>
 
 <div class="mobile-header">
   <div style="font-weight:800; font-size:14px; color:var(--primary)">🛡️ GIGSECURE</div>
@@ -174,7 +222,11 @@ input:focus,select:focus{border-color:var(--primary)}
         <div class="page-title">👥 Workers & Policies</div>
         <div class="page-sub">All registered workers with ML risk scores and policy details</div>
       </div>
-      <button class="btn btn-primary" onclick="window.location.href='gigsecure_onboarding.html'">➕ Add Worker</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportWorkersCSV()">📥 Export CSV</button>
+        <button class="btn btn-secondary" onclick="openModal('adminModal')">➕ Add Admin</button>
+        <button class="btn btn-primary" onclick="openModal('workerModal')">➕ Add Worker</button>
+      </div>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <input id="workerSearch" placeholder="🔍 Search by name, zone, plan..." onkeyup="filterWorkers()" style="flex:1;min-width:200px">
@@ -197,12 +249,24 @@ input:focus,select:focus{border-color:var(--primary)}
         <tbody id="workersBody"></tbody>
       </table></div>
     </div>
+    <div class="tbl-wrap" style="margin-top:16px">
+      <div class="tbl-hdr"><div class="tbl-title">Admin Management</div><div class="refresh-time" id="adminsCount">Loading...</div></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Admin</th><th>Organization</th><th>Designation</th><th>Phone</th><th>Joined</th></tr></thead>
+        <tbody id="adminsBody"></tbody>
+      </table></div>
+    </div>
   </div>
 
   <!-- CLAIMS PIPELINE PAGE -->
   <div class="page" id="page-claims">
-    <div class="page-title">📋 Claims Pipeline</div>
-    <div class="page-sub">Real-time claims management — approve, reject, monitor fraud</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="page-title">📋 Claims Pipeline</div>
+        <div class="page-sub">Real-time claims management — approve, reject, monitor fraud</div>
+      </div>
+      <button class="btn btn-secondary" onclick="exportClaimsCSV()">📥 Export CSV</button>
+    </div>
     <div class="pipe-tabs">
       <button class="pipe-tab active" onclick="showClaimTab('approved')" id="tab-approved">✅ Auto-Approved <span class="cnt" id="cnt-approved">0</span></button>
       <button class="pipe-tab" onclick="showClaimTab('manual_review')" id="tab-manual_review">⏳ Manual Review <span class="cnt" id="cnt-manual_review">0</span></button>
@@ -278,9 +342,10 @@ input:focus,select:focus{border-color:var(--primary)}
 <script>
 const sess = Session.require();
 if(!sess || sess.role !== "admin") { window.location.href = "gigsecure_login.html"; throw 0; }
-document.getElementById("adminName").textContent = sess.name + " · " + sess.org;
+document.getElementById("adminName").textContent = (sess.name || "Admin") + " · " + (sess.org || "GigSecure");
 
 let allWorkers = [];
+let allAdmins = [];
 let allClaims = { approved:[], manual_review:[], rejected:[] };
 let currentClaimTab = "approved";
 let adminSimTrigger = "rainfall";
@@ -386,6 +451,17 @@ async function loadWorkers() {
     allWorkers = data.workers || [];
     document.getElementById("workersCount").textContent = allWorkers.length + " workers";
     renderWorkers(allWorkers);
+    await loadAdmins();
+  } catch(e) {}
+}
+
+async function loadAdmins() {
+  try {
+    const data = await GS.get("/admins");
+    allAdmins = data.admins || [];
+    const countEl = document.getElementById("adminsCount");
+    if (countEl) countEl.textContent = allAdmins.length + " admins";
+    renderAdmins(allAdmins);
   } catch(e) {}
 }
 
@@ -418,6 +494,84 @@ function filterWorkers() {
     (!q || (w.name+w.zone+w.email).toLowerCase().includes(q)) &&
     (!plan || w.plan === plan));
   renderWorkers(filtered);
+}
+
+function renderAdmins(admins) {
+  const el = document.getElementById("adminsBody");
+  if(!el) return;
+  el.innerHTML = admins.map(a => `
+    <tr>
+      <td><div style="font-weight:600">${a.name}</div><div style="color:var(--muted);font-size:11px">${a.id} · ${a.email}</div></td>
+      <td>${a.org || "GigSecure"}</td>
+      <td>${a.designation || "Admin"}</td>
+      <td>${a.phone || "—"}</td>
+      <td style="font-size:12px;color:var(--muted)">${formatDate(a.joined)}</td>
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty-state">No admins found</div></td></tr>`;
+}
+
+function openModal(id) {
+  document.getElementById(id)?.classList.add("open");
+}
+
+function closeModal(id) {
+  document.getElementById(id)?.classList.remove("open");
+}
+
+async function createWorker() {
+  const btn = document.getElementById("createWorkerBtn");
+  const payload = {
+    name: document.getElementById("aw-name").value.trim(),
+    phone: document.getElementById("aw-phone").value.trim(),
+    email: document.getElementById("aw-email").value.trim(),
+    password: document.getElementById("aw-password").value,
+    platform: document.getElementById("aw-platform").value,
+    zone: document.getElementById("aw-zone").value.trim(),
+    pincode: document.getElementById("aw-pincode").value.trim(),
+    bank_upi_id: document.getElementById("aw-upi").value.trim(),
+    plan: document.getElementById("aw-plan").value || null,
+  };
+  if(!payload.name || !payload.phone || !payload.email || !payload.password || !payload.zone || !payload.pincode) {
+    return toast("Fill all required worker fields", "warning");
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Creating...';
+  try {
+    await GS.post("/auth/admin/create-worker", payload);
+    toast("Worker created successfully", "success");
+    closeModal("workerModal");
+    await loadWorkers();
+  } catch(e) {
+    toast(e.message || "Failed to create worker", "error");
+  }
+  btn.disabled = false;
+  btn.innerHTML = "Create Worker";
+}
+
+async function createAdmin() {
+  const btn = document.getElementById("createAdminBtn");
+  const payload = {
+    name: document.getElementById("aa-name").value.trim(),
+    email: document.getElementById("aa-email").value.trim(),
+    password: document.getElementById("aa-password").value,
+    phone: document.getElementById("aa-phone").value.trim(),
+    org: document.getElementById("aa-org").value.trim(),
+    designation: document.getElementById("aa-designation").value.trim(),
+  };
+  if(!payload.name || !payload.email || !payload.password) {
+    return toast("Fill all required admin fields", "warning");
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Creating...';
+  try {
+    await GS.post("/auth/admin/create-admin", payload);
+    toast("Admin created successfully", "success");
+    closeModal("adminModal");
+    await loadAdmins();
+  } catch(e) {
+    toast(e.message || "Failed to create admin", "error");
+  }
+  btn.disabled = false;
+  btn.innerHTML = "Create Admin";
 }
 
 // ── CLAIMS PIPELINE ──────────────────────────────────────────────────────────
@@ -640,6 +794,38 @@ async function runAdminSim() {
     toast("Pipeline complete — " + formatINR(data.payout), data.status==="approved"?"success":"warning");
   } catch(e) { el.innerHTML = `<div style="color:var(--error)">Error: ${e.message}</div>`; }
   btn.disabled = false; btn.innerHTML = "⚡ Run Pipeline";
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────────────────────────
+function downloadCSV(csvContent, filename) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportWorkersCSV() {
+  if(!allWorkers.length) return toast("No active workers to export", "warning");
+  let csv = "ID,Name,Email,Phone,Zone,Plan,RiskScore,TrustScore,TotalPayouts,Status\n";
+  allWorkers.forEach(w => {
+    csv += `${w.id},"${w.name}","${w.email}","${w.phone}","${w.zone}",${w.plan},${w.risk_score},${w.trust_score},${(w.payouts||0)+(w.sim_payouts||0)},${w.aadhaar_verified?'Verified':'Pending'}\n`;
+  });
+  downloadCSV(csv, "gigsecure_workers_report.csv");
+}
+
+function exportClaimsCSV() {
+  const combined = [...allClaims.approved, ...allClaims.manual_review, ...allClaims.rejected];
+  if(!combined.length) return toast("No claims to export", "warning");
+  let csv = "ClaimID,Worker,WorkerID,Trigger,Value,Amount,FraudScore,Status,OrderID,Date\n";
+  combined.forEach(c => {
+    csv += `${c.id},"${c.worker_name}",${c.worker_id},${c.trigger_type},${c.trigger_value},${c.payout_amount},${c.fraud_score},${c.status},${c.razorpay_order_id||''},"${c.created_at}"\n`;
+  });
+  downloadCSV(csv, "gigsecure_claims_report.csv");
 }
 
 // ── Misc ───────────────────────────────────────────────────────────────────────

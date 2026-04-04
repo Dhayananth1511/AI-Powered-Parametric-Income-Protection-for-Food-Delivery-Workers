@@ -76,11 +76,6 @@ def start_scheduler():
     
     scheduler.start()
     logger.info("✅ Background Scheduler Started — 4 jobs registered")
-    print("🎯 Background Job System Active:")
-    print("   • Auto-trigger claims: Every 15 seconds")
-    print("   • Weekly reset: Every Sunday 00:00 UTC")
-    print("   • Plan expiry check: Every hour")
-    print("   • Event cleanup: Daily")
 
 def stop_scheduler():
     """Stop background scheduler."""
@@ -89,7 +84,6 @@ def stop_scheduler():
     if scheduler and scheduler.running:
         scheduler.shutdown(wait=False)
         logger.info("✅ Scheduler stopped")
-        print("⛔ Background Job System Stopped")
 
 def get_scheduler_status() -> dict:
     """Get current scheduler status."""
@@ -229,7 +223,6 @@ def _weekly_reset():
         db.close()
         
         logger.info(f"✅ Weekly reset completed: {reset_count} workers")
-        print(f"📊 Weekly Reset: {reset_count} workers' hourly limits reset")
     
     except Exception as e:
         logger.error(f"❌ Weekly reset job failed: {e}")
@@ -315,3 +308,46 @@ def get_job_logs() -> List[dict]:
         })
     
     return logs
+def process_disruptions():
+    """
+    Process confirmed disruptions and create claims for affected workers.
+    This reuses the existing auto-trigger job logic.
+    """
+    _auto_trigger_claims()
+
+
+def expire_disruptions():
+    """
+    Clear in-memory confirmed disruptions that have been active too long.
+    Also marks old DB disruption events as cleared.
+    """
+    db = SessionLocal()
+    try:
+        now = datetime.now()
+        expired_zones = []
+
+        for zone, state in list(get_active_events().items()) if isinstance(get_active_events(), dict) else []:
+            confirmation_end = state.get("confirmation_end")
+            if confirmation_end and (now - confirmation_end) > timedelta(hours=6):
+                expired_zones.append(zone)
+
+        for zone in expired_zones:
+            from app.trigger_monitor import clear_disruption
+            clear_disruption(zone)
+
+        old_events = db.query(DisruptionEvent).filter(
+            DisruptionEvent.status == "confirmed",
+            DisruptionEvent.created_at < (now - timedelta(hours=6))
+        ).all()
+
+        for event in old_events:
+            event.status = "cleared"
+
+        db.commit()
+        logger.info(f"✅ Expired disruptions cleared: {len(expired_zones)} zones, {len(old_events)} DB events")
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ expire_disruptions failed: {e}")
+    finally:
+        db.close()

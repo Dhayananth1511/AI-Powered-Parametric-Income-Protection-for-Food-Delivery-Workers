@@ -9,7 +9,24 @@ if backend_path not in sys.path:
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    print("Starting GigSecure Unified Service...")
-    print(f"Access the app at: http://localhost:{port}")
-    # Disable reload for maximum stability in production environments
-    uvicorn.run("gigsecure.app.main:app", host="0.0.0.0", port=port, reload=False)
+    line = "=" * 66
+    print(line)
+    print("GigSecure - AI-Powered Parametric Income Protection v2.1.0")
+    print(line)
+    print(f"Open: http://localhost:{port}")
+    print("API docs: http://localhost:{}/docs".format(port))
+    print("")
+    print("Demo credentials:")
+    print("Worker: ravi.kumar@swiggy.in / demo1234")
+    print("Worker: arjun.raj@zomato.in / demo1234")
+    print("Admin : admin@digit.com / admin123")
+    print("Press Ctrl+C to stop the server")
+    print("")
+    uvicorn.run(
+        "gigsecure.app.main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=False,
+        access_log=False,
+        log_level=os.environ.get("UVICORN_LOG_LEVEL", "error").lower(),
+    )

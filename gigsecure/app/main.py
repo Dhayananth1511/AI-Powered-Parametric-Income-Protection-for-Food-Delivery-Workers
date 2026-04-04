@@ -34,13 +34,14 @@ import logging
 # ─────────────────────────────────────────────────────────────────────────────
 # Configure Logging
 # ─────────────────────────────────────────────────────────────────────────────
+log_handlers = [logging.StreamHandler()]
+if os.getenv("ENABLE_FILE_LOGGING", "").lower() in {"1", "true", "yes", "on"}:
+    log_handlers.append(logging.FileHandler("gigsecure.log", encoding='utf-8'))
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, os.getenv("LOG_LEVEL", "ERROR").upper(), logging.ERROR),
     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("gigsecure.log", encoding='utf-8'),
-    ]
+    handlers=log_handlers
 )
 logger = logging.getLogger(__name__)
 
@@ -89,11 +90,14 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────────────────────
 # Security: Rate Limiting Middleware
 # ─────────────────────────────────────────────────────────────────────────────
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
+    limiter = Limiter(key_func=get_remote_address)
+    app.state.limiter = limiter
+except ImportError:
+    app.state.limiter = None
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Register Routers
@@ -236,21 +240,14 @@ seed_db()
 @app.on_event("startup")
 async def startup_event():
     """Start background jobs on application startup."""
-    logger.info("🚀 GigSecure API Starting...")
-    print("━" * 70)
-    print("🛡️  GigSecure — AI-Powered Parametric Income Protection")
-    print("━" * 70)
     start_scheduler()
     initialize_scheduler()  # Phase 2A: Initialize new scheduler
-    logger.info("✅ Startup complete — Background jobs active")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Stop background jobs on application shutdown."""
-    logger.info("⛔ GigSecure API Shutting Down...")
     stop_scheduler()
     stop_bg_scheduler()  # Phase 2A: Stop new scheduler
-    logger.info("✅ Shutdown complete")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Root & Health
@@ -411,6 +408,16 @@ def update_worker_data(worker_id: str, patch: dict):
         db.close()
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Worker Telemetry Cache (Hardware Sensor Heartbeat)
+# ─────────────────────────────────────────────────────────────────────────────
+@app.post("/workers/{worker_id}/telemetry")
+def update_worker_telemetry(worker_id: str, telemetry: dict):
+    from app.ml_engine import latest_telemetry
+    latest_telemetry[worker_id] = telemetry
+    # In a full prod system we might log this in a Time Series DB. For now it is memory-held for the auto-claim engine.
+    return {"success": True, "recorded": True}
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ML — Zone Info
 # ─────────────────────────────────────────────────────────────────────────────
 @app.get("/ml/zones")
@@ -479,7 +486,7 @@ async def weather_poller():
                                 json={"zone": zone, "trigger_type": triggers[0]["type"]}
                             )
         except Exception as e:
-            print(f"[Background Poller Error] {e}")
+            logger.error(f"Background Poller Error: {e}")
 
 async def subscription_poller():
     """Checks for expired weekly plans and sends renewal prompts securely"""
@@ -512,20 +519,13 @@ async def subscription_poller():
                     w.plan_expiry_notified = True
                     db.add(notif)
                     
-                    # Log a "Real Message" output simulation
-                    msg = (f"[REAL SMS SIMULATION - TWILIO/VONAGE]\n"
-                           f"To: {w.phone} | Worker: {w.name}\n"
-                           f"Body: 'GigSecure Alert: Your {w.plan.capitalize()} protection plan expired. "
-                           f"Open GigSecure app to renew matching your bank ID {w.bank_upi_id or 'Not Pinned'}.'")
-                    print("-" * 50)
-                    print(msg)
-                    print("-" * 50)
+                    # Keep notification simulation silent unless logs are explicitly enabled.
                     
                 db.commit()
             finally:
                 db.close()
         except Exception as e:
-            print(f"[Subscription Engine Error] {e}")
+            logger.error(f"Subscription Engine Error: {e}")
 
 @app.on_event("startup")
 async def startup_event():
@@ -536,7 +536,5 @@ async def startup_event():
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8000))
-    print("Starting GigSecure Unified Service...")
-    print(f"Access the app at: http://localhost:{port}")
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True, access_log=False, log_level=os.environ.get("UVICORN_LOG_LEVEL", "error").lower())

@@ -197,6 +197,56 @@ function stopNotifPolling() {
   if (_notifPollingId) clearInterval(_notifPollingId);
 }
 
+// ─── Hardware Telemetry (GPS + Accelerometer) ─────────────────────────────────
+let _telemetry = { lat: null, lon: null, motion_var: 0 };
+let _motionSamples = [];
+let _telemetryInterval = null;
+
+function enableDeviceTelemetry(workerId) {
+  if (!navigator.geolocation) {
+    toast("Geolocation is not supported by your browser", "error");
+    return;
+  }
+  
+  // Start GPS tracking
+  navigator.geolocation.watchPosition((pos) => {
+    _telemetry.lat = pos.coords.latitude;
+    _telemetry.lon = pos.coords.longitude;
+  }, (err) => {
+    console.warn("GPS tracking error:", err);
+  }, { enableHighAccuracy: true });
+
+  // Start Accelerometer tracking
+  if (window.DeviceMotionEvent) {
+    window.addEventListener('devicemotion', (event) => {
+      if (event.acceleration) {
+        const ax = event.acceleration.x || 0;
+        const ay = event.acceleration.y || 0;
+        const az = event.acceleration.z || 0;
+        const magnitude = Math.sqrt(ax*ax + ay*ay + az*az);
+        _motionSamples.push(magnitude);
+        if (_motionSamples.length > 50) _motionSamples.shift(); // keep last 50
+        
+        // Calculate variance roughly
+        const mean = _motionSamples.reduce((a,b)=>a+b,0) / _motionSamples.length;
+        _telemetry.motion_var = _motionSamples.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / _motionSamples.length;
+      }
+    });
+  } else {
+    console.warn("DeviceMotionEvent not supported.");
+  }
+
+  // Heartbeat to server
+  if (_telemetryInterval) clearInterval(_telemetryInterval);
+  _telemetryInterval = setInterval(() => {
+    if (_telemetry.lat && workerId) {
+      GS.post(`/workers/${workerId}/telemetry`, _telemetry).catch(console.warn);
+    }
+  }, 15000); // 15 seconds
+  
+  toast("Live Telemetry Active. You are fully protected.", "success");
+}
+
 async function loadNotifications(workerId, containerEl, badgeEl) {
   try {
     const data = await GS.get(`/notifications/${workerId}?limit=20`);

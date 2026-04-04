@@ -1,9 +1,12 @@
 import time
 import random
+import logging
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import Worker, Claim
 from app.ml_engine import compute_risk_score
+
+logger = logging.getLogger(__name__)
 
 def verify_worker_integrity(worker_id: str):
     """
@@ -16,8 +19,6 @@ def verify_worker_integrity(worker_id: str):
         if not worker:
             return
 
-        print(f"[TASK] Starting Integrity Scan for {worker.name} ({worker_id})...")
-        
         # Simulate ML Model (Isolation Forest) processing time
         time.sleep(2) 
         
@@ -32,7 +33,6 @@ def verify_worker_integrity(worker_id: str):
                 anomaly_detected = True
         
         if anomaly_detected:
-            print(f"[ALERT] Anomaly detected for {worker.id}. Reducing trust score.")
             worker.trust_score = max(0, worker.trust_score - 5)
         else:
             # Reward consistency
@@ -40,9 +40,8 @@ def verify_worker_integrity(worker_id: str):
                 worker.trust_score = min(100, worker.trust_score + 1)
         
         db.commit()
-        print(f"[TASK] Integrity Scan complete for {worker.id}. New Trust Score: {worker.trust_score}")
         
     except Exception as e:
-        print(f"[ERROR] Integrity Scan failed: {e}")
+        logger.error(f"Integrity Scan failed: {e}")
     finally:
         db.close()

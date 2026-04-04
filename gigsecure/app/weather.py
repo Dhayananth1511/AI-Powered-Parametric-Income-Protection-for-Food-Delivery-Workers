@@ -160,7 +160,7 @@ async def fetch_weather(zone: str) -> dict:
                     "fetched_at":   datetime.now().isoformat(),
                 }
     except Exception as e:
-        print(f"[OWM] Fetch error for {zone}: {e}")
+        return _fallback_zone_weather(zone)
     return _mock_weather(zone)
 
 # ─────────────────────────────────────────────────────────────────────────────

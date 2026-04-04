@@ -309,8 +309,9 @@ select option{background:#0f172a}
       <div class="trig-card" id="overallTrigger"><div class="trig-icon">✅</div><div class="trig-name">Overall</div><div class="trig-val" style="color:var(--success)">All Clear</div></div>
     </div>
     <div id="triggerAlert" style="display:none"></div>
-    <div style="margin-top:12px">
-      <button class="btn btn-primary" style="width:100%" onclick="openClaimModal()">⚡ Simulate Disruption Claim</button>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1" onclick="openClaimModal()">⚡ Simulate</button>
+      <button class="btn btn-primary" style="background:#22c55e; border-color:#22c55e; flex:1;" onclick="enableDeviceTelemetry(sess.worker_id); this.innerHTML='📡 Telemetry Live!'; this.disabled=true;">📡 Live Telemetry</button>
     </div>
   </div>
 

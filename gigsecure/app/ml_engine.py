@@ -1,7 +1,22 @@
+import os
 import numpy as np
+import joblib
 from typing import Dict, List
 from datetime import datetime
 
+# Real-time worker telemetry data cache
+latest_telemetry = {}
+
+# Load Real Scikit-Learn Models
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "models_bin")
+ML_MODELS_LOADED = False
+try:
+    risk_model = joblib.load(os.path.join(MODEL_DIR, "zone_risk_model.pkl"))
+    fraud_model = joblib.load(os.path.join(MODEL_DIR, "fraud_detection_model.pkl"))
+    ML_MODELS_LOADED = True
+    print("✅ Real Scikit-Learn Models loaded successfully.")
+except Exception as e:
+    print(f"⚠️ Warning: Live ML models not found. Run train_models.py. Falling back to heuristic mode. ({e})")
 # ─────────────────────────────────────────────────────────────────────────────
 # 40+ Tamil Nadu Zone Data
 # Features: flood_risk, proximity_water, elevation, aqi_history, disruption_months
@@ -78,13 +93,29 @@ def compute_risk_score(zone: str, month: int = 6) -> float:
     data = ZONE_DATA.get(zone)
     if not data:
         return 0.55  # default for unknown zones
-    monsoon_boost = 0.15 if month in [6, 7, 8, 9, 10, 11] else 0.0
+    if ML_MODELS_LOADED:
+        X = [[
+            data["flood_risk"],
+            data["proximity_water"],
+            data["elevation"],
+            data["aqi_history"],
+            data.get("disruption_months", 6) / 12.0,
+            month
+        ]]
+        pred_class = risk_model.predict(X)[0]
+        # Translate the class back to a baseline score (0...4 -> roughly 0.1 to 0.9)
+        score = (pred_class * 0.2) + 0.1 
+        monsoon_boost = 0.15 if month in [6, 7, 8, 9] else 0.0
+        # Incorporate original data elements to keep smooth UI visuals
+        return round(min(score + monsoon_boost, 1.0), 3)
+
+    monsoon_boost = 0.15 if month in [6, 7, 8, 9] else 0.0
     score = (
         data["flood_risk"]                    * 0.35 +
         data["proximity_water"]               * 0.25 +
         (1 - data["elevation"])               * 0.15 +
         data["aqi_history"]                   * 0.10 +
-        (data["disruption_months"] / 12)      * 0.15 +
+        (data.get("disruption_months", 6) / 12.0) * 0.15 +
         monsoon_boost
     )
     return round(min(score, 1.0), 3)
@@ -135,7 +166,7 @@ def calculate_dynamic_premium(zone: str, plan: str, month: int = None,
         trust_discount = 0
 
     # Seasonal adjustment: slight reduction off-season, slight increase monsoon
-    seasonal = 5 if month in [6, 7, 8, 9, 10, 11] else -2
+    seasonal = 5 if month in [6, 7, 8, 9] else -2
 
     final = max(base + zone_adjustment + aqi_surcharge - trust_discount + seasonal, base - 15)
 
@@ -176,7 +207,7 @@ def zone_risk_breakdown(zone: str, month: int = None) -> dict:
             "aqi_history":      data.get("aqi_history", 0.5),
             "disruption_freq":  round(data.get("disruption_months", 6) / 12, 2),
         },
-        "is_monsoon":          month in [6, 7, 8, 9, 10, 11],
+        "is_monsoon":          month in [6, 7, 8, 9],
         "disruption_months_per_year": data.get("disruption_months", 6),
     }
 
@@ -210,6 +241,27 @@ def compute_fraud_score(worker_data: dict) -> dict:
     # Signal 6: Historical baseline consistent
     signals["baseline_ok"]      = worker_data.get("trust_score", 40) > 25
 
+    # Use Real Isolation Forest Model if available
+    if ML_MODELS_LOADED:
+        # Pull real hardware telemetry if available
+        real_tel = latest_telemetry.get(worker_data.get("id")) or latest_telemetry.get(worker_data.get("worker_id")) or {}
+        
+        # If real telemetry exists, use it, else fallback to mock
+        gps_dist = 1.5 if real_tel.get("lat") else (40.0 if not signals["gps_in_zone"] else 1.5)
+        motion_var = real_tel.get("motion_var") if real_tel.get("motion_var") is not None else (0.0 if not signals["accelerometer_ok"] else np.random.uniform(3.0, 10.0))
+        signal_dbm = -125.0 if not signals["cell_tower_match"] else np.random.uniform(-90.0, -60.0)
+        latency = 250.0 if not signals["cell_tower_match"] else np.random.uniform(30.0, 80.0)
+        
+        X_fraud = [[gps_dist, motion_var, signal_dbm, latency, float(worker_data.get("trust_score", 40))]]
+        
+        # Isolation Forest: 1 is inlier (normal), -1 is outlier (fraud)
+        prediction = fraud_model.predict(X_fraud)[0]
+        
+        if prediction == 1:
+            score += 4  # Normal
+        else:
+            score -= 4  # Anomaly detected
+
     if signals["gps_in_zone"]:      score += 2
     if signals["accelerometer_ok"]: score += 2
     if signals["cell_tower_match"]: score += 2
@@ -217,7 +269,7 @@ def compute_fraud_score(worker_data: dict) -> dict:
     if signals["crowd_signal"]:     score += 1
     if signals["baseline_ok"]:      score += 1
 
-    fraud_score = max(0, 100 - (score * 12))
+    fraud_score = max(0, min(100, 100 - (score * 12)))
 
     if fraud_score < 30:   decision = "AUTO_APPROVED"
     elif fraud_score < 70: decision = "MANUAL_REVIEW"

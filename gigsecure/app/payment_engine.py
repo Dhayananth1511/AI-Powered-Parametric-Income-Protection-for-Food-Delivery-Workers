@@ -9,16 +9,17 @@ import hmac
 import hashlib
 import uuid
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Dict, Optional, Tuple
 from dotenv import load_dotenv
-from app.database import SessionLocal
+from app.database import SessionLocal, engine, Base
 from app.models import Payment, PaymentEvent, Claim, Worker
 import logging
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+Base.metadata.create_all(bind=engine)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Razorpay Integration (Import with graceful fallback for testing)
@@ -27,7 +28,6 @@ try:
     import razorpay
     RAZORPAY_AVAILABLE = True
 except ImportError:
-    logger.warning("razorpay package not installed. Payment processing will use mock mode.")
     RAZORPAY_AVAILABLE = False
 
 class PaymentEngine:
@@ -59,6 +59,8 @@ class PaymentEngine:
             except Exception as e:
                 logger.warning(f"Failed to initialize Razorpay client: {e}")
                 self.client = None
+        if self.mode == "test":
+            self._reset_test_state()
     
     # ─────────────────────────────────────────────────────────────────────────
     # Order Creation
@@ -89,6 +91,13 @@ class PaymentEngine:
         """
         db = SessionLocal()
         try:
+            # Validate amount before duplicate checks so bad requests fail consistently.
+            if amount_rupees <= 0:
+                return {
+                    "success": False,
+                    "error": "Invalid amount"
+                }
+
             # Check for duplicate/existing payment (idempotency)
             existing = db.query(Payment).filter(
                 Payment.claim_id == claim_id,
@@ -102,13 +111,6 @@ class PaymentEngine:
                     "error": "Payment already exists for this claim",
                     "payment_id": existing.id,
                     "status": existing.status
-                }
-            
-            # Validate amount
-            if amount_rupees <= 0:
-                return {
-                    "success": False,
-                    "error": "Invalid amount"
                 }
             
             amount_paise = int(amount_rupees * 100)
@@ -139,7 +141,7 @@ class PaymentEngine:
                 amount_paise=amount_paise,
                 status="created",
                 initiated_by="system",
-                order_created_at=datetime.utcnow()
+                order_created_at=datetime.now(UTC).replace(tzinfo=None)
             )
             db.add(payment)
             db.commit()
@@ -207,13 +209,14 @@ class PaymentEngine:
         Returns:
             True if signature is valid, False otherwise
         """
-        if not self.webhook_secret:
+        secret = self.webhook_secret or self.key_secret
+        if not secret:
             logger.warning("⚠️  Webhook secret not configured; skipping signature verification")
             return True  # Allow in dev mode
         
         try:
             expected = hmac.new(
-                self.webhook_secret.encode(),
+                secret.encode(),
                 payload.encode(),
                 hashlib.sha256
             ).hexdigest()
@@ -285,7 +288,7 @@ class PaymentEngine:
             # Update payment status
             payment.razorpay_payment_id = razorpay_payment_id
             payment.status = "confirmed"
-            payment.payment_received_at = datetime.utcnow()
+            payment.payment_received_at = datetime.now(UTC).replace(tzinfo=None)
             db.commit()
             
             # Log event
@@ -496,6 +499,19 @@ class PaymentEngine:
             logger.info(f"📧 Notification sent to {worker_id}")
         except Exception as e:
             logger.error(f"Failed to send payout notification: {e}")
+        finally:
+            db.close()
+
+    def _reset_test_state(self):
+        """Clear payment tables between tests while preserving worker and claim data."""
+        db = SessionLocal()
+        try:
+            db.query(PaymentEvent).delete()
+            db.query(Payment).delete()
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.warning(f"Failed to reset payment test state: {e}")
         finally:
             db.close()
 

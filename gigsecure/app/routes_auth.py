@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
+from typing import Optional
 from app.database import get_db
 from app.models import Worker, Admin
 from app.ml_engine import compute_risk_score, recommend_plan, calculate_dynamic_premium
@@ -42,6 +43,26 @@ class LoginRequest(BaseModel):
     password: str
     role:     str = "worker"
 
+class AdminCreateWorkerRequest(BaseModel):
+    name: str
+    phone: str
+    email: str
+    password: str
+    platform: str
+    zone: str
+    pincode: str
+    bank_upi_id: Optional[str] = None
+    plan: Optional[str] = None
+    aadhaar_verified: bool = True
+
+class AdminCreateAdminRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    org: Optional[str] = "GigSecure"
+    designation: Optional[str] = "Admin"
+    phone: Optional[str] = None
+
 class OTPRequest(BaseModel):
     phone: str
     aadhaar: str
@@ -55,6 +76,13 @@ class TokenResponse(BaseModel):
     token_type: str
     worker_id: str
     role: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    zone: Optional[str] = None
+    plan: Optional[str] = None
+    platform: Optional[str] = None
+    org: Optional[str] = None
+    designation: Optional[str] = None
 
 # In-memory OTP store (mock)
 OTP_STORE = {}
@@ -63,7 +91,6 @@ OTP_STORE = {}
 def send_otp(req: OTPRequest):
     otp = str(random.randint(100000, 999999))
     OTP_STORE[req.phone] = otp
-    print(f"[MOCK OTP] Phone: {req.phone} → OTP: {otp}")
     return {
         "success": True,
         "message": f"OTP sent to {req.phone[:6]}XXXX",
@@ -167,7 +194,16 @@ def login(req: LoginRequest, background_tasks: BackgroundTasks, db: Session = De
             
             logger.info(f"✅ Admin logged in: {user.id} | {user.name}")
             
-            return TokenResponse(access_token=token, token_type="bearer", worker_id=user.id, role="admin")
+            return TokenResponse(
+                access_token=token,
+                token_type="bearer",
+                worker_id=user.id,
+                role="admin",
+                name=user.name,
+                email=user.email,
+                org=user.org,
+                designation=user.designation,
+            )
         
         else:
             user = db.query(Worker).filter(Worker.email == req.email).first()
@@ -189,7 +225,17 @@ def login(req: LoginRequest, background_tasks: BackgroundTasks, db: Session = De
             from app.tasks import verify_worker_integrity
             background_tasks.add_task(verify_worker_integrity, user.id)
             
-            return TokenResponse(access_token=token, token_type="bearer", worker_id=user.id, role="worker")
+            return TokenResponse(
+                access_token=token,
+                token_type="bearer",
+                worker_id=user.id,
+                role="worker",
+                name=user.name,
+                email=user.email,
+                zone=user.zone,
+                plan=user.plan,
+                platform=user.platform,
+            )
     
     except HTTPException:
         raise
@@ -236,6 +282,64 @@ def get_all_workers(db: Session = Depends(get_db)):
         for w in workers
     ]
 
+@router.get("/demo-users")
+def get_demo_users(db: Session = Depends(get_db)):
+    """Return available seeded demo accounts for the login UI."""
+    worker_passwords = {
+        "ravi.kumar@swiggy.in": "demo1234",
+        "arjun.raj@zomato.in": "demo1234",
+        "suresh.m@swiggy.in": "demo1234",
+        "priya.d@zomato.in": "demo1234",
+        "karthik.s@swiggy.in": "demo1234",
+    }
+    admin_passwords = {
+        "admin@digit.com": "admin123",
+        "ops@gigsecure.in": "admin123",
+    }
+
+    workers = (
+        db.query(Worker)
+        .filter(Worker.email.in_(list(worker_passwords.keys())))
+        .order_by(Worker.trust_score.desc())
+        .all()
+    )
+    admins = (
+        db.query(Admin)
+        .filter(Admin.email.in_(list(admin_passwords.keys())))
+        .order_by(Admin.id.asc())
+        .all()
+    )
+
+    return {
+        "workers": [
+            {
+                "label": f"{w.platform} · {w.plan.title()}",
+                "email": w.email,
+                "password": worker_passwords[w.email],
+                "role": "worker",
+                "name": w.name,
+                "worker_id": w.id,
+                "zone": w.zone,
+                "plan": w.plan,
+                "platform": w.platform,
+            }
+            for w in workers
+        ],
+        "admins": [
+            {
+                "label": f"{a.org.split()[0]} Admin",
+                "email": a.email,
+                "password": admin_passwords[a.email],
+                "role": "admin",
+                "name": a.name,
+                "admin_id": a.id,
+                "org": a.org,
+                "designation": a.designation,
+            }
+            for a in admins
+        ],
+    }
+
 @router.put("/worker/{worker_id}")
 def update_worker(worker_id: str, patch: dict, db: Session = Depends(get_db)):
     w = db.query(Worker).filter(Worker.id == worker_id).first()
@@ -250,17 +354,90 @@ def update_worker(worker_id: str, patch: dict, db: Session = Depends(get_db)):
 
 @router.post("/admin/register")
 def register_admin(data: dict, db: Session = Depends(get_db)):
+    if not data.get("email") or not data.get("name"):
+        raise HTTPException(400, "Name and email are required")
+    if db.query(Admin).filter(Admin.email == data.get("email")).first():
+        raise HTTPException(400, "Admin email already registered")
     admin = Admin(
         id = "ADM-" + uuid.uuid4().hex[:4].upper(),
         name = data.get("name"),
         email = data.get("email"),
-        password = data.get("password", "admin123"),
+        password = hash_password(data.get("password", "admin123")),
         org = data.get("org", "GigSecure"),
         designation = data.get("designation", "Admin"),
+        phone = data.get("phone"),
     )
     db.add(admin)
     db.commit()
     return {"success": True, "admin_id": admin.id}
+
+@router.post("/admin/create-worker")
+def admin_create_worker(req: AdminCreateWorkerRequest, db: Session = Depends(get_db)):
+    if db.query(Worker).filter(Worker.email == req.email).first():
+        raise HTTPException(400, "Worker email already registered")
+    if db.query(Worker).filter(Worker.phone == req.phone).first():
+        raise HTTPException(400, "Worker phone already registered")
+
+    month = datetime.now().month
+    risk_score = compute_risk_score(req.zone, month)
+    final_plan = req.plan or recommend_plan(risk_score)
+
+    worker = Worker(
+        id="WKR-" + uuid.uuid4().hex[:4].upper(),
+        name=req.name,
+        phone=req.phone,
+        email=req.email,
+        password=hash_password(req.password),
+        platform=req.platform,
+        zone=req.zone,
+        pincode=req.pincode,
+        aadhaar_verified=req.aadhaar_verified,
+        plan=final_plan,
+        risk_score=risk_score,
+        trust_score=55,
+        bank_upi_id=req.bank_upi_id,
+        plan_effective_date=datetime.now(),
+    )
+    db.add(worker)
+    db.commit()
+    db.refresh(worker)
+
+    return {
+        "success": True,
+        "worker_id": worker.id,
+        "name": worker.name,
+        "email": worker.email,
+        "zone": worker.zone,
+        "plan": worker.plan,
+        "platform": worker.platform,
+    }
+
+@router.post("/admin/create-admin")
+def admin_create_admin(req: AdminCreateAdminRequest, db: Session = Depends(get_db)):
+    if db.query(Admin).filter(Admin.email == req.email).first():
+        raise HTTPException(400, "Admin email already registered")
+
+    admin = Admin(
+        id="ADM-" + uuid.uuid4().hex[:4].upper(),
+        name=req.name,
+        email=req.email,
+        password=hash_password(req.password),
+        org=req.org or "GigSecure",
+        designation=req.designation or "Admin",
+        phone=req.phone,
+    )
+    db.add(admin)
+    db.commit()
+    db.refresh(admin)
+
+    return {
+        "success": True,
+        "admin_id": admin.id,
+        "name": admin.name,
+        "email": admin.email,
+        "org": admin.org,
+        "designation": admin.designation,
+    }
 
 @router.get("/admins")
 def get_all_admins(db: Session = Depends(get_db)):

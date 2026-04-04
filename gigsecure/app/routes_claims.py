@@ -91,6 +91,14 @@ async def trigger_claim(req: ClaimTrigger, db: Session = Depends(get_db)):
         worker.weekly_hrs_used  = (worker.weekly_hrs_used or 0) + req.disruption_hrs
         worker.trust_score      = min(100, (worker.trust_score or 40) + 2)
         worker.earnings_protected = (worker.earnings_protected or 0) + result["payout"]
+        
+        if result["status"] == "approved":
+            from app.sms_engine import send_sms_notification
+            send_sms_notification(
+                to_phone=worker.phone,
+                message=f"GigSecure: Claim for {trigger['label']} Auto-Approved! ₹{result['payout']} has been credited."
+            )
+            
     elif result["status"] == "rejected":
         worker.claims_rejected  = (worker.claims_rejected or 0) + 1
         worker.trust_score      = max(0, (worker.trust_score or 40) - 3)
@@ -200,6 +208,13 @@ def zone_simulate(req: ZoneSimulate, db: Session = Depends(get_db)):
                 icon       = notif_icon,
             )
             db.add(notif)
+            
+            from app.sms_engine import send_sms_notification
+            send_sms_notification(
+                to_phone=worker.phone,
+                message=notif_msg
+            )
+            
         elif result["status"] == "manual_review":
             notif = NotificationLog(
                 worker_id  = worker.id,
@@ -327,6 +342,12 @@ def review_claim(req: ClaimReview, db: Session = Depends(get_db)):
                 icon       = "✅",
             )
             db.add(notif)
+            
+            from app.sms_engine import send_sms_notification
+            send_sms_notification(
+                to_phone=worker.phone,
+                message=f"GigSecure: Your claim for {claim.trigger_label or claim.trigger_type} was manually approved! ₹{claim.payout_amount} credited."
+            )
         else:
             worker.claims_rejected = (worker.claims_rejected or 0) + 1
 

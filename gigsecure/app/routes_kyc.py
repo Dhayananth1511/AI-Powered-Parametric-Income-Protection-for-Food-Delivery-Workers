@@ -47,7 +47,6 @@ def send_otp(req: OTPSend):
         raise HTTPException(400, "Invalid Aadhaar number — must be 12 digits")
     otp = str(random.randint(100000, 999999))
     OTP_STORE[req.phone] = {"otp": otp, "aadhaar": req.aadhaar, "created_at": datetime.now()}
-    print(f"[MOCK UIDAI] Phone: {req.phone} → OTP: {otp}")
     return {
         "success":  True,
         "message":  f"OTP sent to {req.phone[:6]}XXXX via UIDAI mock",
@@ -95,7 +94,6 @@ def initiate_kyc(req: KYCInitiate, db: Session = Depends(get_db)):
     db.add(kyc)
     db.commit()
 
-    print(f"[MOCK UIDAI KYC] Worker: {req.worker_id} → OTP: {otp}")
     return {
         "success":    True,
         "status":     "otp_sent",
