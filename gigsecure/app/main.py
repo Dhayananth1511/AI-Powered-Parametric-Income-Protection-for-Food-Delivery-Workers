@@ -414,8 +414,53 @@ def update_worker_data(worker_id: str, patch: dict):
 def update_worker_telemetry(worker_id: str, telemetry: dict):
     from app.ml_engine import latest_telemetry
     latest_telemetry[worker_id] = telemetry
-    # In a full prod system we might log this in a Time Series DB. For now it is memory-held for the auto-claim engine.
     return {"success": True, "recorded": True}
+
+from pydantic import BaseModel
+class ShiftRequest(BaseModel):
+    is_online: bool
+
+@app.put("/workers/{worker_id}/shift")
+def toggle_worker_shift(worker_id: str, req: ShiftRequest):
+    db: Session = SessionLocal()
+    try:
+        from app.models import Worker
+        w = db.query(Worker).filter(Worker.id == worker_id).first()
+        if w:
+            w.is_online = req.is_online
+            db.commit()
+            return {"success": True, "is_online": w.is_online}
+        return {"success": False, "error": "Worker not found"}
+    finally:
+        db.close()
+
+@app.get("/admin/telemetry")
+def get_all_telemetry():
+    from app.ml_engine import latest_telemetry
+    db: Session = SessionLocal()
+    try:
+        from app.models import Worker
+        # Append is_online status directly into telemetry packet for admin to know state
+        workers = db.query(Worker).all()
+        state_map = { w.id: w.is_online for w in workers }
+        for k, v in latest_telemetry.items():
+            if isinstance(v, dict):
+                v["is_online"] = state_map.get(k, False)
+        return {"telemetry": latest_telemetry}
+    finally:
+        db.close()
+
+@app.get("/workers/{worker_id}/earnings-history")
+def get_earnings_history(worker_id: str):
+    db = SessionLocal()
+    try:
+        claims = db.query(Claim).filter(Claim.worker_id == worker_id, Claim.status == "approved").order_by(Claim.created_at.asc()).all()
+        return {
+            "success": True,
+            "claims": [{"amount": c.payout_amount, "date": str(c.created_at)} for c in claims]
+        }
+    finally:
+        db.close()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ML — Zone Info
@@ -454,9 +499,9 @@ import httpx
 import asyncio
 
 async def weather_poller():
-    """15-second background poller for realtime parametric monitoring"""
+    """Realtime parametric monitoring. Poll interval 120s to preserve OWM API limits."""
     while True:
-        await asyncio.sleep(15)
+        await asyncio.sleep(120)
         try:
             from app.weather import fetch_weather, check_triggers
             from app.trigger_monitor import get_zone_status

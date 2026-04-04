@@ -32,6 +32,7 @@ class Worker(Base):
     plan_effective_date = Column(DateTime, nullable=True)
     weekly_reset_at  = Column(DateTime, nullable=True)
     is_active        = Column(Boolean, default=True)
+    is_online        = Column(Boolean, default=False)
     earnings_protected = Column(Float, default=0.0)
     bank_upi_id      = Column(String, nullable=True)
     plan_expiry_notified = Column(Boolean, default=False)

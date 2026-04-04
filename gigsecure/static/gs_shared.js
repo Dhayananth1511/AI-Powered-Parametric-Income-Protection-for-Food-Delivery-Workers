@@ -240,6 +240,7 @@ function enableDeviceTelemetry(workerId) {
   if (_telemetryInterval) clearInterval(_telemetryInterval);
   _telemetryInterval = setInterval(() => {
     if (_telemetry.lat && workerId) {
+      _telemetry.timestamp = Date.now();
       GS.post(`/workers/${workerId}/telemetry`, _telemetry).catch(console.warn);
     }
   }, 15000); // 15 seconds

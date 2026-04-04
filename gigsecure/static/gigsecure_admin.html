@@ -7,6 +7,8 @@
 <meta name="description" content="GigSecure admin dashboard — real-time KPIs, claims pipeline, worker policies, and disruption monitoring.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
@@ -119,6 +121,7 @@ input:focus,select:focus{border-color:var(--primary)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-grid .full{grid-column:1/-1}
 .field label{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.fullscreen-map { position: fixed !important; inset: 0 !important; z-index: 9999 !important; height: 100vh !important; width: 100vw !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; }
 </style>
 </head>
 <body>
@@ -280,6 +283,14 @@ input:focus,select:focus{border-color:var(--primary)}
     <div class="page-title">📡 Disruption Monitor</div>
     <div class="page-sub">Real-time disruption events across all zones</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="monitorKpis"></div>
+    
+    <!-- LEAFLET ZONE MAP -->
+    <div class="tbl-wrap" id="mapContainer" style="margin-bottom:16px; height: 350px; position:relative; overflow:hidden;">
+      <button id="mapFsBtn" onclick="toggleMapFullscreen()" class="btn btn-ghost" style="position:absolute; top:10px; right:10px; z-index:400; background:rgba(0,0,0,0.7); box-shadow:0 0 10px rgba(0,0,0,0.5); font-size:11px; padding:4px 8px; color:#fff">🔲 Full Screen</button>
+      <button id="mapBackBtn" onclick="toggleMapFullscreen()" class="btn btn-primary" style="display:none; position:absolute; top:10px; left:50px; z-index:400; font-size:11px; padding:4px 8px; box-shadow:0 0 10px rgba(0,0,0,0.5);">🔙 Back to Dashboard</button>
+      <div id="adminMap" style="width: 100%; height: 100%; z-index: 1;"></div>
+    </div>
+
     <div class="tbl-wrap" style="margin-bottom:16px">
       <div class="tbl-hdr"><div class="tbl-title">Recent Disruption Events</div><button class="btn btn-ghost" onclick="loadMonitor()" style="font-size:11px;padding:5px 10px">Refresh</button></div>
       <table>
@@ -368,8 +379,29 @@ function showPage(id) {
   // Lazy load
   if(id==="workers"  && !allWorkers.length) loadWorkers();
   if(id==="claims")   loadClaimsPipeline();
-  if(id==="monitor")  loadMonitor();
+  if(id==="monitor")  {
+    loadMonitor();
+    if(adminLeafletMap) setTimeout(() => adminLeafletMap.invalidateSize(), 200);
+  }
   if(id==="simulate") initSimulator();
+}
+
+function toggleMapFullscreen() {
+  const c = document.getElementById("mapContainer");
+  const b = document.getElementById("mapBackBtn");
+  const f = document.getElementById("mapFsBtn");
+  if(c.classList.contains("fullscreen-map")) {
+    c.classList.remove("fullscreen-map");
+    b.style.display = "none";
+    f.style.display = "block";
+    c.style.height = "350px";
+  } else {
+    c.classList.add("fullscreen-map");
+    b.style.display = "block";
+    f.style.display = "none";
+    c.style.height = "100vh";
+  }
+  if(adminLeafletMap) setTimeout(() => adminLeafletMap.invalidateSize(), 300);
 }
 
 // ── OVERVIEW ────────────────────────────────────────────────────────────────
@@ -636,9 +668,32 @@ async function reviewClaim(claimId, action) {
   } catch(e) { toast("Error: " + e.message, "error"); }
 }
 
-// ── DISRUPTION MONITOR ───────────────────────────────────────────────────────
+// ── DISRUPTION MONITOR & LEAFLET MAP ──────────────────────────────────────────
+let adminLeafletMap = null;
+let zoneMarkers = {};
+
+const ZONE_COORDS_MOCK = {
+  "Velachery, Chennai": [12.9816, 80.2209], "Marina Beach, Chennai": [13.0500, 80.2824],
+  "T. Nagar, Chennai": [13.0358, 80.2332], "Anna Nagar, Chennai": [13.0850, 80.2101],
+  "Adyar, Chennai": [13.0012, 80.2565], "Tambaram, Chennai": [12.9249, 80.1000],
+  "Coimbatore Central": [11.0168, 76.9558], "Madurai Central": [9.9252, 78.1198],
+  "Trichy Central": [10.7905, 78.7047], "Salem Central": [11.6643, 78.1460]
+};
+
+function initAdminMap() {
+  if (adminLeafletMap) return;
+  const container = document.getElementById('adminMap');
+  if(!container) return;
+  adminLeafletMap = L.map('adminMap').setView([11.1271, 78.6569], 6); // Tamil Nadu center
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd', maxZoom: 19
+  }).addTo(adminLeafletMap);
+}
+
 async function loadMonitor() {
   try {
+    initAdminMap();
     const data = await GS.get("/admin/disruption-monitor");
     document.getElementById("monitorKpis").innerHTML = [
       { icon:"⚡", label:"Active Disruptions", val:data.total_active, col:"rgba(248,113,113,0.15)" },
@@ -665,7 +720,35 @@ async function loadMonitor() {
     if(!sel.options.length) {
       const zones = await GS.get("/ml/zones");
       zones.zones.slice(0,20).forEach(z => { const o = document.createElement("option"); o.value = z; o.text = z; sel.add(o); });
+      
+      // Add markers to map
+      zones.zones.forEach(z => {
+        let coords = ZONE_COORDS_MOCK[z] || [13.0 + Math.random()*0.2 - 0.1, 80.2 + Math.random()*0.2 - 0.1]; // Fallback random TN
+        
+        let color = '#4ade80'; // safe
+        let activeEvt = data.active_events[z];
+        if (activeEvt) {
+            color = activeEvt.status === 'confirmed' ? '#f87171' : '#facc15';
+        }
+        
+        if (zoneMarkers[z]) {
+            zoneMarkers[z].setStyle({color, fillColor: color});
+        } else {
+            zoneMarkers[z] = L.circle(coords, {
+                color: color, fillColor: color, fillOpacity: 0.3, radius: 2500
+            }).bindPopup(`<b>${z}</b><br>${activeEvt ? activeEvt.trigger.label : 'Safe'}`).addTo(adminLeafletMap);
+        }
+      });
+    } else {
+      // Update existing markers
+      Object.keys(zoneMarkers).forEach(z => {
+        let activeEvt = data.active_events[z];
+        let color = activeEvt ? (activeEvt.status === 'confirmed' ? '#f87171' : '#facc15') : '#4ade80';
+        zoneMarkers[z].setStyle({color, fillColor: color});
+        zoneMarkers[z].setPopupContent(`<b>${z}</b><br>${activeEvt ? activeEvt.trigger.label : 'Safe'}`);
+      });
     }
+
   } catch(e) {}
 }
 
@@ -724,6 +807,7 @@ function initSimulator() {
   // Populate workers
   const sel = document.getElementById("simWorker");
   if(!sel.options.length) {
+    sel.innerHTML = "";
     allWorkers.forEach(w => { const o = document.createElement("option"); o.value = w.id; o.text = `${w.name} — ${capitalize(w.plan)}`; sel.add(o); });
     if(!allWorkers.length) loadWorkers().then(initSimulator);
   }
@@ -829,12 +913,46 @@ function exportClaimsCSV() {
 }
 
 // ── Misc ───────────────────────────────────────────────────────────────────────
-function refreshAll() { loadOverview(); }
+function refreshAll() { loadOverview(); renderAdminMap(); }
 function logout() { Session.logout(); }
+
+// ── ADMIN HARDWARE MAP ────────────────────────────────────────────────────────
+let adminMarkers = [];
+
+async function renderAdminMap() {
+  initAdminMap();
+  
+  // Clear old pins
+  adminMarkers.forEach(m => adminLeafletMap.removeLayer(m));
+  adminMarkers = [];
+  
+  try {
+     const data = await GS.get('/admin/telemetry');
+     const tele = data.telemetry || {};
+     Object.keys(tele).forEach(workerId => {
+       const worker = allWorkers.find(w => w.id === workerId || w.worker_id === workerId);
+       const t = tele[workerId];
+       if(t.lat && t.lon && worker) {
+         const isStale = (Date.now() - (t.timestamp || 0)) > 300000; // 5 min
+         const isActivelyOnline = t.is_online && !isStale;
+         
+         const m = L.circleMarker([t.lat, t.lon], {
+           radius: 6, 
+           color: isActivelyOnline ? '#4ade80' : '#64748b', 
+           fillColor: isActivelyOnline ? '#4ade80' : '#64748b', 
+           fillOpacity: isActivelyOnline ? 0.8 : 0.4
+         }).bindPopup(`<b>${worker.name}</b><br>${worker.platform} - ${worker.plan}<br>Status: <strong>${isActivelyOnline?'ONLINE 🟢':'OFFLINE / STALE 🔘'}</strong>`).addTo(adminLeafletMap);
+         adminMarkers.push(m);
+       }
+     });
+  } catch(e) {}
+}
 
 // Init
 loadOverview();
-loadWorkers();
+loadWorkers().then(renderAdminMap);
+// Auto refresh hardware endpoints
+setInterval(renderAdminMap, 15000);
 </script>
 </body>
 </html>

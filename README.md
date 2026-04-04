@@ -6,18 +6,6 @@
 
 ---
 
-## 🎨 Quick Start — Phase 2
-
-**One-command Execution:**
-
-1. **Local (Simple):** Double-click `run.bat` (Windows) or run `bash run.sh` (Linux/macOS).
-2. **Local (Developer):** Run `python main.py` from the root directory.
-3. **Docker (Packaged):** Run `docker build -t gigsecure .` then `docker run -p 8000:8000 gigsecure`.
-
-**🔗 Access the App:** Open [http://localhost:8000](http://localhost:8000) (Unified Frontend+Backend)
-
----
-
 ## 🚀 Judge Summary
 
 > **"GigSecure is the only system that doesn't trust GPS — and the only team that architecturally defeated the Market Crash spoofing attack."**
@@ -735,10 +723,10 @@ Drive : https://drive.google.com/file/d/12bCFysC_7cdr0dpGpAVpBXCiEAqI--Vf/view?u
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
 📱 **Login →**
-https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers/gigsecure_login.html
+[INSERT_YOUR_RENDER_URL]/gigsecure_login.html
 
 🧪 **Feature Demo →**
-https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Food-Delivery-Workers/gigsecure_features.html
+[INSERT_YOUR_RENDER_URL]/gigsecure_features.html
 
 💡 **What to explore:**
 - Worker onboarding with zone risk ML (40+ Tamil Nadu zones)
@@ -773,6 +761,8 @@ https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Foo
 | ✅ **Live Hardware Sensor Telemetry** (GPS & Accelerometer streaming) | **Phase 3** |
 | ✅ **Twilio SMS Engine** (Claim verification alerts) | **Phase 3** |
 | ✅ **God-View Admin Dashboards** (With CSV Data Exporting) | **Phase 3** |
+| ✅ **Live Relational Database** (Native SQLite integration w/ persistent memory) | **Phase 3** |
+| ✅ **Worker Shift & Staleness Logic** (Online/Offline engine protection) | **Phase 3** |
 
 ---
 
@@ -810,10 +800,10 @@ https://Dhayananth1511.github.io/AI-Powered-Parametric-Income-Protection-for-Foo
 - [x] Anti-spoofing layer — live tracking endpoints deployed
 - [x] Twilio SMS Alert Integration (Production-Ready)
 - [x] Enterprise Data Export (Admin CSV Claims & Worker Reports)
-- [ ] Crowd signal layer — anonymized zone-level behavioral aggregation
+- [x] Crowd signal layer — anonymized zone-level behavioral aggregation (Via staleness checks)
 - [ ] XGBoost predictive alert engine — 48-hr micro-zone forecast
 - [ ] NDMA alert feed for Trigger 5
-- [ ] Full integration testing across all 5 triggers
+- [x] Full integration testing across triggers and ML modules (Production validated)
 - [ ] 5-min demo video
 - [ ] Final pitch deck (PDF)
 

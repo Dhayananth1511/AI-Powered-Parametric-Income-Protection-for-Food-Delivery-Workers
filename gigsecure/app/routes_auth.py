@@ -63,6 +63,13 @@ class AdminCreateAdminRequest(BaseModel):
     designation: Optional[str] = "Admin"
     phone: Optional[str] = None
 
+class WorkerEditProfileRequest(BaseModel):
+    worker_id: str
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    pincode: Optional[str] = None
+    bank_upi_id: Optional[str] = None
+
 class OTPRequest(BaseModel):
     phone: str
     aadhaar: str
@@ -438,6 +445,17 @@ def admin_create_admin(req: AdminCreateAdminRequest, db: Session = Depends(get_d
         "org": admin.org,
         "designation": admin.designation,
     }
+
+@router.put("/worker/edit-profile")
+def worker_edit_profile(req: WorkerEditProfileRequest, db: Session = Depends(get_db)):
+    w = db.query(Worker).filter(Worker.id == req.worker_id).first()
+    if not w: raise HTTPException(404, "Worker not found")
+    if req.name: w.name = req.name
+    if req.phone: w.phone = req.phone
+    if req.pincode: w.pincode = req.pincode
+    if req.bank_upi_id is not None: w.bank_upi_id = req.bank_upi_id
+    db.commit()
+    return {"success": True}
 
 @router.get("/admins")
 def get_all_admins(db: Session = Depends(get_db)):

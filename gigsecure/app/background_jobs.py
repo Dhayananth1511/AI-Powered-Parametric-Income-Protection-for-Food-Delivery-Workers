@@ -139,6 +139,7 @@ def _auto_trigger_claims():
             workers = db.query(Worker).filter(
                 Worker.zone == zone,
                 Worker.is_active == True,
+                Worker.is_online == True,
                 Worker.plan != None,
             ).all()
             
@@ -152,7 +153,14 @@ def _auto_trigger_claims():
                 
                 if existing_claim:
                     continue
-                
+                    
+                # Staleness Check
+                from app.ml_engine import latest_telemetry
+                t = latest_telemetry.get(worker.id, {})
+                ts = t.get("timestamp", 0)
+                if (datetime.now().timestamp() * 1000 - ts) > 300000:
+                    continue # Worker is technically offline but didn't toggle ui
+                    
                 # Auto-trigger claim
                 try:
                     worker_dict = {

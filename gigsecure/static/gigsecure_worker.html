@@ -7,6 +7,8 @@
 <meta name="description" content="Your GigSecure worker dashboard — live disruption monitoring, payouts, and plan management.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
@@ -16,6 +18,12 @@ html[data-theme="light"] .nav{background:rgba(240,244,255,0.95)!important}
 html[data-theme="light"] .card,html[data-theme="light"] .stat-card,html[data-theme="light"] .hero{background:rgba(255,255,255,0.85);border-color:rgba(99,102,241,0.2)}
 html[data-theme="light"] .modal{background:rgba(240,244,255,0.98)}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.edit-modal-premium { background: rgba(15,23,42,0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+.premium-input { background: rgba(2,8,23,0.5); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 12px; font-size: 14px; color: inherit; transition: all 0.2s ease; width: 100%; box-sizing: border-box; }
+.premium-input:focus { border-color: rgba(99,102,241,0.8); box-shadow: 0 0 0 2px rgba(99,102,241,0.2); outline: none; }
+html[data-theme="light"] .edit-modal-premium { background: rgba(255,255,255,0.8); }
+html[data-theme="light"] .premium-input { background: #fff; }
 .bg-mesh{position:fixed;inset:0;background:radial-gradient(ellipse at 15% 40%,rgba(99,102,241,0.12) 0%,transparent 50%),radial-gradient(ellipse at 85% 70%,rgba(139,92,246,0.10) 0%,transparent 50%);pointer-events:none}
 /* NAV */
 .nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(2,8,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
@@ -242,6 +250,24 @@ select option{background:#0f172a}
   </div>
 </div>
 
+<!-- EDIT PROFILE MODAL -->
+<div class="modal-overlay" id="editProfileModal">
+  <div class="modal edit-modal-premium">
+    <div class="modal-title">✏️ Worker Profile <button class="close-btn" onclick="closeModal('editProfileModal')">✕</button></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.4">Keep your KYC and contact details up to date to ensure seamless zero-touch claim payouts.</div>
+    <div class="form-grid">
+      <div class="field full"><label>👤 Full Name</label><input id="ep-name" class="premium-input" placeholder="Your Name"></div>
+      <div class="field"><label>📞 Phone Number</label><input id="ep-phone" class="premium-input" placeholder="+91 90000 00000"></div>
+      <div class="field"><label>📍 Service Pincode</label><input id="ep-pincode" class="premium-input" placeholder="600001"></div>
+      <div class="field full"><label>🏦 Bank UPI ID <span style="font-size:10px;color:var(--primary);margin-left:6px;font-weight:400">(Encrypted)</span></label><input id="ep-upi" class="premium-input" placeholder="name@bank"></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:24px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('editProfileModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" onclick="submitEditProfile()" id="submitEpBtn">Verify & Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-logo">🛡️ GigSecure</div>
@@ -291,8 +317,15 @@ select option{background:#0f172a}
 
     <!-- HERO STATUS -->
   <div class="hero clear" id="heroEl">
-    <div class="hero-status" id="heroStatus"><span class="pulse-dot"></span> 🟢 ACTIVE COVERAGE</div>
-    <div class="hero-title" id="heroTitle">Loading...</div>
+    <div style="float:right; margin-top:-4px">
+      <button id="shiftToggleBtn" onclick="toggleShift()" class="btn" style="padding:10px 20px; font-size:14px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:30px; display:flex; align-items:center; gap:8px;">
+        <span id="shiftStatusDot" style="width:10px;height:10px;background:#94a3b8;border-radius:50%;display:inline-block"></span>
+        <span id="shiftBtnText" style="font-weight:600">Offline</span>
+      </button>
+    </div>
+    <div class="hero-status" id="heroStatus"><span class="pulse-dot"></span> 🟢 COVERAGE SUBSCRIPTION</div>
+    <div class="hero-title" id="heroTitle" style="display:inline-block;">Loading...</div>
+    <button class="btn btn-ghost btn-sm" onclick="openEditProfile()" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);margin-left:12px;vertical-align:middle;margin-top:-5px">✏️ Edit</button>
     <div class="hero-sub" id="heroSub">Monitoring your zone for disruptions</div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
       <div id="platformBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#a78bfa"></div>
@@ -336,8 +369,8 @@ select option{background:#0f172a}
         <div style="position:relative;height:200px"><canvas id="earningsChart"></canvas></div>
     </div>
     <div class="card" style="padding:18px;margin-bottom:0">
-        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Live Risk Matrix Prediction</div>
-        <div style="position:relative;height:200px;display:flex;align-items:center;justify-content:center"><canvas id="riskRadarChart"></canvas></div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">Live Risk Map</div>
+        <div style="position:relative;height:200px;width:100%"><div id="workerMap" style="width:100%;height:100%;border-radius:8px;z-index:1;"></div></div>
     </div>
   </div>
 
@@ -448,6 +481,9 @@ async function loadWorker() {
     const fallbackRate = PLANS[data.plan]?.rate || 60;
     document.getElementById("heroSub").textContent = `Zone: ${data.zone || "Not Assigned"} · ₹${fallbackRate}/hr coverage active`;
     document.getElementById("zoneLabel").textContent = data.zone || "---";
+    
+    // UI shift updates
+    if(typeof updateShiftBtnUI === 'function') updateShiftBtnUI();
     
     if (document.getElementById("platformBadge") && data.platform) {
       const platIcons = {"Swiggy":"🧡","Zomato":"🍅","Dunzo":"🔵","Blinkit":"🟡"};
@@ -869,6 +905,79 @@ async function confirmPlanChange() {
   openCheckoutModal(selectedNewPlan);
 }
 
+function openEditProfile() {
+  document.getElementById("ep-name").value = (workerData||sess).name || "";
+  document.getElementById("ep-phone").value = workerData.phone || "";
+  document.getElementById("ep-pincode").value = workerData.pincode || "";
+  document.getElementById("ep-upi").value = workerData.bank_upi_id || "";
+  openModal('editProfileModal');
+}
+
+async function toggleShift() {
+  const isNowOnline = !(workerData||sess).is_online;
+  const btn = document.getElementById("shiftToggleBtn");
+  btn.disabled = true;
+  try {
+    const wid = (workerData||sess).id || (workerData||sess).worker_id;
+    const res = await GS.put(`/workers/${wid}/shift`, { is_online: isNowOnline });
+    if(res.success) {
+      if(workerData) workerData.is_online = res.is_online;
+      if(sess) sess.is_online = res.is_online;
+      updateShiftBtnUI();
+      toast(`You are now ${res.is_online ? 'ONLINE. Policy triggers active.' : 'OFFLINE.'}`, res.is_online ? 'success' : 'warning');
+      
+      if(res.is_online && typeof enableDeviceTelemetry === 'function') {
+         enableDeviceTelemetry(wid);
+      } else if (!res.is_online && window._telemetryInterval) {
+         clearInterval(window._telemetryInterval);
+         window._telemetryInterval = null;
+      }
+    }
+  } catch(e) {
+    toast(e.message, "error");
+  }
+  btn.disabled = false;
+}
+
+function updateShiftBtnUI() {
+  const btnText = document.getElementById("shiftBtnText");
+  const dot = document.getElementById("shiftStatusDot");
+  const isOnline = (workerData||sess).is_online;
+  if(btnText && dot) {
+    btnText.textContent = isOnline ? "On Shift" : "Off Shift";
+    dot.style.background = isOnline ? "#4ade80" : "#94a3b8";
+    if(isOnline) dot.style.boxShadow = "0 0 8px #4ade80";
+    else dot.style.boxShadow = "none";
+  }
+}
+
+async function submitEditProfile() {
+  const btn = document.getElementById("submitEpBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Saving...';
+  const payload = {
+    worker_id: (workerData||sess).id || (workerData||sess).worker_id,
+    name: document.getElementById("ep-name").value,
+    phone: document.getElementById("ep-phone").value,
+    pincode: document.getElementById("ep-pincode").value,
+    bank_upi_id: document.getElementById("ep-upi").value,
+  };
+  try {
+    await GS.put("/auth/worker/edit-profile", payload);
+    toast("Profile updated successfully", "success");
+    closeModal('editProfileModal');
+    // Save new basic info to session so UI updates
+    let cached = JSON.parse(localStorage.getItem("gs_session"));
+    if(cached) {
+      cached.name = payload.name;
+      localStorage.setItem("gs_session", JSON.stringify(cached));
+    }
+    await loadWorker();
+  } catch(e) {
+    toast(e.message, "error");
+  }
+  btn.disabled = false; btn.innerHTML = 'Save Changes';
+}
+
 async function cancelPolicy() {
   if(!confirm("Cancel your active policy? Coverage continues until end of week.")) return;
   try {
@@ -881,16 +990,40 @@ async function cancelPolicy() {
 // ── Charting Logic (Chart.js) ───────────────────────────────────────────────
 function initCharts() {
   setupEarningsChart();
-  setupRadarChart();
+  initWorkerMap((workerData||sess).zone);
 }
 
-function setupEarningsChart() {
+async function setupEarningsChart() {
   const ctx = document.getElementById('earningsChart');
   if(!ctx) return;
   
-  // Generate slightly randomized historical data that leads up to their current protected earnings
-  const ep = parseFloat((workerData||sess).earnings_protected) || parseFloat((workerData||sess).payouts) || 250;
-  const dataPoints = [ep*0.1, ep*0.25, ep*0.5, ep*0.8, ep];
+  let dataPoints = [0, 0, 0, 0, 0];
+  let labels = ['Wk -4', 'Wk -3', 'Wk -2', 'Wk -1', 'This Wk'];
+  try {
+     const wid = (workerData||sess).id || (workerData||sess).worker_id;
+     const res = await GS.get(`/workers/${wid}/earnings-history`);
+     if(res && res.claims) {
+        let cumulative = 0;
+        const pts = [];
+        const dateLabels = [];
+        res.claims.forEach(c => {
+           cumulative += c.amount;
+           pts.push(cumulative);
+           dateLabels.push(new Date(c.date).toLocaleDateString('en-IN', {month:'short', day:'numeric'}));
+        });
+        if(pts.length > 0) {
+            dataPoints = pts.slice(-5);
+            labels = dateLabels.slice(-5);
+            while(dataPoints.length < 5) {
+               dataPoints.unshift(pts[0] || 0); // pad gracefully with earliest known
+               labels.unshift("Past");
+            }
+        } else {
+            const ep = parseFloat((workerData||sess).earnings_protected) || parseFloat((workerData||sess).payouts) || 0;
+            dataPoints = [0, ep*0.25, ep*0.5, ep*0.8, ep];
+        }
+     }
+  } catch(e) { }
   
   Chart.defaults.color = "#94a3b8";
   Chart.defaults.font.family = "'Inter', sans-serif";
@@ -898,7 +1031,7 @@ function setupEarningsChart() {
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['Wk -4', 'Wk -3', 'Wk -2', 'Wk -1', 'This Wk'],
+      labels: labels,
       datasets: [{
         label: 'Cumulative Payouts (₹)',
         data: dataPoints,
@@ -922,41 +1055,36 @@ function setupEarningsChart() {
   });
 }
 
-function setupRadarChart() {
-  const ctx = document.getElementById('riskRadarChart');
-  if(!ctx) return;
+let workerLeafletMap = null;
+
+function initWorkerMap(zoneName) {
+  if (workerLeafletMap) return;
+  const container = document.getElementById('workerMap');
+  if(!container) return;
   
-  // Predict simulated risk using random distribution attached to base risk
-  const baseR = Math.max(10, ((workerData||sess).risk_score || 0.4) * 100);
+  // mock coords for local zone
+  let lat = 13.0827, lng = 80.2707; // Chennai Default
+  if(zoneName && zoneName.includes("Velachery")) { lat=12.9816; lng=80.2209; }
+  else if(zoneName && zoneName.includes("Marina")) { lat=13.0500; lng=80.2824; }
+  else if(zoneName && zoneName.includes("Adyar")) { lat=13.0012; lng=80.2565; }
+  else if(zoneName && zoneName.includes("Coimbatore")) { lat=11.0168; lng=76.9558; }
   
-  new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels: ['Rainfall', 'Heat', 'AQI', 'Cyclone', 'Mob/Curfew'],
-      datasets: [{
-        label: 'Disruption Vector',
-        data: [baseR*1.1, baseR*1.4, baseR*0.8, baseR*0.2, baseR*0.1],
-        backgroundColor: 'rgba(139,92,246,0.3)',
-        borderColor: '#8b5cf6',
-        pointBackgroundColor: '#fff',
-        pointBorderColor: '#8b5cf6',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: '#a78bfa',
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        r: {
-          angleLines: { color: 'rgba(255,255,255,0.05)' },
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          pointLabels: { color: '#94a3b8', font: { size: 10 } },
-          ticks: { display: false, max: 100 }
-        }
-      }
-    }
-  });
+  // GPS live tracking over-ride!
+  if(window._telemetry && _telemetry.lat && _telemetry.lon) {
+    lat = _telemetry.lat; lng = _telemetry.lon; 
+  }
+  
+  workerLeafletMap = L.map('workerMap').setView([lat, lng], 14);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 19
+  }).addTo(workerLeafletMap);
+  
+  L.circle([lat, lng], {
+    color: '#4ade80', fillColor: '#4ade80', fillOpacity: 0.2, radius: 800
+  }).bindPopup(`<b>${zoneName} Coverage Zone</b>`).addTo(workerLeafletMap);
+  
+  // Hard pin for exact worker
+  L.marker([lat, lng]).addTo(workerLeafletMap).bindPopup("<b>You are here</b><br>Live Telemetry Sync");
 }
 
 // ── Notifications ───────────────────────────────────────────────────────────
