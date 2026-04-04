@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GigSecure — Admin & Insurer Dashboard</title>
-<meta name="description" content="GigSecure admin dashboard — real-time KPIs, claims pipeline, worker policies, and disruption monitoring.">
+<title>ZenVyte GigPulse</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="ZenVyte GigPulse admin dashboard — real-time KPIs, claims pipeline, worker policies, and disruption monitoring.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -156,7 +157,7 @@ input:focus,select:focus{border-color:var(--primary)}
       <div class="field"><label>Email</label><input id="aa-email" placeholder="admin@example.com"></div>
       <div class="field"><label>Password</label><input id="aa-password" type="password" placeholder="admin123"></div>
       <div class="field"><label>Phone</label><input id="aa-phone" placeholder="+91 90000 00000"></div>
-      <div class="field full"><label>Organization</label><input id="aa-org" placeholder="GigSecure Platform Admin"></div>
+      <div class="field full"><label>Organization</label><input id="aa-org" placeholder="ZenVyte GigPulse Platform Admin"></div>
       <div class="field full"><label>Designation</label><input id="aa-designation" placeholder="Platform Admin"></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:18px">
@@ -167,7 +168,7 @@ input:focus,select:focus{border-color:var(--primary)}
 </div>
 
 <div class="mobile-header">
-  <div style="font-weight:800; font-size:14px; color:var(--primary)">🛡️ GIGSECURE</div>
+  <div style="font-weight:800; font-size:14px; color:var(--primary)">🛡️ GIGPULSE</div>
   <div class="burger" onclick="toggleSidebar()">☰</div>
 </div>
 
@@ -175,7 +176,7 @@ input:focus,select:focus{border-color:var(--primary)}
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div style="font-size:28px;margin-bottom:6px">🛡️</div>
-    <div class="sidebar-logo-txt">GigSecure Admin</div>
+    <div class="sidebar-logo-txt">ZenVyte GigPulse Admin</div>
     <div class="sidebar-logo-sub" id="adminName">Loading...</div>
   </div>
   <div class="nav-item active" onclick="showPage('overview')" id="nav-overview"><span class="nav-icon">📊</span>Overview</div>
@@ -183,7 +184,8 @@ input:focus,select:focus{border-color:var(--primary)}
   <div class="nav-item" onclick="showPage('claims')" id="nav-claims"><span class="nav-icon">📋</span>Claims Pipeline</div>
   <div class="nav-item" onclick="showPage('monitor')" id="nav-monitor"><span class="nav-icon">📡</span>Disruption Monitor</div>
   <div class="nav-item" onclick="showPage('simulate')" id="nav-simulate"><span class="nav-icon">⚡</span>Claim Simulator</div>
-  <div class="nav-item" onclick="window.location.href='gigsecure_features.html'"><span class="nav-icon">🧪</span>Feature Demos</div>
+  <div class="nav-item" onclick="window.location.href='gigpulse_sandbox.html'"><span class="nav-icon">🛡️</span>Fraud Sandbox</div>
+  <div class="nav-item" onclick="window.location.href='gigpulse_features.html'"><span class="nav-icon">🧪</span>Feature Demos</div>
   <div class="sidebar-footer">
     <button id="themeToggle" onclick="Theme.toggle()" style="width:100%;padding:9px;margin-bottom:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
       <span class="theme-toggle-knob">🌙</span> Toggle Theme
@@ -352,8 +354,8 @@ input:focus,select:focus{border-color:var(--primary)}
 <script src="gs_shared.js"></script>
 <script>
 const sess = Session.require();
-if(!sess || sess.role !== "admin") { window.location.href = "gigsecure_login.html"; throw 0; }
-document.getElementById("adminName").textContent = (sess.name || "Admin") + " · " + (sess.org || "GigSecure");
+if(!sess || sess.role !== "admin") { window.location.href = "gigpulse_login.html"; throw 0; }
+document.getElementById("adminName").textContent = (sess.name || "Admin") + " · " + (sess.org || "ZenVyte GigPulse");
 
 let allWorkers = [];
 let allAdmins = [];
@@ -464,7 +466,7 @@ async function checkApis() {
     { name:"IMD Weather",   url:"#", latency: Math.floor(Math.random()*180)+90 },
     { name:"NDMA Alerts",   url:"#", latency: Math.floor(Math.random()*120)+40 },
     { name:"Razorpay SB",   url:"#", latency: Math.floor(Math.random()*100)+50 },
-    { name:"GigSecure API", url:API_BASE+"/health", latency: Math.floor(Math.random()*50)+10 },
+    { name:"ZenVyte GigPulse API", url:API_BASE+"/health", latency: Math.floor(Math.random()*50)+10 },
   ];
   panel.innerHTML = apis.map(a=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
@@ -534,7 +536,7 @@ function renderAdmins(admins) {
   el.innerHTML = admins.map(a => `
     <tr>
       <td><div style="font-weight:600">${a.name}</div><div style="color:var(--muted);font-size:11px">${a.id} · ${a.email}</div></td>
-      <td>${a.org || "GigSecure"}</td>
+      <td>${a.org || "ZenVyte GigPulse"}</td>
       <td>${a.designation || "Admin"}</td>
       <td>${a.phone || "—"}</td>
       <td style="font-size:12px;color:var(--muted)">${formatDate(a.joined)}</td>
@@ -691,6 +693,22 @@ function initAdminMap() {
   }).addTo(adminLeafletMap);
 }
 
+// Generate Hexagon coords around center
+function getHexagonCoords(centerLat, centerLon, radiusInKm) {
+  const points = [];
+  // 1 degree lat ~ 111km. 1 degree lon ~ 111km * cos(lat)
+  const dLat = radiusInKm / 111;
+  const dLon = radiusInKm / (111 * Math.cos(centerLat * Math.PI / 180));
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i;
+    points.push([
+      centerLat + dLat * Math.sin(angle),
+      centerLon + dLon * Math.cos(angle)
+    ]);
+  }
+  return points;
+}
+
 async function loadMonitor() {
   try {
     initAdminMap();
@@ -734,9 +752,11 @@ async function loadMonitor() {
         if (zoneMarkers[z]) {
             zoneMarkers[z].setStyle({color, fillColor: color});
         } else {
-            zoneMarkers[z] = L.circle(coords, {
-                color: color, fillColor: color, fillOpacity: 0.3, radius: 2500
-            }).bindPopup(`<b>${z}</b><br>${activeEvt ? activeEvt.trigger.label : 'Safe'}`).addTo(adminLeafletMap);
+            // Updated to use God-View Hexagons instead of standard circles
+            const hexCoords = getHexagonCoords(coords[0], coords[1], 2.5); // 2.5km radius
+            zoneMarkers[z] = L.polygon(hexCoords, {
+                color: color, fillColor: color, fillOpacity: 0.25, weight: 2
+            }).bindPopup(`<b>${z}</b><br>${activeEvt ? activeEvt.trigger.label : 'Monitoring'}`).addTo(adminLeafletMap);
         }
       });
     } else {
@@ -899,7 +919,7 @@ function exportWorkersCSV() {
   allWorkers.forEach(w => {
     csv += `${w.id},"${w.name}","${w.email}","${w.phone}","${w.zone}",${w.plan},${w.risk_score},${w.trust_score},${(w.payouts||0)+(w.sim_payouts||0)},${w.aadhaar_verified?'Verified':'Pending'}\n`;
   });
-  downloadCSV(csv, "gigsecure_workers_report.csv");
+  downloadCSV(csv, "gigpulse_workers_report.csv");
 }
 
 function exportClaimsCSV() {
@@ -909,7 +929,7 @@ function exportClaimsCSV() {
   combined.forEach(c => {
     csv += `${c.id},"${c.worker_name}",${c.worker_id},${c.trigger_type},${c.trigger_value},${c.payout_amount},${c.fraud_score},${c.status},${c.razorpay_order_id||''},"${c.created_at}"\n`;
   });
-  downloadCSV(csv, "gigsecure_claims_report.csv");
+  downloadCSV(csv, "gigpulse_claims_report.csv");
 }
 
 // ── Misc ───────────────────────────────────────────────────────────────────────

@@ -59,7 +59,7 @@ class AdminCreateAdminRequest(BaseModel):
     name: str
     email: str
     password: str
-    org: Optional[str] = "GigSecure"
+    org: Optional[str] = "ZenVyte GigPulse"
     designation: Optional[str] = "Admin"
     phone: Optional[str] = None
 
@@ -171,7 +171,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
             "premium":          premium,
             "trust_score":      40,
             "role":             "worker",
-            "message":          f"✅ Welcome to GigSecure, {worker.name}!",
+            "message":          f"✅ Welcome to ZenVyte GigPulse, {worker.name}!",
         }
     except ValueError as e:
         logger.error(f"❌ Registration validation error: {e}")
@@ -301,7 +301,7 @@ def get_demo_users(db: Session = Depends(get_db)):
     }
     admin_passwords = {
         "admin@digit.com": "admin123",
-        "ops@gigsecure.in": "admin123",
+        "ops@gigpulse.in": "admin123",
     }
 
     workers = (
@@ -370,7 +370,7 @@ def register_admin(data: dict, db: Session = Depends(get_db)):
         name = data.get("name"),
         email = data.get("email"),
         password = hash_password(data.get("password", "admin123")),
-        org = data.get("org", "GigSecure"),
+        org = data.get("org", "ZenVyte GigPulse"),
         designation = data.get("designation", "Admin"),
         phone = data.get("phone"),
     )
@@ -429,7 +429,7 @@ def admin_create_admin(req: AdminCreateAdminRequest, db: Session = Depends(get_d
         name=req.name,
         email=req.email,
         password=hash_password(req.password),
-        org=req.org or "GigSecure",
+        org=req.org or "ZenVyte GigPulse",
         designation=req.designation or "Admin",
         phone=req.phone,
     )

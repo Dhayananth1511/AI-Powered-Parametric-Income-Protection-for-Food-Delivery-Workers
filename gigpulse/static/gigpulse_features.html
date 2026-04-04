@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GigSecure — Feature Demos | AI Insurance Platform</title>
+<title>ZenVyte GigPulse</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="description" content="Live AI feature demonstrations: weather monitor, claim simulator, fraud visualizer, earnings calculator, disruption forecast, plan comparison.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -110,21 +111,21 @@ input[type="range"]{width:100%;accent-color:#6366f1}
 
 <nav class="nav">
   <div style="display:flex;align-items:center;gap:12px">
-    <div class="nav-logo">🛡️ GigSecure · Feature Demos</div>
+    <div class="nav-logo">🛡️ ZenVyte GigPulse · Feature Demos</div>
     <a href="index.html" style="font-size:11px;color:var(--muted);text-decoration:none;padding:3px 8px;border-radius:6px;border:1px solid rgba(99,102,241,0.2)">← Home</a>
   </div>
   <div class="nav-btns">
     <button id="themeToggle" onclick="Theme.toggle()" title="Toggle theme" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:7px 10px;cursor:pointer;font-size:15px;">
       <span class="theme-toggle-knob">🌙</span>
     </button>
-    <button class="nav-btn nav-btn-ghost" onclick="window.location.href='gigsecure_login.html'">Login</button>
-    <button class="nav-btn nav-btn-primary" onclick="window.location.href='gigsecure_onboarding.html'">Register →</button>
+    <button class="nav-btn nav-btn-ghost" onclick="window.location.href='gigpulse_login.html'">Login</button>
+    <button class="nav-btn nav-btn-primary" onclick="window.location.href='gigpulse_onboarding.html'">Register →</button>
   </div>
 </nav>
 
 <div class="hero-section">
   <div class="hero-badge">⚡ Live Production Demos</div>
-  <h1 class="hero-title">GigSecure AI Features<br>In Action</h1>
+  <h1 class="hero-title">ZenVyte GigPulse AI Features<br>In Action</h1>
   <p class="hero-sub">Interactive demonstrations of every system powering zero-touch parametric insurance for 5 crore+ delivery workers.</p>
 </div>
 
@@ -201,7 +202,7 @@ input[type="range"]{width:100%;accent-color:#6366f1}
   <div class="demo-panel" id="d-earnings">
     <div class="card">
       <div class="card-title">💰 Protected Earnings Calculator</div>
-      <div class="card-sub">Calculate how much income you'd save over a year with GigSecure vs. without protection. Based on real actuarial data.</div>
+      <div class="card-sub">Calculate how much income you'd save over a year with ZenVyte GigPulse vs. without protection. Based on real actuarial data.</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
         <div>
           <label>Your Zone</label>
@@ -244,7 +245,7 @@ input[type="range"]{width:100%;accent-color:#6366f1}
   <div class="demo-panel" id="d-compare">
     <div class="card">
       <div class="card-title">📋 Plan Comparison & Loss Ratio Analysis</div>
-      <div class="card-sub">Compare all 5 GigSecure plans with actuarially verified loss ratios under normal and heavy monsoon scenarios.</div>
+      <div class="card-sub">Compare all 5 ZenVyte GigPulse plans with actuarially verified loss ratios under normal and heavy monsoon scenarios.</div>
       <div style="overflow-x:auto;margin-bottom:20px">
         <table class="compare-tbl">
           <thead>
@@ -257,12 +258,8 @@ input[type="range"]{width:100%;accent-color:#6366f1}
               <th style="color:#f87171">🔴 Elite</th>
             </tr>
           </thead>
-          <tbody>
-            <tr><td>Weekly Premium</td>${Object.values(PLANS_DATA).map(p=>`<td class="highlight">₹${p.premium}</td>`).join("")}</tr>
-            <tr><td>Hourly Payout</td>${Object.values(PLANS_DATA).map(p=>`<td>₹${p.rate}/hr</td>`).join("")}</tr>
-            <tr><td>Max Hours/week</td>${Object.values(PLANS_DATA).map(p=>`<td>${p.maxHrs} hrs</td>`).join("")}</tr>
-            <tr><td>Weekly Cap</td>${Object.values(PLANS_DATA).map(p=>`<td>₹${p.cap}</td>`).join("")}</tr>
-            <tr><td>% of Earnings (₹7,500/wk)</td>${Object.values(PLANS_DATA).map(p=>`<td style="color:var(--muted)">${(p.premium/75).toFixed(1)}%</td>`).join("")}</tr>
+          <tbody id="compareBody">
+            <!-- Rendered via JS -->
           </tbody>
         </table>
       </div>
@@ -574,12 +571,25 @@ async function loadLossRatios() {
   } catch(e) { el.innerHTML = `<div style="color:var(--error);padding:20px;text-align:center">Error loading data: ${e.message}</div>`; }
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── 7. INIT ────────────────────────────────────────────────────────────────────
+function initCompareTable() {
+  const tbody = document.getElementById("compareBody");
+  if(!tbody) return;
+  tbody.innerHTML = `
+    <tr><td>Weekly Premium</td>${Object.values(PLANS_DATA).map(p=>'<td class="highlight">₹'+p.premium+'</td>').join("")}</tr>
+    <tr><td>Hourly Payout</td>${Object.values(PLANS_DATA).map(p=>'<td>₹'+p.rate+'/hr</td>').join("")}</tr>
+    <tr><td>Max Hours/week</td>${Object.values(PLANS_DATA).map(p=>'<td>'+p.maxHrs+' hrs</td>').join("")}</tr>
+    <tr><td>Weekly Cap</td>${Object.values(PLANS_DATA).map(p=>'<td>₹'+p.cap+'</td>').join("")}</tr>
+    <tr><td>% of Earnings (₹7,500/wk)</td>${Object.values(PLANS_DATA).map(p=>'<td style="color:var(--muted)">'+(p.premium/75).toFixed(1)+'%</td>').join("")}</tr>
+  `;
+}
+
 loadAllZones();
 initClaimTrigBtns();
 updateFraud();
 updateClaimPrev();
 calcEarnings();
+initCompareTable();
 </script>
 </body>
 </html>

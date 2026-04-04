@@ -2,7 +2,7 @@
 setlocal
 
 echo ==================================================================
-echo GigSecure - AI-Powered Parametric Income Protection v2.1.0
+echo ZenVyte GigPulse - AI-Powered Parametric Income Protection v2.1.0
 echo ==================================================================
 echo.
 
@@ -23,10 +23,10 @@ if not exist ".venv\Scripts\python.exe" (
 
 echo [INFO] Using virtual environment: .venv
 echo [INFO] Installing dependencies...
-.\.venv\Scripts\python.exe -m pip install -q -r gigsecure\requirements.txt
+.\.venv\Scripts\python.exe -m pip install -q -r requirements.txt
 echo.
 echo ==================================================================
-echo Starting GigSecure API...
+echo Starting ZenVyte GigPulse API...
 echo ==================================================================
 echo.
 
@@ -37,7 +37,7 @@ if not "%PORT%"=="" (
 )
 
 echo Open: http://localhost:%APP_PORT%
-echo Demo login: http://localhost:%APP_PORT%/gigsecure_login.html
+echo Demo login: http://localhost:%APP_PORT%/gigpulse_login.html
 echo API docs: http://localhost:%APP_PORT%/docs
 echo.
 echo Demo credentials:
@@ -50,12 +50,12 @@ echo.
 
 if errorlevel 1 (
   echo.
-  echo [ERROR] Failed to start GigSecure
+  echo [ERROR] Failed to start ZenVyte GigPulse
   echo.
   echo Troubleshooting:
   echo 1. Ensure port %APP_PORT% is not already in use
   echo 2. Make sure Python virtual environment was created successfully
-  echo 3. Try: set PORT=8001 ^&^& START_GIGSECURE.bat
+  echo 3. Try: set PORT=8001 ^&^& START_GIGPULSE.bat
   echo.
   exit /b 1
 )

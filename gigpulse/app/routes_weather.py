@@ -40,6 +40,27 @@ async def get_weather(zone: str, db: Session = Depends(get_db)):
         "fetched_at":   datetime.now().isoformat(),
     }
 
+@router.get("/live-demo/{zone}")
+async def live_demo_weather(zone: str):
+    import httpx
+    import os
+    from fastapi import HTTPException
+    
+    OWM_KEY = os.getenv("OWM_API_KEY", "")
+    if not OWM_KEY or OWM_KEY == "your_owm_key_here":
+        raise HTTPException(status_code=500, detail="Missing valid OWM_API_KEY in .env")
+        
+    from app.weather import ZONE_COORDS
+    coords = ZONE_COORDS.get(zone, (13.0827, 80.2707))
+    lat, lon = coords
+    
+    url = (f"https://api.openweathermap.org/data/2.5/weather"
+           f"?lat={lat}&lon={lon}&appid={OWM_KEY}&units=metric")
+           
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, timeout=8.0)
+        return {"live_raw_response": resp.json(), "http_status": resp.status_code, "request_url": url.replace(OWM_KEY, "HIDDEN_KEY")}
+
 @router.get("/all-zones")
 async def get_all_zone_weather():
     from app.weather import ZONE_COORDS

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GigSecure Portal | Sign In</title>
+<title>ZenVyte GigPulse</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -182,7 +183,7 @@
 <div class="container">
   <div class="logo-box">
     <div class="logo-icon">🛡️</div>
-    <h1>GigSecure</h1>
+    <h1>ZenVyte GigPulse</h1>
     <p>Authentication Required</p>
   </div>
 
@@ -210,7 +211,7 @@
   </div>
 
   <div class="footer-links">
-    Back to <a href="index.html">Home</a> • New? <a href="gigsecure_onboarding.html">Register</a>
+    Back to <a href="index.html">Home</a> • New? <a href="gigpulse_onboarding.html">Register</a>
   </div>
 </div>
 
@@ -280,7 +281,7 @@ async function doLogin() {
     Session.save({ ...data, role: data.role || currentRole });
     toast("Welcome back, " + (data.name || currentRole) + "!", "success");
     setTimeout(() => {
-      window.location.href = (data.role || currentRole) === "admin" ? "gigsecure_admin.html" : "gigsecure_worker.html";
+      window.location.href = (data.role || currentRole) === "admin" ? "gigpulse_admin.html" : "gigpulse_worker.html";
     }, 800);
   } catch(e) {
     toast(e.message || "Invalid credentials", "error");
@@ -301,7 +302,7 @@ if (s) {
       <div style="display:inline-block;width:28px;height:28px;border:3px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite"></div>
     </div>`;
   setTimeout(() => {
-    window.location.href = s.role === "admin" ? "gigsecure_admin.html" : "gigsecure_worker.html";
+    window.location.href = s.role === "admin" ? "gigpulse_admin.html" : "gigpulse_worker.html";
   }, 800);
 }
 </script>

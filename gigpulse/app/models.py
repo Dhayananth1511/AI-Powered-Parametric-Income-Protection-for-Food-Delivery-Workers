@@ -43,7 +43,7 @@ class Admin(Base):
     name        = Column(String, nullable=False)
     email       = Column(String, nullable=False, unique=True)
     password    = Column(String, nullable=False)
-    org         = Column(String, default="GigSecure Platform")
+    org         = Column(String, default="ZenVyte GigPulse Platform")
     designation = Column(String, default="Admin")
     phone       = Column(String, nullable=True)
     role        = Column(String, default="admin")

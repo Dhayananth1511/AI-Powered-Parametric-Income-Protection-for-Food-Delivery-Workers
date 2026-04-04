@@ -73,7 +73,7 @@ class PaymentEngine:
         Implements idempotency: same idempotency_key returns same order.
         
         Args:
-            claim_id: GigSecure claim ID
+            claim_id: ZenVyte GigPulse claim ID
             amount_rupees: Payout amount in rupees
             worker_id: Worker ID
             idempotency_key: Unique key for idempotent requests
@@ -81,7 +81,7 @@ class PaymentEngine:
         Returns:
             {
                 "success": bool,
-                "payment_id": str,  # GigSecure payment ID
+                "payment_id": str,  # ZenVyte GigPulse payment ID
                 "razorpay_order_id": str,
                 "amount_rupees": float,
                 "status": str,
@@ -185,7 +185,7 @@ class PaymentEngine:
                 "notes": {
                     "claim_id": claim_id,
                     "worker_id": worker_id,
-                    "platform": "gigsecure",
+                    "platform": "gigpulse",
                 }
             }
             rzp_order = self.client.order.create(order_data)

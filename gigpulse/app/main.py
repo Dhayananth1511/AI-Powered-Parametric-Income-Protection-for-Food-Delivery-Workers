@@ -36,7 +36,7 @@ import logging
 # ─────────────────────────────────────────────────────────────────────────────
 log_handlers = [logging.StreamHandler()]
 if os.getenv("ENABLE_FILE_LOGGING", "").lower() in {"1", "true", "yes", "on"}:
-    log_handlers.append(logging.FileHandler("gigsecure.log", encoding='utf-8'))
+    log_handlers.append(logging.FileHandler("gigpulse.log", encoding='utf-8'))
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOG_LEVEL", "ERROR").upper(), logging.ERROR),
@@ -67,7 +67,7 @@ with engine.connect() as conn:
 # FastAPI App
 # ─────────────────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="GigSecure API",
+    title="ZenVyte GigPulse API",
     description="AI-Powered Parametric Income Protection for Food Delivery Workers — Phase 2 (PRODUCTION READY)",
     version="2.1.0",
     docs_url="/docs",
@@ -181,8 +181,8 @@ def seed_db():
                 ),
                 Admin(
                     id="ADM-002", name="Priya Nair",
-                    email="ops@gigsecure.in", password=hash_password("admin123"),
-                    org="GigSecure Platform Admin", designation="Platform Admin",
+                    email="ops@gigpulse.in", password=hash_password("admin123"),
+                    org="ZenVyte GigPulse Platform Admin", designation="Platform Admin",
                 ),
             ]
             for a in admins:
@@ -255,7 +255,7 @@ async def shutdown_event():
 @app.get("/api")
 def api_root():
     return {
-        "app":     "GigSecure API v2.0",
+        "app":     "ZenVyte GigPulse API v2.0",
         "status":  "running",
         "team":    "ZenVyte",
         "phase":   "Phase 2 - Automation & Protection",

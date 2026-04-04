@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier, IsolationForest
 output_dir = os.path.join(os.path.dirname(__file__), "app", "models_bin")
 os.makedirs(output_dir, exist_ok=True)
 
-print("🚀 Starting GigSecure ML Training Script...")
+print("🚀 Starting ZenVyte GigPulse ML Training Script...")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Train Zone Risk Classifier (Random Forest)
@@ -102,4 +102,4 @@ fraud_model_path = os.path.join(output_dir, "fraud_detection_model.pkl")
 joblib.dump(fraud_model, fraud_model_path)
 print(f"✅ Saved Fraud Detection Model -> {fraud_model_path}")
 
-print("\n🎉 ML Training Complete! You can now launch GigSecure.")
+print("\n🎉 ML Training Complete! You can now launch ZenVyte GigPulse.")

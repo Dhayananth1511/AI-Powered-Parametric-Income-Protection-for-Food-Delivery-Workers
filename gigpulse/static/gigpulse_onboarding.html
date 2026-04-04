@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GigSecure — Worker Registration & Onboarding</title>
-<meta name="description" content="Register as a GigSecure delivery worker — Aadhaar KYC, zone risk assessment, AI plan recommendation.">
+<title>ZenVyte GigPulse</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Register as a ZenVyte GigPulse delivery worker — Aadhaar KYC, zone risk assessment, AI plan recommendation.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -129,7 +130,7 @@ input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 12px var(--p
 <div class="bg-mesh"></div>
 <header class="hdr">
   <div style="display:flex;align-items:center;gap:12px">
-    <div class="hdr-logo">🛡️ GigSecure</div>
+    <div class="hdr-logo">🛡️ ZenVyte GigPulse</div>
     <a href="index.html" style="font-size:11px;color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:6px;border:1px solid rgba(99,102,241,0.2);transition:all 0.2s" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--muted)'">← Home</a>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -159,7 +160,7 @@ input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 12px var(--p
   <div id="s1">
     <div class="card">
       <div class="card-title">👤 Personal Information</div>
-      <div class="card-sub">Enter your details to create your GigSecure account</div>
+      <div class="card-sub">Enter your details to create your ZenVyte GigPulse account</div>
       <div class="form-grid">
         <div class="fg"><label>Full Name</label><input id="name" placeholder="Ravi Kumar" required></div>
         <div class="fg"><label>Phone Number</label><input id="phone" placeholder="+91 98765 43210"></div>
@@ -253,7 +254,7 @@ input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 12px var(--p
     <div class="card">
       <div class="success-panel">
         <div class="success-icon">🎉</div>
-        <h2 style="font-size:22px;margin-bottom:8px">Welcome to GigSecure!</h2>
+        <h2 style="font-size:22px;margin-bottom:8px">Welcome to ZenVyte GigPulse!</h2>
         <p style="color:var(--muted);margin-bottom:24px" id="successMsg">You're protected against disruptions starting now.</p>
         <div id="successDetails" style="text-align:left;margin-bottom:24px"></div>
         <button class="btn btn-primary btn-full" style="font-size:16px" onclick="goToDashboard()">
@@ -572,7 +573,7 @@ async function completeRegistration() {
 }
 
 function goToDashboard() {
-  window.location.href = "gigsecure_worker.html";
+  window.location.href = "gigpulse_worker.html";
 }
 
 // ── Payment Simulation ────────────────────────────────────────────────────────
@@ -655,7 +656,7 @@ loadZones();
         <div style="display:inline-block;width:32px;height:32px;border:3px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite"></div>
       </div>`;
     setTimeout(() => {
-      window.location.href = sess.role === 'admin' ? 'gigsecure_admin.html' : 'gigsecure_worker.html';
+      window.location.href = sess.role === 'admin' ? 'gigpulse_admin.html' : 'gigpulse_worker.html';
     }, 1200);
   }
 })();
@@ -663,9 +664,9 @@ loadZones();
 function handleAuthClick() {
   const sess = Session.get();
   if (sess) {
-    window.location.href = sess.role === 'admin' ? 'gigsecure_admin.html' : 'gigsecure_worker.html';
+    window.location.href = sess.role === 'admin' ? 'gigpulse_admin.html' : 'gigpulse_worker.html';
   } else {
-    window.location.href = 'gigsecure_login.html';
+    window.location.href = 'gigpulse_login.html';
   }
 }
 </script>

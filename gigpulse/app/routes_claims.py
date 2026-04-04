@@ -36,6 +36,16 @@ class ZoneSimulate(BaseModel):
     zone:         str
     trigger_type: str = "rainfall"
 
+class SandboxPayload(BaseModel):
+    gps_distance: float
+    motion_var: float
+    signal_dbm: float
+    latency: float
+    gps_in_zone: bool
+    accelerometer_ok: bool
+    cell_tower_match: bool
+    trust_score: float
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Trigger / Simulate Claim
 # ─────────────────────────────────────────────────────────────────────────────
@@ -96,7 +106,7 @@ async def trigger_claim(req: ClaimTrigger, db: Session = Depends(get_db)):
             from app.sms_engine import send_sms_notification
             send_sms_notification(
                 to_phone=worker.phone,
-                message=f"GigSecure: Claim for {trigger['label']} Auto-Approved! ₹{result['payout']} has been credited."
+                message=f"ZenVyte GigPulse: Claim for {trigger['label']} Auto-Approved! ₹{result['payout']} has been credited."
             )
             
     elif result["status"] == "rejected":
@@ -132,6 +142,29 @@ async def auto_check(worker_id: str, db: Session = Depends(get_db)):
 @router.get("/zone-status/{zone}")
 def zone_status(zone: str):
     return get_zone_status(zone)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Simulate Zone Disruption — Auto-triggers payouts for all workers in zone
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/sandbox/evaluate")
+def sandbox_evaluate(req: SandboxPayload):
+    from app.ml_engine import compute_fraud_score
+    worker_data = {
+        "id": "SANDBOX_MOCK_WORKER",
+        "trust_score": req.trust_score,
+        "claims_total": 0,
+        "sandbox_overrides": {
+            "gps_distance": req.gps_distance,
+            "motion_var": req.motion_var,
+            "signal_dbm": req.signal_dbm,
+            "latency": req.latency
+        }
+    }
+    
+    # We also need to hack the base signals before compute_fraud_score evaluates them
+    # But compute_fraud_score computes them dynamically based on trust score.
+    # The sandbox passes exact telemetry which our modified ml_engine parses directly.
+    return compute_fraud_score(worker_data)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Simulate Zone Disruption — Auto-triggers payouts for all workers in zone
@@ -346,7 +379,7 @@ def review_claim(req: ClaimReview, db: Session = Depends(get_db)):
             from app.sms_engine import send_sms_notification
             send_sms_notification(
                 to_phone=worker.phone,
-                message=f"GigSecure: Your claim for {claim.trigger_label or claim.trigger_type} was manually approved! ₹{claim.payout_amount} credited."
+                message=f"ZenVyte GigPulse: Your claim for {claim.trigger_label or claim.trigger_type} was manually approved! ₹{claim.payout_amount} credited."
             )
         else:
             worker.claims_rejected = (worker.claims_rejected or 0) + 1

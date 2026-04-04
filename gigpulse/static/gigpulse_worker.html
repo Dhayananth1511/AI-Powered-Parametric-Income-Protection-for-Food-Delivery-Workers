@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GigSecure — Worker Dashboard</title>
-<meta name="description" content="Your GigSecure worker dashboard — live disruption monitoring, payouts, and plan management.">
+<title>ZenVyte GigPulse</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Your ZenVyte GigPulse worker dashboard — live disruption monitoring, payouts, and plan management.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -270,7 +271,7 @@ select option{background:#0f172a}
 
 <!-- NAV -->
 <nav class="nav">
-  <div class="nav-logo">🛡️ GigSecure</div>
+  <div class="nav-logo">🛡️ ZenVyte GigPulse</div>
   <div class="nav-right">
     <div class="notif-wrap">
       <button class="notif-btn" onclick="toggleNotif()" title="Notifications">
@@ -281,7 +282,7 @@ select option{background:#0f172a}
         <div id="notifList2"></div>
       </div>
     </div>
-    <button class="nav-btn nav-btn-ghost" onclick="window.location.href='gigsecure_features.html'" style="border:none;background:rgba(99,102,241,0.1);color:var(--primary);font-weight:700;padding:8px 14px;margin-right:8px;font-size:12px">🧪 Demos</button>
+    <button class="nav-btn nav-btn-ghost" onclick="window.location.href='gigpulse_features.html'" style="border:none;background:rgba(99,102,241,0.1);color:var(--primary);font-weight:700;padding:8px 14px;margin-right:8px;font-size:12px">🧪 Demos</button>
     <!-- Theme Toggle -->
     <button id="themeToggle" onclick="Theme.toggle()" title="Toggle theme" style="background:rgba(99,102,241,0.1);border:1px solid var(--border);border-radius:10px;padding:7px 10px;cursor:pointer;font-size:15px;color:var(--text);">
       <span class="theme-toggle-knob">🌙</span>
@@ -317,14 +318,16 @@ select option{background:#0f172a}
 
     <!-- HERO STATUS -->
   <div class="hero clear" id="heroEl">
-    <div style="float:right; margin-top:-4px">
-      <button id="shiftToggleBtn" onclick="toggleShift()" class="btn" style="padding:10px 20px; font-size:14px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:30px; display:flex; align-items:center; gap:8px;">
-        <span id="shiftStatusDot" style="width:10px;height:10px;background:#94a3b8;border-radius:50%;display:inline-block"></span>
-        <span id="shiftBtnText" style="font-weight:600">Offline</span>
-      </button>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:10;">
+      <div class="hero-status" id="heroStatus"><span class="pulse-dot"></span> 🟢 COVERAGE SUBSCRIPTION</div>
+      <div style="margin-top:-4px">
+        <button id="shiftToggleBtn" onclick="toggleShift()" class="btn" style="padding:10px 20px; font-size:14px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:30px; display:flex; align-items:center; gap:8px; backdrop-filter:blur(4px);">
+          <span id="shiftStatusDot" style="width:10px;height:10px;background:#94a3b8;border-radius:50%;display:inline-block"></span>
+          <span id="shiftBtnText" style="font-weight:600">Off Shift</span>
+        </button>
+      </div>
     </div>
-    <div class="hero-status" id="heroStatus"><span class="pulse-dot"></span> 🟢 COVERAGE SUBSCRIPTION</div>
-    <div class="hero-title" id="heroTitle" style="display:inline-block;">Loading...</div>
+    <div class="hero-title" id="heroTitle" style="display:inline-block; position:relative; z-index:10;">Loading...</div>
     <button class="btn btn-ghost btn-sm" onclick="openEditProfile()" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);margin-left:12px;vertical-align:middle;margin-top:-5px">✏️ Edit</button>
     <div class="hero-sub" id="heroSub">Monitoring your zone for disruptions</div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
@@ -332,7 +335,7 @@ select option{background:#0f172a}
       <div id="workerIdBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8"></div>
       <div id="upiBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#4ade80"></div>
     </div>
-    <div class="hero-badge" id="heroBadge">🛡️</div>
+    <div class="hero-badge" id="heroBadge" style="z-index:1; opacity:0.3; right: -10px; font-size: 80px;">🛡️</div>
   </div>
 
   <!-- STATS -->
@@ -377,7 +380,7 @@ select option{background:#0f172a}
   <!-- LIVE TRIGGER STATUS -->
   <div class="card">
     <div class="card-hdr">
-      <div class="card-title">📡 Live Zone Status — <span id="zoneLabel" style="color:var(--primary)">Loading...</span></div>
+      <div class="card-title">📡 Live Zone Status — <span id="zoneLabel" style="color:var(--primary)">Loading...</span> <span id="zoneSourceBadge" class="badge" style="display:none; font-size:10px; margin-left:8px;"></span></div>
       <button class="btn btn-ghost btn-sm" onclick="refreshZone()" id="refreshZoneBtn">↻ Refresh</button>
     </div>
     <div class="triggers-grid" id="triggersGrid">
@@ -546,9 +549,24 @@ async function loadZoneStatus() {
     const rain = data.weather.rainfall_3h || 0;
     const temp = data.weather.temperature || 0;
     const aqi  = data.weather.aqi || 0;
+    const source = data.weather.source || "mock";
     document.getElementById("tv-rainfall").textContent = rain.toFixed(1) + " mm";
     document.getElementById("tv-temp").textContent = temp.toFixed(1) + "°C";
     document.getElementById("tv-aqi").textContent = "AQI " + aqi;
+    
+    const sb = document.getElementById("zoneSourceBadge");
+    if(source.toLowerCase().includes("mock") || source === "System Fallback") {
+      sb.textContent = "🧪 Mocked Data";
+      sb.style.background = "rgba(250,204,21,0.1)";
+      sb.style.color = "var(--warn)";
+      sb.style.borderColor = "rgba(250,204,21,0.3)";
+    } else {
+      sb.textContent = "📡 Live API Data";
+      sb.style.background = "rgba(74,222,128,0.1)";
+      sb.style.color = "var(--success)";
+      sb.style.borderColor = "rgba(74,222,128,0.3)";
+    }
+    sb.style.display = "inline-block";
 
     if(rain >= 35) document.getElementById("tv-rainfall").closest(".trig-card")?.classList.add("active");
     if(temp >= 43) document.getElementById("tv-temp").closest(".trig-card")?.classList.add("active");

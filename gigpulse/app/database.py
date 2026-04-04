@@ -12,9 +12,9 @@ load_dotenv()
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = APP_DIR.parent.parent
 
-default_db_path = PROJECT_ROOT / "gigsecure.db"
-test_db_path = Path(tempfile.gettempdir()) / "gigsecure_test.db"
-recovery_db_path = Path(tempfile.gettempdir()) / "gigsecure_recovered.db"
+default_db_path = PROJECT_ROOT / "gigpulse.db"
+test_db_path = Path(tempfile.gettempdir()) / "gigpulse_test.db"
+recovery_db_path = Path(tempfile.gettempdir()) / "gigpulse_recovered.db"
 
 is_pytest = (
     "PYTEST_CURRENT_TEST" in os.environ

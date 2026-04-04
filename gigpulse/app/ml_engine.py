@@ -251,6 +251,16 @@ def compute_fraud_score(worker_data: dict) -> dict:
         motion_var = real_tel.get("motion_var") if real_tel.get("motion_var") is not None else (0.0 if not signals["accelerometer_ok"] else np.random.uniform(3.0, 10.0))
         signal_dbm = -125.0 if not signals["cell_tower_match"] else np.random.uniform(-90.0, -60.0)
         latency = 250.0 if not signals["cell_tower_match"] else np.random.uniform(30.0, 80.0)
+
+        overrides = worker_data.get("sandbox_overrides")
+        if overrides:
+            gps_dist = overrides.get("gps_distance", gps_dist)
+            motion_var = overrides.get("motion_var", motion_var)
+            signal_dbm = overrides.get("signal_dbm", signal_dbm)
+            latency = overrides.get("latency", latency)
+            signals["gps_in_zone"] = overrides.get("gps_in_zone", signals["gps_in_zone"])
+            signals["accelerometer_ok"] = overrides.get("accelerometer_ok", signals["accelerometer_ok"])
+            signals["cell_tower_match"] = overrides.get("cell_tower_match", signals["cell_tower_match"])
         
         X_fraud = [[gps_dist, motion_var, signal_dbm, latency, float(worker_data.get("trust_score", 40))]]
         
