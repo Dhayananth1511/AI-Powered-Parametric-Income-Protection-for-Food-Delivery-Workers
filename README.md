@@ -39,7 +39,7 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 7. [Actuarial Basis](#actuarial-basis)
 8. [Weekly Premium Model — Corrected & Verified](#weekly-premium-model--corrected--verified)
 9. [Weekly Payout Per Disruption Type](#weekly-payout-per-disruption-type)
-10. [Loss Ratio Analysis — All Plans Under Control](#Loss-Ratio-Analysis-—-All-Plans-Under-Control-✅)
+10. [Loss Ratio Analysis — All Plans Under Control](#Loss-Ratio-Analysis-—-All-Plans-Under-Control--)
 11. [Worker Affordability Check](#worker-affordability-check)
 12. [AI/ML Architecture](#aiml-architecture)
 13. [Smart Validation Layer](#smart-validation-layer)
