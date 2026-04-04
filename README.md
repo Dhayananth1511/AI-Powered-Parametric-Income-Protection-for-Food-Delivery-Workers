@@ -738,13 +738,13 @@ Drive :
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
 📱 **Home →**
-https://zenvyte-gigpulse.onrender.com
+https://ai-powered-parametric-income-protection.onrender.com
 
 📱 **Login →**
-https://zenvyte-gigpulse.onrender.com/gigpulse_login.html
+https://ai-powered-parametric-income-protection.onrender.com/gigpulse_login.html
 
 🧪 **Feature Demo →**(optional)
-https://zenvyte-gigpulse.onrender.com/gigpulse_features.html
+https://ai-powered-parametric-income-protection.onrender.com/gigpulse_features.html
 
 💡 **What to explore:**
 - Worker onboarding with zone risk ML (40+ Tamil Nadu zones)
