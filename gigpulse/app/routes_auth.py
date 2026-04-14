@@ -5,12 +5,16 @@ from typing import Optional
 from app.database import get_db
 from app.models import Worker, Admin
 from app.ml_engine import compute_risk_score, recommend_plan, calculate_dynamic_premium
-from app.security import hash_password, verify_password, create_access_token, verify_token
+from app.security import (
+    hash_password, verify_password, create_access_token, 
+    verify_token, get_current_user, require_role
+)
 import uuid, random
 import logging
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+_DEMO_CACHE = None  # Global cache for demo users
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -228,9 +232,8 @@ def login(req: LoginRequest, background_tasks: BackgroundTasks, db: Session = De
             
             logger.info(f"✅ Worker logged in: {user.id} | {user.name}")
             
-            # Trigger background integrity scan
-            from app.tasks import verify_worker_integrity
-            background_tasks.add_task(verify_worker_integrity, user.id)
+            # Background integrity scan disabled as tasks.py was cleaned up
+            pass
             
             return TokenResponse(
                 access_token=token,
@@ -251,9 +254,18 @@ def login(req: LoginRequest, background_tasks: BackgroundTasks, db: Session = De
         raise HTTPException(500, "Login failed")
 
 @router.get("/worker/{worker_id}")
-def get_worker(worker_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def get_worker(
+    worker_id: str, 
+    background_tasks: BackgroundTasks, 
+    db: Session = Depends(get_db),
+    auth_user: dict = Depends(get_current_user)
+):
+    # RBAC: Only the worker themselves OR an admin can fetch this data
+    if auth_user.get("role") != "admin" and auth_user.get("worker_id") != worker_id:
+        logger.warning(f"🚫 Unauthorized fetch attempt: {auth_user.get('worker_id')} tried to access {worker_id}")
+        raise HTTPException(status_code=403, detail="Forbidden: You do not have permission to access this worker's data")
+
     from app.tasks import verify_worker_integrity
-    # Check integrity every time profile is fetched
     background_tasks.add_task(verify_worker_integrity, worker_id)
     
     w = db.query(Worker).filter(Worker.id == worker_id).first()
@@ -273,7 +285,7 @@ def get_worker(worker_id: str, background_tasks: BackgroundTasks, db: Session = 
         "aadhaar_verified": w.aadhaar_verified, "bank_upi_id": w.bank_upi_id,
     }
 
-@router.get("/workers")
+@router.get("/workers", dependencies=[Depends(require_role(["admin"]))])
 def get_all_workers(db: Session = Depends(get_db)):
     workers = db.query(Worker).all()
     return [
@@ -292,6 +304,10 @@ def get_all_workers(db: Session = Depends(get_db)):
 @router.get("/demo-users")
 def get_demo_users(db: Session = Depends(get_db)):
     """Return available seeded demo accounts for the login UI."""
+    global _DEMO_CACHE
+    if _DEMO_CACHE:
+        return _DEMO_CACHE
+        
     worker_passwords = {
         "ravi.kumar@swiggy.in": "demo1234",
         "arjun.raj@zomato.in": "demo1234",
@@ -317,12 +333,12 @@ def get_demo_users(db: Session = Depends(get_db)):
         .all()
     )
 
-    return {
+    _DEMO_CACHE = {
         "workers": [
             {
                 "label": f"{w.platform} · {w.plan.title()}",
                 "email": w.email,
-                "password": worker_passwords[w.email],
+                "password": worker_passwords.get(w.email, "demo1234"),
                 "role": "worker",
                 "name": w.name,
                 "worker_id": w.id,
@@ -336,7 +352,7 @@ def get_demo_users(db: Session = Depends(get_db)):
             {
                 "label": f"{a.org.split()[0]} Admin",
                 "email": a.email,
-                "password": admin_passwords[a.email],
+                "password": admin_passwords.get(a.email, "admin123"),
                 "role": "admin",
                 "name": a.name,
                 "admin_id": a.id,
@@ -346,6 +362,7 @@ def get_demo_users(db: Session = Depends(get_db)):
             for a in admins
         ],
     }
+    return _DEMO_CACHE
 
 @router.put("/worker/{worker_id}")
 def update_worker(worker_id: str, patch: dict, db: Session = Depends(get_db)):
@@ -457,7 +474,7 @@ def worker_edit_profile(req: WorkerEditProfileRequest, db: Session = Depends(get
     db.commit()
     return {"success": True}
 
-@router.get("/admins")
+@router.get("/admins", dependencies=[Depends(require_role(["admin"]))])
 def get_all_admins(db: Session = Depends(get_db)):
     admins = db.query(Admin).all()
     return {

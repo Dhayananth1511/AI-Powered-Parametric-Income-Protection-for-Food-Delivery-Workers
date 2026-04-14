@@ -3,6 +3,8 @@ import numpy as np
 import joblib
 from typing import Dict, List
 from datetime import datetime
+from geopy.distance import geodesic
+from app.weather import ZONE_COORDS
 
 # Real-time worker telemetry data cache
 latest_telemetry = {}
@@ -242,12 +244,20 @@ def compute_fraud_score(worker_data: dict) -> dict:
     signals["baseline_ok"]      = worker_data.get("trust_score", 40) > 25
 
     # Use Real Isolation Forest Model if available
+    real_tel = latest_telemetry.get(worker_data.get("id")) or latest_telemetry.get(worker_data.get("worker_id")) or {}
+    zone_name = worker_data.get("zone")
+    expected_coords = ZONE_COORDS.get(zone_name)
+    
+    if real_tel and real_tel.get("lat") and expected_coords:
+        # Hyper-Local Geolocation Validation
+        worker_coords = (real_tel["lat"], real_tel["lon"])
+        gps_dist = geodesic(worker_coords, expected_coords).km
+        signals["gps_in_zone"] = gps_dist <= 5.0  # 5km strict radius for spoof prevention
+    else:
+        signals["gps_in_zone"] = worker_data.get("sandbox_overrides", {}).get("gps_in_zone", True)
+        gps_dist = 1.5 if signals["gps_in_zone"] else 15.0
+
     if ML_MODELS_LOADED:
-        # Pull real hardware telemetry if available
-        real_tel = latest_telemetry.get(worker_data.get("id")) or latest_telemetry.get(worker_data.get("worker_id")) or {}
-        
-        # If real telemetry exists, use it, else fallback to mock
-        gps_dist = 1.5 if real_tel.get("lat") else (40.0 if not signals["gps_in_zone"] else 1.5)
         motion_var = real_tel.get("motion_var") if real_tel.get("motion_var") is not None else (0.0 if not signals["accelerometer_ok"] else np.random.uniform(3.0, 10.0))
         signal_dbm = -125.0 if not signals["cell_tower_match"] else np.random.uniform(-90.0, -60.0)
         latency = 250.0 if not signals["cell_tower_match"] else np.random.uniform(30.0, 80.0)

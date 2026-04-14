@@ -24,6 +24,10 @@ default_database_url = f"sqlite:///{test_db_path}" if is_pytest else f"sqlite://
 
 DATABASE_URL = default_database_url if is_pytest else os.getenv("DATABASE_URL", default_database_url)
 
+# Render fix: Replace "postgres://" with "postgresql://" for SQLAlchemy compatibility
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if DATABASE_URL.startswith("sqlite:///"):
     sqlite_path = Path(DATABASE_URL.replace("sqlite:///", "", 1))
     if not sqlite_path.is_absolute():
@@ -42,10 +46,11 @@ if DATABASE_URL.startswith("sqlite:///"):
 
     DATABASE_URL = f"sqlite:///{sqlite_path}"
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+engine_kwargs = {}
+if DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

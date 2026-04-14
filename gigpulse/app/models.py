@@ -29,13 +29,18 @@ class Worker(Base):
     claims_rejected  = Column(Integer, default=0)
     role             = Column(String, default="worker")
     joined           = Column(DateTime, server_default=func.now())
-    plan_effective_date = Column(DateTime, nullable=True)
-    weekly_reset_at  = Column(DateTime, nullable=True)
-    is_active        = Column(Boolean, default=True)
-    is_online        = Column(Boolean, default=False)
-    earnings_protected = Column(Float, default=0.0)
-    bank_upi_id      = Column(String, nullable=True)
+    plan_effective_date  = Column(DateTime, nullable=True)
+    weekly_reset_at      = Column(DateTime, nullable=True)
+    is_active            = Column(Boolean, default=True)
+    is_online            = Column(Boolean, default=False)
+    earnings_protected   = Column(Float, default=0.0)
+    bank_upi_id          = Column(String, nullable=True)
     plan_expiry_notified = Column(Boolean, default=False)
+    # Policy lifecycle (weekly auto-renewal)
+    policy_start_date    = Column(DateTime, nullable=True)
+    policy_expiry_date   = Column(DateTime, nullable=True)
+    policy_status        = Column(String, default="active")
+    # policy_status: active | expired | grace_period | pending_renewal
 
 class Admin(Base):
     __tablename__ = "admins"

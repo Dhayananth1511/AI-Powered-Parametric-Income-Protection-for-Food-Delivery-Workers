@@ -40,6 +40,10 @@ env/
 *.log
 gigsecure.db
 gigsecure.log
+gigpulse.log
+
+# Trained ML model binaries (regenerate with train_models.py)
+gigpulse/app/models_bin/*.pkl
 
 # OS
 .DS_Store

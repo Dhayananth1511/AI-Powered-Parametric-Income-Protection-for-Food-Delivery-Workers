@@ -18,16 +18,16 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from app.security import require_role
 from app.database import engine, Base, SessionLocal
-from app.models import Worker, Admin, Policy, Claim, WeatherLog
+from app.models import Worker, Admin, Policy, Claim, WeatherLog, NotificationLog
 from app import routes_auth, routes_policy, routes_claims, routes_weather
 from app import routes_kyc, routes_notifications, routes_payments
 from app.ml_engine import compute_risk_score, recommend_plan, calculate_dynamic_premium
 from app.trigger_monitor import get_active_events, get_all_disruption_events_db
-from app.background_jobs import start_scheduler, stop_scheduler, get_scheduler_status
-from app.scheduler import initialize_scheduler, stop_scheduler as stop_bg_scheduler
+from app.scheduler import initialize_scheduler, stop_scheduler as stop_bg_scheduler, get_scheduler_status
 from sqlalchemy.orm import Session
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import os
 import logging
 
@@ -51,14 +51,32 @@ logger = logging.getLogger(__name__)
 Base.metadata.create_all(bind=engine)
 
 from sqlalchemy import text
+from datetime import timedelta
+
+_POLICY_MIGRATIONS = [
+    "ALTER TABLE workers ADD COLUMN bank_upi_id VARCHAR",
+    "ALTER TABLE workers ADD COLUMN plan_expiry_notified BOOLEAN DEFAULT 0",
+    "ALTER TABLE workers ADD COLUMN policy_start_date DATETIME",
+    "ALTER TABLE workers ADD COLUMN policy_expiry_date DATETIME",
+    "ALTER TABLE workers ADD COLUMN policy_status VARCHAR DEFAULT 'active'",
+]
+with engine.connect() as conn:
+    for sql in _POLICY_MIGRATIONS:
+        try:
+            conn.execute(text(sql))
+            conn.commit()
+        except Exception:
+            pass
+
+# Seed policy dates for workers that have none
 with engine.connect() as conn:
     try:
-        conn.execute(text("ALTER TABLE workers ADD COLUMN bank_upi_id VARCHAR"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE workers ADD COLUMN plan_expiry_notified BOOLEAN DEFAULT 0"))
+        now = datetime.now()
+        week = timedelta(days=7)
+        conn.execute(text(
+            "UPDATE workers SET policy_start_date=:s, policy_expiry_date=:e, policy_status='active' "
+            "WHERE policy_start_date IS NULL"
+        ), {"s": now.isoformat(), "e": (now + week).isoformat()})
         conn.commit()
     except Exception:
         pass
@@ -117,6 +135,10 @@ static_path = os.path.join(os.path.dirname(__file__), "..", "static")
 # Seed Database (idempotent)
 # ─────────────────────────────────────────────────────────────────────────────
 def seed_db():
+    if os.getenv("SKIP_SEEDING", "").lower() in {"1", "true", "yes"}:
+        logger.info("⏭️ Skipping database seeding per environment variable.")
+        return
+
     db: Session = SessionLocal()
     try:
         if db.query(Worker).count() == 0:
@@ -232,22 +254,18 @@ def seed_db():
     finally:
         db.close()
 
-seed_db()
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Startup & Shutdown Events (Lifecycle Management)
-# ─────────────────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup_event():
     """Start background jobs on application startup."""
-    start_scheduler()
-    initialize_scheduler()  # Phase 2A: Initialize new scheduler
+    # Seed database (checks SKIP_SEEDING inside)
+    seed_db()
+    # Start the consolidated scheduler
+    initialize_scheduler()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Stop background jobs on application shutdown."""
-    stop_scheduler()
-    stop_bg_scheduler()  # Phase 2A: Stop new scheduler
+    stop_bg_scheduler()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Root & Health
@@ -274,7 +292,7 @@ def get_scheduler_info():
 # ─────────────────────────────────────────────────────────────────────────────
 # Admin Stats (7 KPIs)
 # ─────────────────────────────────────────────────────────────────────────────
-@app.get("/admin/stats")
+@app.get("/admin/stats", dependencies=[Depends(require_role(["admin"]))])
 def admin_stats():
     db: Session = SessionLocal()
     try:
@@ -463,7 +481,134 @@ def get_earnings_history(worker_id: str):
         db.close()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ML — Zone Info
+# Policy Lifecycle — Active / Expired / Renewal
+# ─────────────────────────────────────────────────────────────────────────────
+PLAN_WEEKLY_PREMIUMS = {"starter": 55, "basic": 70, "standard": 90, "premium": 115, "elite": 135}
+
+def _policy_status_for(w) -> dict:
+    """Compute real-time policy status for a worker."""
+    now = datetime.now()
+    expiry = w.policy_expiry_date
+    start  = w.policy_start_date
+
+    if not expiry:
+        status = w.policy_status or "active"
+        days_left = None
+        alert = None
+    else:
+        days_left = (expiry - now).days
+        hours_left = (expiry - now).total_seconds() / 3600
+
+        if now > expiry:
+            status = "expired"
+            alert  = "🚨 Policy expired — coverage suspended"
+        elif days_left <= 1:
+            status = "grace_period"
+            alert  = f"⚠️ Policy expires in {int(hours_left)} hours — renew now!"
+        elif days_left <= 2:
+            status = "expiring_soon"
+            alert  = f"⏰ Policy renews in {days_left} days"
+        else:
+            status = "active"
+            alert  = None
+
+    return {
+        "policy_status":  status,
+        "policy_start":   start.isoformat() if start else None,
+        "policy_expiry":  expiry.isoformat() if expiry else None,
+        "days_remaining": days_left,
+        "next_renewal":   expiry.isoformat() if expiry else None,
+        "weekly_premium": PLAN_WEEKLY_PREMIUMS.get(w.plan, 90),
+        "alert":          alert,
+        "is_covered":     status in ("active", "expiring_soon", "grace_period"),
+    }
+
+@app.get("/workers/{worker_id}/policy-status")
+def get_worker_policy_status(worker_id: str):
+    """Get real-time policy status, renewal date, and alert for a worker."""
+    db = SessionLocal()
+    try:
+        w = db.query(Worker).filter(Worker.id == worker_id).first()
+        if not w:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        return {"success": True, "worker_id": worker_id, **_policy_status_for(w)}
+    finally:
+        db.close()
+
+@app.post("/workers/{worker_id}/renew-policy")
+def renew_worker_policy(worker_id: str):
+    """Manually renew a worker's policy for another 7 days."""
+    db = SessionLocal()
+    try:
+        w = db.query(Worker).filter(Worker.id == worker_id).first()
+        if not w:
+            raise HTTPException(status_code=404, detail="Worker not found")
+
+        now = datetime.now()
+        # If already active/expiring_soon, extend from current expiry; else from now
+        base = w.policy_expiry_date if (w.policy_expiry_date and w.policy_expiry_date > now) else now
+        new_expiry = base + timedelta(days=7)
+
+        w.policy_start_date = now
+        w.policy_expiry_date = new_expiry
+        w.policy_status = "active"
+        w.plan_expiry_notified = False
+        w.is_active = True
+
+        # Send renewal notification
+        import uuid as _uuid
+        from app.models import NotificationLog
+        notif = NotificationLog(
+            id=f"NTF-{_uuid.uuid4().hex[:8].upper()}",
+            worker_id=worker_id,
+            title="✅ Policy Renewed",
+            message=f"Your {w.plan.capitalize()} plan has been renewed until {new_expiry.strftime('%d %b %Y')}. Stay covered!",
+            notif_type="plan_change",
+            icon="✅"
+        )
+        db.add(notif)
+        db.commit()
+
+        logger.info(f"✅ Policy renewed for {worker_id} → expires {new_expiry.date()}")
+        return {
+            "success": True,
+            "worker_id": worker_id,
+            "new_expiry": new_expiry.isoformat(),
+            "message": f"Policy renewed until {new_expiry.strftime('%d %b %Y')}"
+        }
+    finally:
+        db.close()
+
+@app.get("/admin/policy-overview")
+def get_policy_overview():
+    """Admin view: all workers with policy status, expiry dates, and alerts."""
+    db = SessionLocal()
+    try:
+        workers = db.query(Worker).all()
+        result = []
+        counts = {"active": 0, "expiring_soon": 0, "grace_period": 0, "expired": 0}
+        for w in workers:
+            ps = _policy_status_for(w)
+            counts[ps["policy_status"]] = counts.get(ps["policy_status"], 0) + 1
+            result.append({
+                "id": w.id, "name": w.name, "plan": w.plan,
+                "zone": w.zone, "platform": w.platform,
+                **ps
+            })
+        # Sort: expired first, then grace_period, then expiring_soon, then active
+        order = {"expired": 0, "grace_period": 1, "expiring_soon": 2, "active": 3}
+        result.sort(key=lambda x: order.get(x["policy_status"], 4))
+        return {"workers": result, "summary": counts, "total": len(result)}
+    finally:
+        db.close()
+
+@app.post("/admin/policy-lifecycle-check")
+def run_policy_lifecycle_check():
+    """Manually trigger the weekly policy expiry check (also runs automatically)."""
+    from app.scheduler import job_policy_lifecycle
+    job_policy_lifecycle()
+    return {"success": True, "message": "Policy lifecycle check completed"}
+
 # ─────────────────────────────────────────────────────────────────────────────
 @app.get("/ml/zones")
 def get_zones():
@@ -491,6 +636,139 @@ def get_loss_ratio(plan: str, disruption_hrs: float = 52.5):
     from app.ml_engine import calculate_loss_ratio
     return calculate_loss_ratio(plan, disruption_hrs)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 3: Compliance Center — Market Crash Defense
+# ─────────────────────────────────────────────────────────────────────────────
+
+# In-memory compliance state (survives process restarts via seeding below)
+_COMPLIANCE_STATE = {
+    "market_crash_active": False,
+    "new_premium_cap":     None,   # e.g. 90 rupees if regulator forces a cap
+    "new_payout_cap":      None,   # e.g. 300 rupees
+    "sabotage_shield":     False,  # unlockable DC purchase
+    "freeze_new_policies": False,
+    "emergency_reserve_pct": 5.0,  # % of premiums held in reserve
+    "compliance_notes":    [],
+    "last_updated":        None,
+}
+
+from pydantic import BaseModel as _BM
+class CompliancePatch(_BM):
+    market_crash_active: bool = None
+    new_premium_cap: float = None
+    new_payout_cap: float = None
+    sabotage_shield: bool = None
+    freeze_new_policies: bool = None
+    emergency_reserve_pct: float = None
+    note: str = None
+
+@app.get("/admin/compliance")
+def get_compliance_state():
+    """Get the current Phase 3 compliance / market crash state."""
+    return _COMPLIANCE_STATE
+
+@app.post("/admin/compliance")
+def update_compliance_state(patch: CompliancePatch):
+    """Update compliance parameters in real-time (Market Crash response)."""
+    if patch.market_crash_active is not None:
+        _COMPLIANCE_STATE["market_crash_active"] = patch.market_crash_active
+    if patch.new_premium_cap is not None:
+        _COMPLIANCE_STATE["new_premium_cap"] = patch.new_premium_cap
+    if patch.new_payout_cap is not None:
+        _COMPLIANCE_STATE["new_payout_cap"] = patch.new_payout_cap
+    if patch.sabotage_shield is not None:
+        _COMPLIANCE_STATE["sabotage_shield"] = patch.sabotage_shield
+    if patch.freeze_new_policies is not None:
+        _COMPLIANCE_STATE["freeze_new_policies"] = patch.freeze_new_policies
+    if patch.emergency_reserve_pct is not None:
+        _COMPLIANCE_STATE["emergency_reserve_pct"] = patch.emergency_reserve_pct
+    if patch.note:
+        _COMPLIANCE_STATE["compliance_notes"].append({
+            "text": patch.note,
+            "at": datetime.now().isoformat()
+        })
+    _COMPLIANCE_STATE["last_updated"] = datetime.now().isoformat()
+    logger.info(f"🚨 Compliance state updated: crash={_COMPLIANCE_STATE['market_crash_active']}")
+    return {"success": True, "state": _COMPLIANCE_STATE}
+
+@app.get("/admin/loss-ratio-trend")
+def get_loss_ratio_trend():
+    """Return week-by-week loss ratio trend for the admin dashboard chart."""
+    from app.ml_engine import PLAN_BASE
+    db = SessionLocal()
+    try:
+        claims = db.query(Claim).filter(Claim.status == "approved").order_by(Claim.created_at.asc()).all()
+        workers = db.query(Worker).all()
+        plan_prices = {p: PLAN_BASE[p]["premium"] for p in PLAN_BASE}
+
+        # Group claims by ISO week
+        from collections import defaultdict
+        weeks: dict = defaultdict(lambda: {"payouts": 0.0, "premium": 0.0})
+        weekly_premium = sum(plan_prices.get(w.plan, 90) for w in workers)
+
+        for c in claims:
+            if c.created_at:
+                week_key = c.created_at.strftime("%Y-W%W")
+                weeks[week_key]["payouts"] += c.payout_amount or 0
+
+        for wk in weeks:
+            weeks[wk]["premium"] = weekly_premium
+            weeks[wk]["loss_ratio"] = round(
+                weeks[wk]["payouts"] / weekly_premium * 100, 1
+            ) if weekly_premium > 0 else 0.0
+
+        sorted_weeks = sorted(weeks.items())
+        return {
+            "weeks": [
+                {"week": w, "payouts": v["payouts"], "premium": v["premium"], "loss_ratio": v["loss_ratio"]}
+                for w, v in sorted_weeks
+            ],
+            "plans": {p: {"normal_lr": round(PLAN_BASE[p]["rate"]*52.5/(PLAN_BASE[p]["premium"]*52)*100,1),
+                          "monsoon_lr": round(PLAN_BASE[p]["rate"]*73.5/(PLAN_BASE[p]["premium"]*52)*100,1)}
+                     for p in PLAN_BASE}
+        }
+    finally:
+        db.close()
+
+@app.get("/admin/fraud-heatmap")
+def get_fraud_heatmap():
+    """Return hyper-local fraud detection analytics per zone."""
+    from app.weather import ZONE_COORDS
+    db = SessionLocal()
+    try:
+        claims = db.query(Claim).all()
+        workers = db.query(Worker).all()
+        worker_zones = {w.id: w.zone for w in workers}
+
+        zone_stats: dict = {}
+        for c in claims:
+            zone = worker_zones.get(c.worker_id, "Unknown")
+            if zone not in zone_stats:
+                coords = ZONE_COORDS.get(zone, (13.0827, 80.2707))
+                zone_stats[zone] = {
+                    "zone": zone,
+                    "lat": coords[0], "lon": coords[1],
+                    "total_claims": 0, "auto_approved": 0,
+                    "manual_review": 0, "rejected": 0,
+                    "avg_fraud_score": 0, "fraud_scores": [],
+                }
+            z = zone_stats[zone]
+            z["total_claims"] += 1
+            if c.status == "approved":   z["auto_approved"] += 1
+            if c.status == "manual_review": z["manual_review"] += 1
+            if c.status == "rejected":   z["rejected"] += 1
+            if c.fraud_score is not None:
+                z["fraud_scores"].append(c.fraud_score)
+
+        for z in zone_stats.values():
+            scores = z.pop("fraud_scores", [])
+            z["avg_fraud_score"] = round(sum(scores)/len(scores), 1) if scores else 0
+            z["risk_level"] = "HIGH" if z["avg_fraud_score"] > 60 else ("MEDIUM" if z["avg_fraud_score"] > 30 else "LOW")
+
+        return {"zones": list(zone_stats.values()), "total_zones": len(zone_stats)}
+    finally:
+        db.close()
+
 # Final Static Mount — Handles index.html and all static assets at /
 if os.path.exists(static_path):
     app.mount("/", StaticFiles(directory=static_path, html=True), name="static")
@@ -498,85 +776,7 @@ if os.path.exists(static_path):
 import httpx
 import asyncio
 
-async def weather_poller():
-    """Realtime parametric monitoring. Poll interval 120s to preserve OWM API limits."""
-    while True:
-        await asyncio.sleep(120)
-        try:
-            from app.weather import fetch_weather, check_triggers
-            from app.trigger_monitor import get_zone_status
-            from app.database import SessionLocal
-            from app.models import Worker
-            
-            # 1. Find which zones currently have active workers
-            db = SessionLocal()
-            try:
-                active_zones = {w.zone for w in db.query(Worker).filter(Worker.is_active == True).all()}
-            finally:
-                db.close()
-
-            # 2. Poll those zones
-            for zone in active_zones:
-                weather = await fetch_weather(zone)
-                triggers = check_triggers(weather)
-                
-                # 3. Auto-Trigger Pipeline if weather hits threshold!
-                if triggers:
-                    status = get_zone_status(zone)
-                    if not status.get("payout_active"):
-                        # Hit the auto-pipeline endpoint locally to trigger zero-touch payout
-                        async with httpx.AsyncClient() as client:
-                            await client.post(
-                                "http://127.0.0.1:8000/claims/zone-simulate",
-                                json={"zone": zone, "trigger_type": triggers[0]["type"]}
-                            )
-        except Exception as e:
-            logger.error(f"Background Poller Error: {e}")
-
-async def subscription_poller():
-    """Checks for expired weekly plans and sends renewal prompts securely"""
-    while True:
-        await asyncio.sleep(60) # Run every 60 seconds
-        try:
-            from app.database import SessionLocal
-            from app.models import Worker, NotificationLog
-            from datetime import datetime
-            
-            db = SessionLocal()
-            try:
-                # Find workers whose plan expired, but we haven't notified yet
-                now = datetime.now()
-                expired_workers = db.query(Worker).filter(
-                    Worker.weekly_reset_at < now,
-                    Worker.plan_expiry_notified == False
-                ).all()
-                
-                for w in expired_workers:
-                    # Log internal push notification
-                    notif = NotificationLog(
-                        worker_id  = w.id,
-                        title      = "⚠️ Weekly Plan Expired!",
-                        message    = f"Your {w.plan.capitalize()} plan has expired. Please renew ASAP to stay protected against disruptions.",
-                        notif_type = "plan_change",
-                        icon       = "⏳",
-                    )
-                    # Set notified flag so we don't spam
-                    w.plan_expiry_notified = True
-                    db.add(notif)
-                    
-                    # Keep notification simulation silent unless logs are explicitly enabled.
-                    
-                db.commit()
-            finally:
-                db.close()
-        except Exception as e:
-            logger.error(f"Subscription Engine Error: {e}")
-
-@app.on_event("startup")
-async def startup_event():
-    import asyncio
-    asyncio.create_task(weather_poller())
-    asyncio.create_task(subscription_poller())
+# Background tasks have been consolidated into app.scheduler
 
 if __name__ == "__main__":
     import os

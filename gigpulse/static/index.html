@@ -320,10 +320,13 @@ footer{
       <div class="theme-toggle-knob" id="themeKnob">🌙</div>
     </button>
     <div id="loggedInNav" style="display:none">
-      <div class="user-pill" id="userPill" onclick="goToDashboard()">
-        <div class="user-avatar" id="userInitial">U</div>
-        <span id="userName" style="font-size:13px;font-weight:600"></span>
-        <span style="font-size:11px;color:var(--text-dim)">Dashboard →</span>
+      <div class="user-pill" id="userPill">
+        <div onclick="goToDashboard()" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <div class="user-avatar" id="userInitial">U</div>
+          <span id="userName" style="font-size:13px;font-weight:600"></span>
+          <span style="font-size:11px;color:var(--text-dim)">Dashboard →</span>
+        </div>
+        <div onclick="Session.logout()" style="margin-left:12px;padding:4px 8px;font-size:10px;font-weight:700;color:var(--error);border-left:1px solid var(--border);cursor:pointer">LOGOUT</div>
       </div>
     </div>
     <div id="loggedOutNav" style="display:none">

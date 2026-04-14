@@ -61,6 +61,44 @@ def verify_token(token: str) -> Optional[dict]:
         logger.warning(f"Invalid token: {e}")
         return None
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FastAPI Dependencies (for Router Protection)
+# ─────────────────────────────────────────────────────────────────────────────
+from fastapi import Header, HTTPException, status
+
+async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+    """extract and verify JWT from Authorization header."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    token = authorization.split(" ")[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired. Please login again.",
+        )
+    return payload
+
+def require_role(roles: list[str]):
+    """Higher-order dependency to enforce role-based access control."""
+    async def role_checker(payload: dict = Depends(get_current_user)):
+        user_role = payload.get("role")
+        if user_role not in roles:
+            logger.warning(f"🚫 Access Denied: User with role '{user_role}' attempted to access {roles} route.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required roles: {', '.join(roles)}",
+            )
+        return payload
+    return role_checker
+
+from fastapi import Depends  # Ensure Depends is available
+
 def decode_token(token: str) -> Optional[dict]:
     """Decode token without verification (for debugging only)."""
     try:

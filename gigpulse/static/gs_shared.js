@@ -27,9 +27,19 @@ const Theme = {
 
 // ─── API Fetch Helper ────────────────────────────────────────────────────────
 async function apiCall(path, options = {}) {
+  const sess = Session.get();
+  const headers = { 
+    "Content-Type": "application/json", 
+    ...(options.headers || {}) 
+  };
+  
+  if (sess && sess.access_token) {
+    headers["Authorization"] = `Bearer ${sess.access_token}`;
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
+    headers
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

@@ -218,12 +218,7 @@
 <script src="gs_shared.js"></script>
 <script>
 let currentRole = "worker";
-const DEMO_FALLBACKS = [
-  { label: "🛵 Standard", email: "ravi.kumar@swiggy.in", pass: "demo1234", role: "worker" },
-  { label: "🏆 Elite",    email: "arjun.raj@zomato.in",  pass: "demo1234", role: "worker" },
-  { label: "🏢 Admin", email: "admin@digit.com",     pass: "admin123", role: "admin"  },
-];
-let DEMOS = [...DEMO_FALLBACKS];
+let DEMOS = []; // Start empty to prevent jumping from fallback to live
 
 function fillDemo(i) {
   const d = DEMOS[i];
@@ -233,8 +228,18 @@ function fillDemo(i) {
 }
 
 function renderDemoPills() {
-  document.getElementById("demo-pills").innerHTML = DEMOS.map((d,i) => 
-    `<div class="pill" onclick="fillDemo(${i})">${d.label}</div>`
+  const container = document.getElementById("demo-pills");
+  if (!DEMOS.length) {
+    container.innerHTML = `
+      <div style="display:flex;gap:8px;opacity:0.6">
+        <div class="pill" style="width:80px;height:28px;background:rgba(255,255,255,0.05);border:none;cursor:default"></div>
+        <div class="pill" style="width:80px;height:28px;background:rgba(255,255,255,0.05);border:none;cursor:default"></div>
+        <div class="pill" style="width:80px;height:28px;background:rgba(255,255,255,0.05);border:none;cursor:default"></div>
+      </div>`;
+    return;
+  }
+  container.innerHTML = DEMOS.map((d,i) => 
+    `<div class="pill fade-in-up" style="animation-delay:${i*0.05}s" onclick="fillDemo(${i})">${d.label}</div>`
   ).join("");
 }
 
@@ -251,12 +256,12 @@ async function loadDemos() {
       }));
     }
   } catch(e) {
-    console.warn("Using fallback demo accounts.", e);
-    DEMOS = [...DEMO_FALLBACKS];
+    console.warn("Failed to load demo accounts.", e);
   }
   renderDemoPills();
 }
 
+// Initial render with skeleton
 renderDemoPills();
 loadDemos();
 
@@ -297,13 +302,19 @@ if (s) {
   document.querySelector('.container').innerHTML = `
     <div style="text-align:center;padding:60px 20px">
       <div style="font-size:52px;margin-bottom:16px">🛡️</div>
-      <h2 style="background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:24px;margin-bottom:8px">Already Signed In</h2>
+      <h2 style="background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:24px;margin-bottom:8px">Welcome Back, <span id="sessName">...</span></h2>
       <p style="color:#94a3b8;margin-bottom:24px">Redirecting to your dashboard...</p>
       <div style="display:inline-block;width:28px;height:28px;border:3px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+      
+      <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.05);padding-top:24px">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Not you?</div>
+        <button onclick="Session.clear();location.reload()" class="btn btn-ghost" style="width:auto;padding:8px 16px;font-size:12px">Switch Account / Sign Out</button>
+      </div>
     </div>`;
+  document.getElementById("sessName").textContent = s.name.split(' ')[0];
   setTimeout(() => {
     window.location.href = s.role === "admin" ? "/gigpulse_admin.html" : "/gigpulse_worker.html";
-  }, 800);
+  }, 1500);
 }
 </script>
 </body>

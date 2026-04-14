@@ -184,6 +184,7 @@ input:focus,select:focus{border-color:var(--primary)}
   <div class="nav-item" onclick="showPage('claims')" id="nav-claims"><span class="nav-icon">📋</span>Claims Pipeline</div>
   <div class="nav-item" onclick="showPage('monitor')" id="nav-monitor"><span class="nav-icon">📡</span>Disruption Monitor</div>
   <div class="nav-item" onclick="showPage('simulate')" id="nav-simulate"><span class="nav-icon">⚡</span>Claim Simulator</div>
+  <div class="nav-item" onclick="showPage('compliance')" id="nav-compliance" style="border-left:3px solid rgba(248,113,113,0.5)"><span class="nav-icon">🚨</span>Compliance Center</div>
   <div class="nav-item" onclick="window.location.href='/gigpulse_sandbox.html'"><span class="nav-icon">🛡️</span>Fraud Sandbox</div>
   <div class="nav-item" onclick="window.location.href='gigpulse_features.html'"><span class="nav-icon">🧪</span>Feature Demos</div>
   <div class="sidebar-footer">
@@ -233,6 +234,8 @@ input:focus,select:focus{border-color:var(--primary)}
         <button class="btn btn-primary" onclick="openModal('workerModal')">➕ Add Worker</button>
       </div>
     </div>
+    <!-- Policy Status Summary Banner -->
+    <div id="policyStatsBanner" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <input id="workerSearch" placeholder="🔍 Search by name, zone, plan..." onkeyup="filterWorkers()" style="flex:1;min-width:200px">
       <select id="planFilter" onchange="filterWorkers()"><option value="">All Plans</option><option>starter</option><option>basic</option><option>standard</option><option>premium</option><option>elite</option></select>
@@ -245,6 +248,8 @@ input:focus,select:focus{border-color:var(--primary)}
                 <th>Platform</th>
                 <th>Zone</th>
                 <th>Plan</th>
+                <th>Policy Status</th>
+                <th>Next Renewal</th>
                 <th>Risk Score</th>
                 <th>Trust Score</th>
                 <th>Total Payouts</th>
@@ -349,12 +354,127 @@ input:focus,select:focus{border-color:var(--primary)}
     </div>
   </div>
 
+  <!-- COMPLIANCE CENTER PAGE (Phase 3 — Market Crash Defense) -->
+  <div class="page" id="page-compliance">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <div class="page-title" style="color:#f87171">🚨 Phase 3 Compliance Center</div>
+        <div class="page-sub">Market Crash Defense · IRDAI Regulatory Compliance · Emergency Controls</div>
+      </div>
+      <button class="btn btn-ghost" onclick="loadCompliance()">↻ Refresh</button>
+    </div>
+
+    <!-- Market Crash Alert Banner -->
+    <div id="crashBanner" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);border-radius:16px;padding:18px;margin-bottom:20px;animation:pulse-border 2s infinite">
+      <div style="display:flex;align-items:center;gap:14px">
+        <span style="font-size:32px">🚨</span>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#f87171">MARKET CRASH — REGULATORY EVENT ACTIVE</div>
+          <div style="font-size:13px;color:#fca5a5;margin-top:4px">Emergency protocols engaged. New premium/payout caps are in effect. All new policies frozen until further notice.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="complianceKpis"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <!-- Emergency Controls -->
+      <div class="tbl-wrap" style="padding:20px">
+        <div class="tbl-title" style="margin-bottom:16px">⚙️ Emergency Controls</div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <div>
+            <div style="font-weight:600;font-size:13px">Market Crash Mode</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:2px">Activate emergency protocols</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:44px;height:24px">
+            <input type="checkbox" id="toggleCrash" onchange="toggleCompliance('market_crash_active',this.checked)" style="opacity:0;width:0;height:0">
+            <span id="crashSlider" style="position:absolute;cursor:pointer;inset:0;background:#334155;border-radius:24px;transition:0.3s"></span>
+          </label>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <div>
+            <div style="font-weight:600;font-size:13px">🛡️ Sabotage Shield</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:2px">Protects against DC penalties</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:44px;height:24px">
+            <input type="checkbox" id="toggleShield" onchange="toggleCompliance('sabotage_shield',this.checked)" style="opacity:0;width:0;height:0">
+            <span id="shieldSlider" style="position:absolute;cursor:pointer;inset:0;background:#334155;border-radius:24px;transition:0.3s"></span>
+          </label>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <div>
+            <div style="font-weight:600;font-size:13px">Freeze New Policies</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:2px">Stop onboarding during event</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:44px;height:24px">
+            <input type="checkbox" id="toggleFreeze" onchange="toggleCompliance('freeze_new_policies',this.checked)" style="opacity:0;width:0;height:0">
+            <span id="freezeSlider" style="position:absolute;cursor:pointer;inset:0;background:#334155;border-radius:24px;transition:0.3s"></span>
+          </label>
+        </div>
+
+        <div style="padding:12px 0">
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px">Emergency Reserve %</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="reservePct" min="0" max="30" step="0.5" value="5" style="width:80px;text-align:center">
+            <button class="btn btn-primary" onclick="setReserve()" style="font-size:12px">Set</button>
+          </div>
+        </div>
+
+        <div style="padding:12px 0">
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px">Log Compliance Note</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="compNote" placeholder="Enter note..." style="flex:1;font-size:12px">
+            <button class="btn btn-secondary" onclick="addNote()" style="font-size:12px">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loss Ratio Trend -->
+      <div class="tbl-wrap" style="padding:20px">
+        <div class="tbl-title" style="margin-bottom:16px">📈 Loss Ratio by Plan</div>
+        <div id="lrTrendChart" style="display:grid;gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- Fraud Heatmap Table -->
+    <div class="tbl-wrap" style="margin-bottom:20px">
+      <div class="tbl-hdr"><div class="tbl-title">🗺️ Hyper-Local Fraud Heatmap</div><button class="btn btn-ghost" onclick="loadFraudHeatmap()" style="font-size:11px;padding:5px 10px">Refresh</button></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Zone</th><th>Coordinates</th><th>Total Claims</th><th>Approved</th><th>Review</th><th>Rejected</th><th>Avg Fraud Score</th><th>Risk Level</th></tr></thead>
+          <tbody id="fraudHeatmapBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Compliance Audit Log -->
+    <div class="tbl-wrap" style="padding:20px">
+      <div class="tbl-title" style="margin-bottom:12px">📝 Compliance Audit Log</div>
+      <div id="complianceNotes"></div>
+    </div>
+  </div>
+
 </div>
 
 <script src="gs_shared.js"></script>
 <script>
 const sess = Session.require();
-if(!sess || sess.role !== "admin") { window.location.href = "gigpulse_login.html"; throw 0; }
+if(!sess) {
+  window.location.href = "/gigpulse_login.html";
+  throw new Error("Not logged in");
+}
+if(sess.role !== "admin") {
+  toast("Redirecting to your correct dashboard...", "info");
+  setTimeout(() => {
+    window.location.href = sess.role === "worker" ? "/gigpulse_worker.html" : "/gigpulse_login.html";
+  }, 1000);
+  throw new Error("Invalid role for this page");
+}
+
 document.getElementById("adminName").textContent = (sess.name || "Admin") + " · " + (sess.org || "ZenVyte GigPulse");
 
 let allWorkers = [];
@@ -481,12 +601,46 @@ async function checkApis() {
 // ── WORKERS ─────────────────────────────────────────────────────────────────
 async function loadWorkers() {
   try {
-    const data = await GS.get("/workers");
+    const [data, policyData] = await Promise.all([
+      GS.get("/workers"),
+      GS.get("/admin/policy-overview").catch(() => ({workers:[], summary:{}}))
+    ]);
     allWorkers = data.workers || [];
+
+    // Attach policy status to each worker object
+    const policyMap = {};
+    (policyData.workers || []).forEach(pw => { policyMap[pw.id] = pw; });
+    allWorkers.forEach(w => { w._policy = policyMap[w.id] || {}; });
+
     document.getElementById("workersCount").textContent = allWorkers.length + " workers";
+
+    // Render policy summary banner
+    const s = policyData.summary || {};
+    const bannerEl = document.getElementById("policyStatsBanner");
+    if(bannerEl) {
+      bannerEl.innerHTML = [
+        {label:"🟢 Active",     val: s.active||0,        col:"#4ade80"},
+        {label:"⏰ Expiring",    val: s.expiring_soon||0, col:"#facc15"},
+        {label:"⚠️ Grace",      val: s.grace_period||0,  col:"#fb923c"},
+        {label:"🔴 Expired",    val: s.expired||0,       col:"#f87171"},
+      ].map(k=>`
+        <div style="background:${k.col}15;border:1px solid ${k.col}33;border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px;font-weight:800;color:${k.col}">${k.val}</span>
+          <span style="font-size:12px;color:var(--muted)">${k.label}</span>
+        </div>`).join("");
+    }
+
     renderWorkers(allWorkers);
     await loadAdmins();
-  } catch(e) {}
+  } catch(e) { console.warn("loadWorkers error:", e); }
+}
+
+async function renewPolicy(workerId) {
+  try {
+    const r = await GS.post(`/workers/${workerId}/renew-policy`, {});
+    toast(`✅ Policy renewed until ${new Date(r.new_expiry).toLocaleDateString("en-IN")}`, "success");
+    await loadWorkers();   // Refresh table
+  } catch(e) { toast("Renewal failed: " + e.message, "error"); }
 }
 
 async function loadAdmins() {
@@ -501,7 +655,18 @@ async function loadAdmins() {
 
 function renderWorkers(workers) {
   const PLAN_COLORS = {starter:"#4ade80",basic:"#60a5fa",standard:"#facc15",premium:"#fb923c",elite:"#f87171"};
-  document.getElementById("workersBody").innerHTML = workers.map(w => `
+  document.getElementById("workersBody").innerHTML = workers.map(w => {
+    // Compute policy status display
+    const ps = w._policy || {};
+    const pStatus = ps.policy_status || "active";
+    const pExpiry = ps.policy_expiry ? new Date(ps.policy_expiry) : null;
+    const daysLeft = ps.days_remaining;
+    const pBadgeColor = pStatus==="active"?"#4ade80":pStatus==="expiring_soon"?"#facc15":pStatus==="grace_period"?"#fb923c":"#f87171";
+    const pLabel = pStatus==="active"?"🟢 Active":pStatus==="expiring_soon"?"⏰ Expiring":pStatus==="grace_period"?"⚠️ Grace":"🔴 Expired";
+    const renewalDate = pExpiry ? pExpiry.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
+    const alertHtml = ps.alert ? `<div style="font-size:10px;color:#fb923c;margin-top:2px">${ps.alert}</div>` : "";
+    
+    return `
     <tr>
       <td>
         <div style="font-weight:600">${w.name}</div>
@@ -511,6 +676,15 @@ function renderWorkers(workers) {
       <td style="font-size:12px;max-width:160px">${w.zone}</td>
       <td><span style="color:${PLAN_COLORS[w.plan]||"#6366f1"};font-weight:700">${capitalize(w.plan)}</span></td>
       <td>
+        <span class="badge" style="background:${pBadgeColor}22;color:${pBadgeColor};border:1px solid ${pBadgeColor}44">${pLabel}</span>
+        ${alertHtml}
+        ${pStatus==="expired"?`<button class="btn btn-success" style="font-size:10px;padding:2px 8px;margin-top:4px" onclick="renewPolicy('${w.id}')">🔄 Renew</button>`:""}
+      </td>
+      <td style="font-size:12px">
+        <div style="font-weight:600">${renewalDate}</div>
+        ${daysLeft!==null&&daysLeft!==undefined?`<div style="font-size:10px;color:var(--muted)">${daysLeft} day${daysLeft!==1?'s':''} left</div>`:""}
+      </td>
+      <td>
         <div style="font-weight:600;color:${w.risk_score>0.6?"#f87171":w.risk_score>0.4?"#facc15":"#4ade80"}">${Math.round((w.risk_score||0.5)*100)}%</div>
         <div class="risk-bar"><div class="risk-fill" style="width:${(w.risk_score||0.5)*100}%;background:${w.risk_score>0.6?"#f87171":w.risk_score>0.4?"#facc15":"#4ade80"}"></div></div>
       </td>
@@ -518,7 +692,8 @@ function renderWorkers(workers) {
       <td style="font-weight:700;color:#4ade80">${formatINR((w.payouts||0)+(w.sim_payouts||0))}</td>
       <td>${w.aadhaar_verified?'<span style="color:#4ade80">✅ KYC</span>':'<span style="color:#f87171">❌ Pending</span>'}</td>
       <td>${w.claims_total||0} <span style="color:var(--muted);font-size:11px">(${w.claims_approved||0}✅ ${w.claims_rejected||0}❌)</span></td>
-    </tr>`).join("") || `<tr><td colspan="9"><div class="empty-state">No workers found</div></td></tr>`;
+    </tr>`;
+  }).join("") || `<tr><td colspan="11"><div class="empty-state">No workers found</div></td></tr>`;
 }
 
 function filterWorkers() {
@@ -968,11 +1143,156 @@ async function renderAdminMap() {
   } catch(e) {}
 }
 
+// ── COMPLIANCE CENTER ────────────────────────────────────────────────────────
+let _complianceState = {};
+
+async function loadCompliance() {
+  try {
+    const s = await GS.get("/admin/compliance");
+    _complianceState = s;
+    // Update banner
+    const banner = document.getElementById("crashBanner");
+    if(banner) banner.style.display = s.market_crash_active ? "block" : "none";
+    // Update toggles
+    function setToggle(id, sliderId, active) {
+      const el = document.getElementById(id);
+      const sl = document.getElementById(sliderId);
+      if(el) el.checked = !!active;
+      if(sl) sl.style.background = active ? "#6366f1" : "#334155";
+    }
+    setToggle("toggleCrash","crashSlider", s.market_crash_active);
+    setToggle("toggleShield","shieldSlider", s.sabotage_shield);
+    setToggle("toggleFreeze","freezeSlider", s.freeze_new_policies);
+    const rp = document.getElementById("reservePct");
+    if(rp) rp.value = s.emergency_reserve_pct || 5;
+    // KPIs
+    const kpiEl = document.getElementById("complianceKpis");
+    if(kpiEl) kpiEl.innerHTML = [
+      {icon:"🚨", label:"Crash Mode", val: s.market_crash_active?"ACTIVE":"Standby", col: s.market_crash_active?"rgba(239,68,68,0.2)":"rgba(99,102,241,0.15)"},
+      {icon:"🛡️", label:"Sabotage Shield", val: s.sabotage_shield?"ACTIVE":"OFF", col: s.sabotage_shield?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.05)"},
+      {icon:"🔒", label:"Policy Freeze", val: s.freeze_new_policies?"FROZEN":"Open", col: s.freeze_new_policies?"rgba(250,204,21,0.15)":"rgba(255,255,255,0.05)"},
+      {icon:"💰", label:"Emergency Reserve", val: (s.emergency_reserve_pct||5)+"%", col:"rgba(56,189,248,0.15)"},
+    ].map(k=>`<div class="kpi-card" style="--kpi-col:${k.col}">
+      <div class="kpi-icon">${k.icon}</div>
+      <div class="kpi-val" style="font-size:18px">${k.val}</div>
+      <div class="kpi-lbl">${k.label}</div>
+    </div>`).join("");
+    // Audit log
+    const notesEl = document.getElementById("complianceNotes");
+    if(notesEl) {
+      const notes = s.compliance_notes || [];
+      notesEl.innerHTML = notes.length ? notes.slice().reverse().map(n=>`
+        <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px">
+          <span style="color:var(--muted);font-size:11px">${new Date(n.at).toLocaleString("en-IN")}</span>
+          <div style="margin-top:3px">${n.text}</div>
+        </div>`).join("") :
+        `<div class="empty-state">No compliance notes yet</div>`;
+    }
+    // Loss Ratio Chart
+    await loadLRTrendChart();
+    await loadFraudHeatmap();
+  } catch(e) { console.warn("Compliance load error:", e); }
+}
+
+async function loadLRTrendChart() {
+  try {
+    const data = await GS.get("/admin/loss-ratio-trend");
+    const plans = data.plans || {};
+    const el = document.getElementById("lrTrendChart");
+    if(!el) return;
+    const planOrder = ["starter","basic","standard","premium","elite"];
+    const planColors = {starter:"#4ade80",basic:"#60a5fa",standard:"#facc15",premium:"#fb923c",elite:"#f87171"};
+    el.innerHTML = planOrder.map(p => {
+      const d = plans[p];
+      if(!d) return "";
+      const normalPct = Math.min(100, d.normal_lr);
+      const monsoonPct = Math.min(100, d.monsoon_lr);
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px">
+          <span style="color:${planColors[p]}">${capitalize(p)}</span>
+          <span style="color:var(--muted)">Normal: ${d.normal_lr}% · Monsoon: ${d.monsoon_lr}%</span>
+        </div>
+        <div class="risk-bar" style="margin-bottom:3px">
+          <div class="risk-fill" style="width:${normalPct}%;background:${d.normal_lr<75?'#4ade80':'#f87171'}"></div>
+        </div>
+        <div class="risk-bar">
+          <div class="risk-fill" style="width:${monsoonPct}%;background:${d.monsoon_lr<95?'#facc15':'#f87171'}"></div>
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e) {}
+}
+
+async function loadFraudHeatmap() {
+  try {
+    const data = await GS.get("/admin/fraud-heatmap");
+    const tbody = document.getElementById("fraudHeatmapBody");
+    if(!tbody) return;
+    const zones = data.zones || [];
+    tbody.innerHTML = zones.map(z => {
+      const riskColor = z.risk_level==="HIGH"?"#f87171":z.risk_level==="MEDIUM"?"#facc15":"#4ade80";
+      return `<tr>
+        <td><div style="font-weight:600;font-size:12px">${z.zone}</div></td>
+        <td style="font-size:11px;color:var(--muted)">${z.lat.toFixed(4)}, ${z.lon.toFixed(4)}</td>
+        <td style="font-weight:700">${z.total_claims}</td>
+        <td style="color:#4ade80">${z.auto_approved}</td>
+        <td style="color:#facc15">${z.manual_review}</td>
+        <td style="color:#f87171">${z.rejected}</td>
+        <td style="color:${z.avg_fraud_score>60?"#f87171":z.avg_fraud_score>30?"#facc15":"#4ade80"};font-weight:700">${z.avg_fraud_score}/100</td>
+        <td><span class="badge" style="background:${riskColor}22;color:${riskColor};border:1px solid ${riskColor}44">${z.risk_level}</span></td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="8"><div class="empty-state">No fraud data yet</div></td></tr>`;
+  } catch(e) {}
+}
+
+async function toggleCompliance(key, val) {
+  try {
+    await GS.post("/admin/compliance", {[key]: val});
+    toast(`${key.replace(/_/g," ")} → ${val?"ON":"OFF"}`, val?"warning":"success");
+    await loadCompliance();
+  } catch(e) { toast("Compliance update failed", "error"); }
+}
+
+async function setReserve() {
+  const val = parseFloat(document.getElementById("reservePct").value);
+  if(isNaN(val)) return;
+  await toggleCompliance("emergency_reserve_pct", val);
+}
+
+async function addNote() {
+  const n = document.getElementById("compNote").value.trim();
+  if(!n) return;
+  try {
+    await GS.post("/admin/compliance", {note: n});
+    document.getElementById("compNote").value = "";
+    toast("Note logged", "success");
+    await loadCompliance();
+  } catch(e) {}
+}
+
+// Hook compliance into showPage
+const _origShowPage = showPage;
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  const pageEl = document.getElementById("page-"+id);
+  const navEl  = document.getElementById("nav-"+id);
+  if(pageEl) pageEl.classList.add("active");
+  if(navEl)  navEl.classList.add("active");
+  if(window.innerWidth <= 768) document.getElementById("sidebar").classList.remove("open");
+  if(id==="workers"    && !allWorkers.length) loadWorkers();
+  if(id==="claims")    loadClaimsPipeline();
+  if(id==="monitor")   { loadMonitor(); if(adminLeafletMap) setTimeout(() => adminLeafletMap.invalidateSize(), 200); }
+  if(id==="simulate")  initSimulator();
+  if(id==="compliance") loadCompliance();
+}
+
 // Init
 loadOverview();
 loadWorkers().then(renderAdminMap);
 // Auto refresh hardware endpoints
 setInterval(renderAdminMap, 15000);
+
 </script>
 </body>
 </html>

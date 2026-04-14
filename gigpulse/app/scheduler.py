@@ -10,10 +10,11 @@ from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime, timedelta
 import logging
 from app.database import SessionLocal
-from app.models import Claim, DisruptionEvent, Payment, Worker
-from app.trigger_monitor import get_zone_status, confirm_disruption, _ZONE_STATE
-from app.background_jobs import process_disruptions, expire_disruptions
+from app.models import Claim, DisruptionEvent, Payment, Worker, NotificationLog
+from app.trigger_monitor import get_zone_status, confirm_disruption, _ZONE_STATE, get_active_events
 from app.payment_engine import payment_engine
+import uuid
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -24,27 +25,52 @@ scheduler = BackgroundScheduler()
 # Scheduled Tasks
 # ─────────────────────────────────────────────────────────────────────────────
 
+async def check_all_zones_concurrently():
+    """Fetch weather for all zones and feed trigger data into trigger_monitor."""
+    from app.weather import get_all_zones, fetch_weather, check_triggers
+    from app.trigger_monitor import start_confirmation_window, get_zone_status, _ZONE_STATE
+    import asyncio
+
+    zones = get_all_zones()
+    # Limit to a batch to avoid hammering the API on free tiers
+    batch = zones[:20]
+    tasks = [fetch_weather(zone) for zone in batch]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    disruptions_detected = 0
+    for i, weather in enumerate(results):
+        zone = batch[i]
+        if isinstance(weather, Exception):
+            logger.warning(f"Weather fetch failed for {zone}: {weather}")
+            continue
+
+        triggers = check_triggers(weather)
+        if not triggers:
+            continue
+
+        trigger = triggers[0]  # Use the most critical trigger
+        current_state = _ZONE_STATE.get(zone, {})
+
+        # Only start a new confirmation if not already tracking this zone
+        if current_state.get("status") not in ("confirming", "confirmed"):
+            logger.info(f"⚡ Trigger detected in {zone}: {trigger['label']} ({trigger['value']}{trigger['unit']})")
+            start_confirmation_window(zone, trigger)
+            disruptions_detected += 1
+
+    return disruptions_detected
+
 def job_check_zone_disruptions():
-    """Every 5 minutes: Check weather APIs for disruption triggers."""
+    """Every 15 minutes: Check weather APIs for disruption triggers."""
     logger.info("🔄 Task: Checking zone disruptions...")
     try:
-        from app.weather import get_all_zones
-        from app.routes_weather import fetch_weather
-        
-        zones = get_all_zones()
-        disruptions_detected = 0
-        
-        for zone in zones:
-            try:
-                weather = fetch_weather(zone)
-                if weather and weather.get("has_disruption"):
-                    logger.info(f"⚡ Disruption detected in {zone}: {weather.get('alert_type')}")
-                    disruptions_detected += 1
-            except Exception as e:
-                logger.error(f"Error checking zone {zone}: {e}")
-        
-        logger.info(f"✅ Zone check complete: {disruptions_detected} disruptions detected")
-    
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            disruptions_detected = loop.run_until_complete(check_all_zones_concurrently())
+            logger.info(f"✅ Zone check complete: {disruptions_detected} disruptions detected")
+        finally:
+            loop.close()
     except Exception as e:
         logger.error(f"❌ Error in job_check_zone_disruptions: {e}")
 
@@ -74,24 +100,89 @@ def job_confirm_disruptions():
         logger.error(f"❌ Error in job_confirm_disruptions: {e}")
 
 def job_auto_create_claims():
-    """When disruption confirmed: Create auto-claims for all zone workers."""
+    """Check for active disruptions and trigger claims logic."""
     logger.info("🔄 Task: Creating auto-claims...")
+    db = SessionLocal()
     try:
-        process_disruptions()
-        logger.info("✅ Auto-claims created")
-    
+        from app.claims import run_claim_pipeline
+        active_disruptions = get_active_events()
+        
+        if not active_disruptions:
+            return
+            
+        logger.info(f"🌩️  Auto-trigger check: Found {len(active_disruptions)} active disruptions")
+        
+        for disruption in active_disruptions:
+            zone = disruption.get("zone", "")
+            trigger = disruption.get("trigger", {})
+            
+            # Logic from legacy background_jobs.py consolidated here
+            workers = db.query(Worker).filter(
+                Worker.zone == zone,
+                Worker.is_active == True,
+                Worker.plan != None,
+            ).all()
+            
+            for worker in workers:
+                try:
+                    # Basic auto-trigger for demo (payout based on plan)
+                    worker_dict = {"id": worker.id, "name": worker.name, "zone": worker.zone, "plan": worker.plan}
+                    result = run_claim_pipeline(worker_dict, trigger, 4.0) # assume 4hr disruption for auto-trigger
+                    
+                    claim = Claim(
+                        id="CLM-" + uuid.uuid4().hex[:6].upper(),
+                        worker_id=worker.id,
+                        trigger_type=trigger.get("type", "rainfall"),
+                        trigger_value=float(trigger.get("value", 0)),
+                        trigger_label=trigger.get("label", "Alert"),
+                        disruption_hrs=4.0,
+                        payout_amount=result.get("payout", 0),
+                        status="approved",
+                        is_simulated=True
+                    )
+                    db.add(claim)
+                    logger.info(f"✅ Auto-claim triggered: {worker.id} | ₹{result.get('payout', 0)}")
+                except Exception as e:
+                    logger.error(f"Error auto-triggering claim for {worker.id}: {e}")
+        
+        db.commit()
     except Exception as e:
+        db.rollback()
         logger.error(f"❌ Error in job_auto_create_claims: {e}")
+    finally:
+        db.close()
 
 def job_expire_disruptions():
-    """Every 30 minutes: Expire old confirmed disruptions."""
+    """Clear old confirmed disruptions from state and DB."""
     logger.info("🔄 Task: Expiring old disruptions...")
+    db = SessionLocal()
     try:
-        expire_disruptions()
-        logger.info("✅ Old disruptions expired")
-    
+        from app.trigger_monitor import clear_disruption
+        now = datetime.now()
+        
+        # Expire in-memory zones
+        for zone, state in list(_ZONE_STATE.items()):
+            if state["status"] == "confirmed":
+                conf_end = state.get("confirmation_end")
+                if conf_end and (now - conf_end) > timedelta(hours=6):
+                    clear_disruption(zone)
+                    logger.info(f"⌛ Expired zone disruption: {zone}")
+        
+        # Mark DB events as cleared
+        old_events = db.query(DisruptionEvent).filter(
+            DisruptionEvent.status == "confirmed",
+            DisruptionEvent.created_at < (now - timedelta(hours=6))
+        ).all()
+        for evt in old_events:
+            evt.status = "cleared"
+        
+        db.commit()
+        logger.info("✅ Expiration task complete")
     except Exception as e:
+        db.rollback()
         logger.error(f"❌ Error in job_expire_disruptions: {e}")
+    finally:
+        db.close()
 
 def job_retry_failed_payments():
     """Every 30 minutes: Retry failed payments."""
@@ -167,34 +258,108 @@ def job_cleanup_old_records():
         db.close()
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Policy Lifecycle Auto-Check (Daily)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def job_policy_lifecycle():
+    """Daily job: auto-expire policies, send 24hr warning notifications."""
+    logger.info("🔄 Task: Policy lifecycle check...")
+    db = SessionLocal()
+    try:
+        import uuid as _uuid
+        from datetime import timedelta
+        now = datetime.now()
+        workers = db.query(Worker).all()
+        expired_count = 0
+        alerted_count = 0
+
+        for w in workers:
+            if not w.policy_expiry_date:
+                # Set a default 7-day window if missing
+                w.policy_start_date = now
+                w.policy_expiry_date = now + timedelta(days=7)
+                w.policy_status = "active"
+                continue
+
+            days_left = (w.policy_expiry_date - now).days
+            hours_left = (w.policy_expiry_date - now).total_seconds() / 3600
+
+            if now > w.policy_expiry_date:
+                # ── EXPIRED: suspend coverage
+                if w.policy_status != "expired":
+                    w.policy_status = "expired"
+                    w.is_active = False
+                    expired_count += 1
+                    logger.info(f"❌ Policy EXPIRED for {w.id} ({w.name})")
+                    notif = NotificationLog(
+                        id=f"NTF-{_uuid.uuid4().hex[:8].upper()}",
+                        worker_id=w.id,
+                        title="❌ Policy Expired",
+                        message=f"Your {w.plan.capitalize()} plan expired. Renew now to restore coverage and claim eligibility.",
+                        notif_type="plan_change",
+                        icon="❌"
+                    )
+                    db.add(notif)
+
+            elif days_left <= 1 and not w.plan_expiry_notified:
+                # ── EXPIRING SOON: send 24hr alert
+                w.policy_status = "grace_period"
+                w.plan_expiry_notified = True
+                alerted_count += 1
+                logger.info(f"⚠️  Expiry alert sent for {w.id} ({w.name}) — {int(hours_left)}h left")
+                notif = NotificationLog(
+                    id=f"NTF-{_uuid.uuid4().hex[:8].upper()}",
+                    worker_id=w.id,
+                    title="⚠️ Policy Expiring Soon",
+                    message=f"Your {w.plan.capitalize()} plan expires in {int(hours_left)} hours on {w.policy_expiry_date.strftime('%d %b %Y')}. Renew to stay protected!",
+                    notif_type="plan_change",
+                    icon="⚠️"
+                )
+                db.add(notif)
+
+            elif days_left > 1:
+                # ── ACTIVE: reset notification flag for next cycle
+                w.policy_status = "active"
+                w.is_active = True
+                w.plan_expiry_notified = False
+
+        db.commit()
+        logger.info(f"✅ Policy lifecycle: {expired_count} expired, {alerted_count} alerted")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error in job_policy_lifecycle: {e}")
+    finally:
+        db.close()
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Scheduler Initialization
 # ─────────────────────────────────────────────────────────────────────────────
 
 def initialize_scheduler():
     """Initialize and start background job scheduler."""
     try:
-        # Check zone disruptions every 5 minutes
+        # Check zone disruptions every 15 minutes
         scheduler.add_job(
             job_check_zone_disruptions,
-            IntervalTrigger(minutes=5),
+            IntervalTrigger(minutes=15),
             id="job_check_zone_disruptions",
             name="Check Zone Disruptions",
             replace_existing=True
         )
         
-        # Confirm disruptions every 2 minutes
+        # Confirm disruptions every 10 minutes
         scheduler.add_job(
             job_confirm_disruptions,
-            IntervalTrigger(minutes=2),
+            IntervalTrigger(minutes=10),
             id="job_confirm_disruptions",
             name="Confirm Disruptions",
             replace_existing=True
         )
         
-        # Auto-create claims when disruption confirmed
+        # Auto-create claims when disruption confirmed (every 10 minutes)
         scheduler.add_job(
             job_auto_create_claims,
-            IntervalTrigger(minutes=1),
+            IntervalTrigger(minutes=10),
             id="job_auto_create_claims",
             name="Auto-Create Claims",
             replace_existing=True
@@ -224,6 +389,15 @@ def initialize_scheduler():
             IntervalTrigger(hours=1),
             id="job_update_worker_stats",
             name="Update Worker Stats",
+            replace_existing=True
+        )
+        
+        # Policy lifecycle check — daily at 9 AM
+        scheduler.add_job(
+            job_policy_lifecycle,
+            CronTrigger(hour=9, minute=0),
+            id="job_policy_lifecycle",
+            name="Policy Lifecycle Auto-Check",
             replace_existing=True
         )
         

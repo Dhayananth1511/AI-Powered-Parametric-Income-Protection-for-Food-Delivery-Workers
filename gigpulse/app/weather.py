@@ -6,7 +6,7 @@ from datetime import datetime
 
 load_dotenv()
 OWM_KEY = os.getenv("OWM_API_KEY", "")
-
+WAQI_KEY = os.getenv("WAQI_API_KEY", "")
 # ─────────────────────────────────────────────────────────────────────────────
 # Zone Coordinates (GPS lat/lon for real OWM API calls)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -128,22 +128,44 @@ def _mock_weather(zone: str) -> dict:
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Weather Fetch (OWM real + mock fallback)
+# Weather Fetch (OWM real + WAQI real + mock fallback)
 # ─────────────────────────────────────────────────────────────────────────────
 async def fetch_weather(zone: str) -> dict:
     coords = ZONE_COORDS.get(zone)
     if not coords or not OWM_KEY:
         return _mock_weather(zone)
     lat, lon = coords
-    url = (f"https://api.openweathermap.org/data/2.5/weather"
+    
+    url_owm = (f"https://api.openweathermap.org/data/2.5/weather"
            f"?lat={lat}&lon={lon}&appid={OWM_KEY}&units=metric")
+           
+    # Deep Integration: Secondary API for AQI (WAQI / AQICN)
+    url_waqi = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQI_KEY}" if WAQI_KEY else None
+
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url, timeout=8.0)
-            if resp.status_code == 200:
-                data = resp.json()
+            resp_owm = await client.get(url_owm, timeout=8.0)
+            
+            # Fetch WAQI
+            real_aqi = None
+            if url_waqi:
+                try:
+                    resp_waqi = await client.get(url_waqi, timeout=5.0)
+                    if resp_waqi.status_code == 200:
+                        w_data = resp_waqi.json()
+                        if w_data.get("status") == "ok":
+                            real_aqi = w_data.get("data", {}).get("aqi")
+                except Exception as e:
+                    pass # fallback to mock if single WAQI call fails
+            
+            if resp_owm.status_code == 200:
+                data = resp_owm.json()
                 rainfall_1h = data.get("rain", {}).get("1h", 0.0)
                 rainfall_3h = data.get("rain", {}).get("3h", rainfall_1h * 3)
+                
+                final_aqi = int(real_aqi) if real_aqi is not None else _mock_aqi(zone)
+                source_label = "OWM + WAQI Live" if real_aqi is not None else "OWM Live (+ Mock AQI)"
+                
                 return {
                     "zone":         zone,
                     "temperature":  data["main"]["temp"],
@@ -153,14 +175,14 @@ async def fetch_weather(zone: str) -> dict:
                     "rainfall_3h":  rainfall_3h,
                     "wind_speed":   data["wind"]["speed"],
                     "description":  data["weather"][0]["description"],
-                    "aqi":          _mock_aqi(zone),
+                    "aqi":          final_aqi,
                     "cyclone":      False,
                     "curfew":       False,
-                    "source":       "OpenWeatherMap Live",
+                    "source":       source_label,
                     "fetched_at":   datetime.now().isoformat(),
                 }
     except Exception as e:
-        return _fallback_zone_weather(zone)
+        return _mock_weather(zone) # Fallback directly to mock instead of undefined function
     return _mock_weather(zone)
 
 # ─────────────────────────────────────────────────────────────────────────────
