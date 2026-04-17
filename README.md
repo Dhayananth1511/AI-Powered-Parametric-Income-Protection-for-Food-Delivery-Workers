@@ -28,6 +28,30 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 
 ---
 
+## 🔑 Demo Credentials
+
+| Role | Email / ID | Password | Use Case |
+|---|---|---|---|
+| **Admin** | `admin@digit.com` | `admin123` | Compliance, claims, stats |
+| **Worker 1** | `ravi.kumar@swiggy.in` | `demo1234` | Full dashboard view |
+| **Worker 2** | `arjun.raj@zomato.in` | `demo1234` | Multi-zone simulation |
+
+---
+
+## 📽️ Recorded Video
+
+> **[Click here to watch the Demo Video](https://youtu.be/Omy7fbd703M?si=b_E84AmUH5kmhk7m)**
+*(Covers problem statement, live simulation, and architectural walkthrough)*
+
+---
+
+## 📊 Pitch Deck
+
+> **[Click here to view the Pitch Deck](https://docs.google.com/presentation/d/1EEkGotHzBqoTRvArTn95Gi-1vk2Z5IEi/edit?usp=sharing&ouid=117502270727505012924&rtpof=true&sd=true)**
+*(Strategic overview, financial model, and roadmap)*
+
+---
+
 ## Table of Contents
 
 1. [Problem Statement](#problem-statement)
@@ -55,9 +79,14 @@ ZenVyte GigPulse solves a **₹5,880/year income loss problem** for 5 crore+ inf
 23. [Plan Cancellation & Refund Policy](#plan-cancellation--refund-policy)
 24. [Financial & Business Model](#financial--business-model)
 25. [Why ZenVyte GigPulse Wins](#why-zenvyte-gigpulse-wins)
-26. [Live Website](#live-website)
-27. [How to Run Locally](#how-to-run-locally)
-28. [Development Roadmap](#development-roadmap)
+26. [Project Deliverables](#project-deliverables)
+27. [API Reference](#api-reference)
+28. [Frontend Architecture](#frontend-architecture)
+29. [Background Scheduler](#background-scheduler)
+30. [How to Run Locally](#how-to-run-locally)
+31. [Testing](#testing)
+32. [Docker Deployment](#docker-deployment)
+33. [Development Roadmap](#development-roadmap)
 
 ---
 
@@ -100,6 +129,7 @@ ZenVyte GigPulse is an **AI-powered parametric micro-insurance platform** built 
 - **Parametric Insurance** — payouts triggered by objective data, not manual claims
 - **Zero-Touch Claims** — no forms, no uploads, no waiting
 - **Trained ML Models** — RandomForest (zone risk) + IsolationForest (fraud) trained on 3,500+ synthetic data points; persisted in `models_bin/`
+- **AI Assistant Bot** — Integrated support bot powered by HuggingFace LLM (Zephyr-7b-beta) with rule-based fallback
 - **Dual Live APIs** — OpenWeatherMap (weather) + WAQI/AQICN (real AQI) — source label visible in admin
 - **Hyper-Local Geopy Validation** — geodesic distance (geopy.distance) between worker GPS and zone centroid; strict 5 km fraud radius
 - **Micro-Zone Precision** — 2–5 km disruption detection, not city-level
@@ -384,6 +414,20 @@ New workers start at **Provisional Score 40** — can claim from Week 1 at 50% c
 
 ---
 
+### Model 4 — GigPulse AI Assistant
+
+**Algorithm:** `Zephyr-7b-beta` (via HuggingFace Inference API)
+**Fallback:** Rule-based custom logic
+**Purpose:** Real-time support for workers regarding policies, claims, and platform guidance.
+
+**Capabilities:**
+- Policy & Plan guidance
+- Claim simulation assistance
+- Login/Onboarding support
+- Real-time disruption information
+
+---
+
 ## Smart Validation Layer
 
 | Layer | Problem | Solution |
@@ -394,11 +438,53 @@ New workers start at **Provisional Score 40** — can claim from Week 1 at 50% c
 | **4. Context-Aware Delivery Logic** | 20-min vs 3-hr disruption ≠ same impact | Disruption duration vs avg delivery time. Payout scales proportionally. |
 | **5. Crowd Signal Validation** | API data lags real conditions 10–20 min | Anonymized zone-level aggregate: movement speed + inactivity spikes. |
 
-```
-Layer 1: API threshold crossed → Layer 2: Secondary source confirms →
-Layer 3: 15–30 min persistence → Layer 4: Worker GPS (geopy) + sensors verified →
-Layer 5: Crowd signal confirms → ✅ Payout initiated
-```
+---
+
+## 🎨 Frontend Architecture
+
+The platform provides a responsive, mobile-first experience for workers and a data-rich desktop command center for admins.
+
+### Main Views
+1.  **Landing Page (`index.html`)**: Strategic overview and entry points.
+2.  **Worker Dashboard (`gigpulse_worker.html`)**: Real-time disruption monitoring, AI Chat, and policy management.
+3.  **Admin Command Center (`gigpulse_admin.html`)**: 7-KPI dashboard, Compliance Center (Market Crash toggle), and Fraud Heatmap.
+4.  **Onboarding Journey (`gigpulse_onboarding.html`)**: Multi-step Aadhaar KYC and ML-powered plan recommendation.
+5.  **Feature Showcase (`gigpulse_features.html`)**: Interactive tech demo of the validation layer.
+6.  **Auth Portal (`gigpulse_login.html`)**: Role-based secure access.
+
+### Asset Shared Component
+- **`gs_shared.js`**: Unified logic for real-time telemetry, map rendering (Leaflet), and API synchronization.
+
+---
+
+### ML / Forecast Endpoints
+- `GET /ml/zones` - List all supported 2-5km micro-zones.
+- `GET /ml/risk/{zone}` - Get historical risk breakdown for a zone.
+- `GET /ml/forecast/{zone}` - Get 48-hr disruption probability.
+- `GET /ml/all-forecasts` - Bulk forecast for all active zones.
+
+### Admin / Operations
+- `GET /admin/stats` - 7-KPI dashboard data (Loss Ratio, Premium, etc.).
+- `GET /admin/telemetry` - Live hardware sensor heartbeat for all online workers.
+- `POST /admin/compliance` - Trigger Market Crash mode / Sabotage shield.
+- `GET /admin/fraud-heatmap` - Zone-level Isolation Forest anomaly map.
+
+---
+
+## ⚙️ Background Scheduler
+
+ZenVyte GigPulse uses **APScheduler** to manage 8 mission-critical background jobs:
+
+| Job | Frequency | Purpose |
+|---|---|---|
+| **Disruption Check** | Every 2 min | Poll dual APIs for threshold breaches |
+| **Confirmation** | Every 2 min | Verify persistence (15-30 min window) |
+| **Auto-Claims** | Every 2 min | Trigger payout pipeline for confirmed events |
+| **Payment Retry** | Every 30 min | Re-attempt failed Razorpay disbursements |
+| **Stats Update** | Every 1 hr | Compute cumulative earnings & trust scores |
+| **Policy Lifecycle** | Daily 9 AM | Auto-expire plans and send 24hr alerts |
+| **Data Cleanup** | Daily 2 AM | Prune logs older than 90 days |
+| **Weekly Reset**| Sun 11:59 PM| Reset weekly hour caps for all workers |
 
 ---
 
@@ -530,13 +616,14 @@ The Compliance Center is a dedicated admin panel that allows the insurer partner
 | **ORM** | SQLAlchemy | All DB models and migrations |
 | **ML — Zone Risk** | Scikit-Learn `RandomForestClassifier` | Plan recommendation at onboarding |
 | **ML — Fraud Detection** | Scikit-Learn `IsolationForest` | Anomaly detection on claim telemetry |
+| **AI Assistant** | HuggingFace Inference API (Zephyr-7b) | LLM-powered support bot |
 | **Geospatial** | `geopy.distance.geodesic` | Hyper-local 5 km GPS zone validation |
 | **Weather API** | OpenWeatherMap (live) | Temperature, rainfall, wind |
 | **AQI API** | WAQI / AQICN (live) | Real-time PM2.5 / AQI readings |
 | **Disaster Alerts** | NDMA Mock Feed | Cyclone / curfew triggers |
 | **Payments** | Razorpay SDK (test mode) | Simulated near-real-time payout |
 | **Scheduler** | APScheduler | Background jobs: disruption check, policy lifecycle, payment retry |
-| **Notifications** | In-app (DB) + Twilio SMS (production-ready) | Worker alerts |
+| **Notifications** | Telegram · CallMeBot · Twilio SMS | Multi-channel worker alerts |
 | **Frontend — Worker** | HTML · CSS · JS (Leaflet, Chart.js) | Mobile-first worker dashboard |
 | **Frontend — Admin** | HTML · CSS · JS (Leaflet, Chart.js) | Desktop insurer/admin dashboard |
 | **Hosting** | Render (free tier) | Live deployment |
@@ -615,6 +702,7 @@ twilio · python-multipart
 - **Live Zone Status** — Rainfall · Heat · AQI · Cyclone · Curfew (source: "OWM + WAQI Live")
 - **Change Plan** — Upgrade or downgrade anytime
 - **Payout History** — Timeline of all credited amounts with fraud scores
+- **AI Assistant Chat** — 24/7 intelligent support bot for policy and claim queries
 - **Predictive Alert Panel** — 48-hr forecast: "Rain likely 6–9pm (78%)"
 - **Earnings Protected Counter** — Total saved via GigPulse
 - **Earnings Growth Chart** — Cumulative payout chart
@@ -645,6 +733,7 @@ twilio · python-multipart
 | ✅ **Dual Live APIs** — OpenWeatherMap + WAQI/AQICN — source: "OWM + WAQI Live" | **Live** |
 | ✅ **Hyper-local geopy fraud validation** — geodesic 5 km zone radius | **Live** |
 | ✅ **Trained ML Models** — RandomForest + IsolationForest from `train_models.py` | **Live** |
+| ✅ **GigPulse AI Assistant** — HuggingFace Zephyr-7b + Rule-based fallback | **Live** |
 | ✅ **Policy Lifecycle Engine** — auto-expiry, 24hr alerts, daily scheduler, renew | **Live** |
 | ✅ **Compliance Center** — Market Crash Mode, premium cap, freeze, audit log | **Live** |
 | ✅ Admin dashboard — policy list, KPIs, claims pipeline, API status | Live |
@@ -653,7 +742,7 @@ twilio · python-multipart
 | ✅ APScheduler — disruption check every 15 min, policy lifecycle daily 9 AM | Live |
 | ✅ PostgreSQL (Neon) persistent database — no data loss on redeploy | Live |
 | ✅ Isolation Forest fraud engine with live hardware telemetry signals | Live |
-| ✅ Twilio SMS engine — production-ready, keys in `.env` | Live |
+| ✅ **Multi-Channel Alerts** — Telegram, WhatsApp/CallMeBot, Twilio SMS | **Live** |
 | ✅ Enterprise CSV export — admin claims & worker reports | Live |
 | ✅ JWT auth + bcrypt password hashing | Live |
 | ✅ Mobile-first responsive design — worker bottom-nav, admin sidebar | Live |
@@ -764,21 +853,19 @@ All claim liabilities handled by the licensed insurer partner.
 
 ## Live Website
 
-🎥 **2-Minute Strategy Video →**
+🎥 **5-Minute Strategy Video →**
 
-Youtube : https://youtu.be/XK3wGCvJ5v4 <br><br>
-Drive : https://drive.google.com/file/d/1PdthvPOd5pq_jYmLhIaiZLGzqfBc8aIk/view?usp=drivesdk
+Youtube : https://youtu.be/Omy7fbd703M?si=b_E84AmUH5kmhk7m <br><br>
 
 > Video covers: problem & persona → solution walkthrough → anti-spoofing architecture → financial model & roadmap.
 
 📱 **Home →**
-https://ai-powered-parametric-income-protection.onrender.com
-
+https://ai-powered-parametric-income-protection-b2hw.onrender.com
 📱 **Login →**
-https://ai-powered-parametric-income-protection.onrender.com/gigpulse_login.html
+https://ai-powered-parametric-income-protection-b2hw.onrender.com/gigpulse_login.html
 
 🧪 **Feature Demo →**
-https://ai-powered-parametric-income-protection.onrender.com/gigpulse_features.html
+https://ai-powered-parametric-income-protection-b2hw.onrender.com/gigpulse_features.html
 
 💡 **What to explore:**
 - Worker onboarding with zone risk ML (40+ Tamil Nadu zones)
@@ -840,10 +927,15 @@ python main.py
 |---|---|---|
 | `OWM_API_KEY` | ✅ Yes | https://openweathermap.org/api |
 | `WAQI_API_KEY` | ✅ Yes | https://aqicn.org/data-platform/token/ |
+| `HUGGINGFACE_API_KEY` | ✅ Yes | https://huggingface.co/settings/tokens |
 | `RAZORPAY_KEY_ID` | Optional | https://razorpay.com (test keys) |
 | `RAZORPAY_KEY_SECRET` | Optional | Same |
 | `DATABASE_URL` | Optional | Neon/Supabase PostgreSQL (falls back to SQLite) |
 | `JWT_SECRET_KEY` | ✅ Yes | Any secure random string |
+| `TELEGRAM_BOT_TOKEN` | Optional | @BotFather on Telegram |
+| `TELEGRAM_CHAT_ID` | Optional | @userinfobot on Telegram |
+| `CALLMEBOT_API_KEY` | Optional | https://www.callmebot.com |
+| `TWILIO_ACCOUNT_SID`| Optional | https://twilio.com |
 
 ### 5. Access the Dashboards
 
@@ -854,6 +946,36 @@ Once the server says `Uvicorn running on http://0.0.0.0:8000`:
 - **Feature Demo**: http://localhost:8000/gigpulse_features.html
 
 > **Database** auto-creates and seeds on first launch. ML models auto-load from `models_bin/`.
+
+---
+
+## 🧪 Testing
+
+The platform includes a comprehensive test suite covering actuarial logic, fraud detection, and API reliability.
+
+```bash
+# Run all tests
+pytest tests/
+
+# Individual test modules
+pytest tests/test_fraud.py      # Isolation Forest & GPS validation
+pytest tests/test_actuarial.py  # Pricing & Loss Ratio formulas
+pytest tests/test_weather.py    # Multi-source API cross-validation
+```
+
+---
+
+## 🐳 Docker Deployment
+
+For standardized production deployment:
+
+```bash
+# Build the image
+docker build -t gigpulse-v2 .
+
+# Run the container
+docker run -p 8000:8000 --env-file .env gigpulse-v2
+```
 
 ---
 
@@ -882,7 +1004,8 @@ Once the server says `Uvicorn running on http://0.0.0.0:8000`:
 - [x] Auto-claim pipeline: confirm → verify → GPS → fraud → approve → payout
 - [x] Razorpay payment integration (test mode)
 - [x] Isolation Forest fraud model with live hardware telemetry
-- [x] Twilio SMS Alert Integration (production-ready)
+- [x] **Multi-Channel Alert Integration** (Telegram, WhatsApp/CallMeBot, Twilio SMS)
+- [x] **GigPulse AI Assistant** (HuggingFace Zephyr-7b integration)
 - [x] Enterprise CSV export (admin reports)
 - [x] PostgreSQL persistent database (Neon)
 - [x] APScheduler background jobs

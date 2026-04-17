@@ -101,7 +101,7 @@ class PaymentEngine:
             # Check for duplicate/existing payment (idempotency)
             query = db.query(Payment).filter(
                 Payment.worker_id == worker_id,
-                Payment.status.in_(["pending", "created", "confirmed", "success"])
+                Payment.status.in_(["pending", "created", "order_created", "confirmed", "success"])
             )
             if claim_id:
                 query = query.filter(Payment.claim_id == claim_id)

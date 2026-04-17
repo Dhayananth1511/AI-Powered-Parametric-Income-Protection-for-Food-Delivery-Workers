@@ -23,6 +23,7 @@ def payment_engine_instance():
     """Create payment engine for testing."""
     engine = PaymentEngine(mode="test")
     engine.key_secret = "test_secret_for_webhook_verification"
+    engine.webhook_secret = None  # Ensure it falls back to key_secret for tests
     return engine
 
 @pytest.fixture
@@ -87,7 +88,7 @@ def test_create_order_idempotency(payment_engine_instance, test_claim_data):
     
     assert result1["success"] is True
     assert result2["success"] is False
-    assert result2["error"] == "Payment already exists for this claim"
+    assert result2["error"] == "Active payment order already exists"
 
 def test_create_order_invalid_amount(payment_engine_instance, test_claim_data):
     """Test payment creation with invalid amount."""

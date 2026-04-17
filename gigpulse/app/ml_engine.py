@@ -228,10 +228,14 @@ def _risk_label(score: float) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Fraud Detection Engine
 # ─────────────────────────────────────────────────────────────────────────────
-def compute_fraud_score(worker_data: dict) -> dict:
+def compute_fraud_score(worker_data: dict, **kwargs) -> dict:
     """
     6-signal fraud detection (Isolation Forest simulation).
     Signals: GPS·Accelerometer·CellTower·PriorActivity·CrowdSignal·Baseline
+    
+    Args:
+        worker_data: Dict containing worker/policy info
+        **kwargs: Optional granular overrides for testing (gps_coordinates, accelerometer_variance, etc.)
     """
     signals = {}
     score   = 0

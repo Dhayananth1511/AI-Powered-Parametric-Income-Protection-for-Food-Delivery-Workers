@@ -25,3 +25,5 @@ email-validator>=2.1.0
 aiohttp>=3.9.3
 twilio
 psycopg2-binary>=2.9.9
+pytest>=8.0.0
+pytest-mock>=3.12.0
