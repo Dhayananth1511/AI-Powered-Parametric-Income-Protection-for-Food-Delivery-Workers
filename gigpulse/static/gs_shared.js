@@ -331,3 +331,155 @@ function showLoader(el, msg = "Loading...") {
 function showError(el, msg) {
   if (el) el.innerHTML = `<div style="padding:20px;text-align:center;color:#f87171">⚠️ ${msg}</div>`;
 }
+
+// ─── AI Assistant Bot UI Phase 2.1 ───────────────────────────────────────────
+function initGigPulseBot() {
+  if (document.getElementById("gp-bot-widget")) return;
+
+  const botStyles = document.createElement("style");
+  botStyles.textContent = `
+    .gp-bot-widget { position: fixed; bottom: 24px; right: 24px; z-index: 1000; font-family: 'Inter', sans-serif; }
+    .gp-bot-btn { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; box-shadow: 0 10px 25px rgba(99,102,241,0.5); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; color: white; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .gp-bot-btn:hover { transform: scale(1.1); box-shadow: 0 15px 35px rgba(99,102,241,0.6); }
+    .gp-bot-btn.pulse { animation: gpBotPulse 2s infinite; }
+    @keyframes gpBotPulse { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.7); } 70% { box-shadow: 0 0 0 15px rgba(99,102,241,0); } 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); } }
+    
+    .gp-bot-window { position: absolute; bottom: 80px; right: 0; width: 350px; height: 480px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(99,102,241,0.3); border-radius: 24px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transform-origin: bottom right; transform: scale(0.9); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .gp-bot-window.open { display: flex; transform: scale(1); opacity: 1; }
+    
+    html[data-theme="light"] .gp-bot-window { background: rgba(255, 255, 255, 0.9); border-color: rgba(99,102,241,0.2); box-shadow: 0 25px 50px -12px rgba(99,102,241,0.2); }
+    html[data-theme="light"] .gp-bot-msg.bot { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; }
+    html[data-theme="light"] .gp-bot-msg.user { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+    html[data-theme="light"] .gp-bot-input { background: #fff; color: #0f172a; border-top: 1px solid #e2e8f0; }
+    
+    .gp-bot-header { background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(15,23,42,0.8)); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(99,102,241,0.2); }
+    html[data-theme="light"] .gp-bot-header { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(255,255,255,0.9)); }
+    .gp-bot-title { font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .gp-bot-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; transition: color 0.2s; }
+    .gp-bot-close:hover { color: var(--text); }
+    
+    .gp-bot-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .gp-bot-body::-webkit-scrollbar { width: 6px; }
+    .gp-bot-body::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; }
+    
+    .gp-bot-msg { max-width: 85%; padding: 12px 16px; font-size: 13.5px; line-height: 1.5; border-radius: 18px; position: relative; animation: msgFadeIn 0.3s ease; }
+    @keyframes msgFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .gp-bot-msg.bot { align-self: flex-start; background: rgba(30, 41, 59, 0.8); color: #f8fafc; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+    .gp-bot-msg.user { align-self: flex-end; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    
+    .gp-bot-typing { display: flex; gap: 4px; padding: 12px 16px; align-items: center; align-self: flex-start; background: rgba(30, 41, 59, 0.8); border-radius: 18px; border-bottom-left-radius: 4px; display: none; }
+    html[data-theme="light"] .gp-bot-typing { background: #f1f5f9; }
+    .gp-bot-typing span { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
+    .gp-bot-typing span:nth-child(1) { animation-delay: -0.32s; }
+    .gp-bot-typing span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); background: var(--primary); } }
+    
+    .gp-bot-footer { padding: 14px 20px; border-top: 1px solid var(--border); background: rgba(2, 8, 23, 0.5); }
+    .gp-bot-input-grp { display: flex; gap: 10px; background: rgba(15, 23, 42, 0.6); padding: 4px 4px 4px 16px; border-radius: 30px; border: 1px solid var(--border); transition: border-color 0.3s; }
+    .gp-bot-input-grp:focus-within { border-color: var(--primary); }
+    html[data-theme="light"] .gp-bot-input-grp { background: #f8fafc; border-color: #cbd5e1; }
+    .gp-bot-input { flex: 1; border: none; background: transparent; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none; }
+    .gp-bot-send { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
+    .gp-bot-send:hover { transform: scale(1.05); }
+    .gp-bot-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    
+    @media (max-width: 600px) {
+      .gp-bot-window { width: calc(100vw - 40px); right: -10px; bottom: 70px; height: 450px; }
+    }
+  `;
+  document.head.appendChild(botStyles);
+
+  const container = document.createElement("div");
+  container.className = "gp-bot-widget";
+  container.id = "gp-bot-widget";
+  container.innerHTML = `
+    <button class="gp-bot-btn pulse" id="gpBotToggle">🤖</button>
+    <div class="gp-bot-window" id="gpBotWindow">
+      <div class="gp-bot-header">
+        <div class="gp-bot-title"><span style="font-size:24px">🤖</span> GigPulse AI</div>
+        <button class="gp-bot-close" id="gpBotClose">✕</button>
+      </div>
+      <div class="gp-bot-body" id="gpBotBody">
+        <div class="gp-bot-msg bot">Hi! I'm your GigPulse AI Assistant. How can I protect your earnings today?</div>
+        <div class="gp-bot-typing" id="gpBotTyping"><span></span><span></span><span></span></div>
+      </div>
+      <div class="gp-bot-footer">
+        <form id="gpBotForm" class="gp-bot-input-grp">
+          <input type="text" class="gp-bot-input" id="gpBotInput" placeholder="Ask about claims, policies..." autocomplete="off">
+          <button type="submit" class="gp-bot-send" id="gpBotSend">↗</button>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(container);
+
+  const toggle = document.getElementById("gpBotToggle");
+  const win = document.getElementById("gpBotWindow");
+  const close = document.getElementById("gpBotClose");
+  const form = document.getElementById("gpBotForm");
+  const input = document.getElementById("gpBotInput");
+  const body = document.getElementById("gpBotBody");
+  const typing = document.getElementById("gpBotTyping");
+
+  function toggleOpen() {
+    win.classList.toggle("open");
+    toggle.classList.remove("pulse");
+    if(win.classList.contains("open")) { input.focus(); }
+  }
+
+  toggle.addEventListener("click", toggleOpen);
+  close.addEventListener("click", () => win.classList.remove("open"));
+
+  function addMsg(text, sender) {
+    const d = document.createElement("div");
+    d.className = `gp-bot-msg ${sender}`;
+    d.textContent = text;
+    body.insertBefore(d, typing);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const txt = input.value.trim();
+    if (!txt) return;
+    
+    input.value = "";
+    addMsg(txt, "user");
+    
+    typing.style.display = "flex";
+    body.scrollTop = body.scrollHeight;
+    
+    try {
+      const sess = Session.get();
+      const wId = sess ? (sess.worker_id || sess.id) : null;
+      const res = await GS.post("/bot/chat", { message: txt, worker_id: wId });
+      typing.style.display = "none";
+      if (res && res.response) {
+        // Strip out the prompt text if HD free model returns it by mistake
+        let finalTxt = res.response;
+        if(finalTxt.includes("<|assistant|>")) {
+            finalTxt = finalTxt.split("<|assistant|>").pop().strip();
+        }
+        addMsg(finalTxt, "bot");
+      } else {
+        addMsg("Sorry, I had trouble connecting. You can try again.", "bot");
+      }
+    } catch(err) {
+      typing.style.display = "none";
+      addMsg("I'm experiencing an error connecting to my servers. Please try again later.", "bot");
+    }
+  });
+}
+
+// Auto-init bot on all pages
+function attemptBotInit() {
+    setTimeout(() => {
+        initGigPulseBot();
+    }, 1000);
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', attemptBotInit);
+} else {
+    attemptBotInit();
+}

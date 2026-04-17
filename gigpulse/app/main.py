@@ -22,7 +22,7 @@ from app.security import require_role
 from app.database import engine, Base, SessionLocal
 from app.models import Worker, Admin, Policy, Claim, WeatherLog, NotificationLog
 from app import routes_auth, routes_policy, routes_claims, routes_weather
-from app import routes_kyc, routes_notifications, routes_payments
+from app import routes_kyc, routes_notifications, routes_payments, routes_bot
 from app.ml_engine import compute_risk_score, recommend_plan, calculate_dynamic_premium
 from app.trigger_monitor import get_active_events, get_all_disruption_events_db
 from app.scheduler import initialize_scheduler, stop_scheduler as stop_bg_scheduler, get_scheduler_status
@@ -153,6 +153,7 @@ app.include_router(routes_weather.router)
 app.include_router(routes_kyc.router)
 app.include_router(routes_notifications.router)
 app.include_router(routes_payments.router)  # Phase 2A: Payment integration
+app.include_router(routes_bot.router)
 
 # Static Frontend (Mount after all routes)
 static_path = os.path.join(os.path.dirname(__file__), "..", "static")
