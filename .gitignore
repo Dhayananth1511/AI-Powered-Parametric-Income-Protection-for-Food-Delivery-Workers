@@ -49,3 +49,6 @@ gigpulse/app/models_bin/*.pkl
 # OS
 .DS_Store
 Thumbs.db
+
+# Documents
+*.pdf
