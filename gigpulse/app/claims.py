@@ -2,6 +2,8 @@ from app.ml_engine import compute_fraud_score, PLAN_BASE
 from app.models import NotificationLog
 from app.database import SessionLocal
 import os, uuid, json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,12 +11,23 @@ load_dotenv()
 # ─────────────────────────────────────────────────────────────────────────────
 # Payout Calculator
 # ─────────────────────────────────────────────────────────────────────────────
-def calculate_payout(plan: str, disruption_hrs: float, payout_type: str = "hourly") -> float:
+def calculate_payout(plan: str, disruption_hrs: float, current_weekly_hrs: float = 0.0, payout_type: str = "hourly") -> dict:
     meta = PLAN_BASE.get(plan, PLAN_BASE["standard"])
+    plan_max = float(meta["maxHrs"])
+    
     if payout_type == "full_cap":
-        return float(meta["cap"])
-    hrs = min(disruption_hrs, meta["maxHrs"])
-    return round(hrs * meta["rate"], 2)
+        return {"payout": float(meta["cap"]), "hrs_added": plan_max}
+    
+    # Logic: Cumulative weekly cap enforcement
+    remaining_hrs = max(0.0, plan_max - current_weekly_hrs)
+    hrs_to_pay = min(disruption_hrs, remaining_hrs)
+    payout = round(hrs_to_pay * meta["rate"], 2)
+    
+    return {
+        "payout": payout,
+        "hrs_added": hrs_to_pay,
+        "is_capped": hrs_to_pay < disruption_hrs
+    }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Razorpay Sandbox Order
@@ -54,16 +67,18 @@ def _send_notification(worker_id: str, title: str, message: str,
 # ─────────────────────────────────────────────────────────────────────────────
 # Main Auto-Claim Pipeline (5-step zero-touch)
 # ─────────────────────────────────────────────────────────────────────────────
-def run_claim_pipeline(worker: dict, trigger: dict, disruption_hrs: float = 2.5) -> dict:
+def run_claim_pipeline(worker: dict, trigger: dict, disruption_hrs: float = 2.5, current_weekly_hrs: float = 0.0) -> dict:
     """
     Zero-touch 5-step auto-claim pipeline:
     1. Weather threshold confirmed
     2. Worker zone verified
     3. Fraud score calculated
-    4. Payout calculated
+    4. Payout calculated (Local IST & Capped)
     5. Razorpay order created + notification sent
     """
     steps = []
+    # Force localized timestamp for real-time accuracy (Asia/Kolkata)
+    local_now = datetime.now(ZoneInfo("Asia/Kolkata"))
     plan  = worker.get("plan", "standard")
     meta  = PLAN_BASE.get(plan, PLAN_BASE["standard"])
 
@@ -116,12 +131,19 @@ def run_claim_pipeline(worker: dict, trigger: dict, disruption_hrs: float = 2.5)
         }
 
     # ── Step 5: Payout Calculation ───────────────────────────────────────────
-    payout = calculate_payout(plan, disruption_hrs, trigger.get("payout_type", "hourly"))
-    payout_detail = (
-        f"Full weekly cap — {trigger['label']}"
-        if trigger.get("payout_type") == "full_cap"
-        else f"{disruption_hrs}hrs × ₹{meta['rate']}/hr = ₹{payout} (cap: ₹{meta['cap']})"
-    )
+    calc = calculate_payout(plan, disruption_hrs, current_weekly_hrs, trigger.get("payout_type", "hourly"))
+    payout = calc["payout"]
+    hrs_paid = calc["hrs_added"]
+    
+    if calc.get("is_capped"):
+        payout_detail = f"Capped at week limit: {hrs_paid}hr of requested {disruption_hrs}hr paid × ₹{meta['rate']}/hr = ₹{payout}"
+    else:
+        payout_detail = (
+            f"Full weekly cap — {trigger['label']}"
+            if trigger.get("payout_type") == "full_cap"
+            else f"{hrs_paid}hrs × ₹{meta['rate']}/hr = ₹{payout} (max: {meta['maxHrs']}hr/wk)"
+        )
+        
     steps.append({
         "step":   5,
         "label":  "Payout calculated",
@@ -158,10 +180,12 @@ def run_claim_pipeline(worker: dict, trigger: dict, disruption_hrs: float = 2.5)
         "status":         final_status,
         "steps":          steps,
         "payout":         payout,
+        "hrs_added":      hrs_paid,
         "fraud":          fraud,
         "razorpay":       rzp,
         "disruption_hrs": disruption_hrs,
         "trigger":        trigger,
+        "timestamp_ist":  local_now.isoformat(),
     }
 
 CONFIRMATION_MINUTES_DISPLAY = "20 minutes"

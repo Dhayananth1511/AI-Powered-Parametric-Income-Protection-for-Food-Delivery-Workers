@@ -255,8 +255,7 @@ def login(req: LoginRequest, background_tasks: BackgroundTasks, db: Session = De
 
 @router.get("/worker/{worker_id}")
 def get_worker(
-    worker_id: str, 
-    background_tasks: BackgroundTasks, 
+    worker_id: str,
     db: Session = Depends(get_db),
     auth_user: dict = Depends(get_current_user)
 ):
@@ -265,8 +264,7 @@ def get_worker(
         logger.warning(f"🚫 Unauthorized fetch attempt: {auth_user.get('worker_id')} tried to access {worker_id}")
         raise HTTPException(status_code=403, detail="Forbidden: You do not have permission to access this worker's data")
 
-    from app.tasks import verify_worker_integrity
-    background_tasks.add_task(verify_worker_integrity, worker_id)
+
     
     w = db.query(Worker).filter(Worker.id == worker_id).first()
     if not w:
@@ -277,12 +275,13 @@ def get_worker(
         "risk_score": w.risk_score, "trust_score": w.trust_score,
         "payouts": w.payouts, "sim_payouts": w.sim_payouts,
         "earnings_protected": w.earnings_protected,
-        "claims_total": w.claims_total, 
+        "claims_total": w.claims_total,
         "claims_approved": w.claims_approved,
         "claims_rejected": w.claims_rejected,
-        "platform": w.platform,
+        "platform": w.platform, "pincode": w.pincode,
         "joined": str(w.joined), "weekly_hrs_used": w.weekly_hrs_used,
         "aadhaar_verified": w.aadhaar_verified, "bank_upi_id": w.bank_upi_id,
+        "is_online": bool(w.is_online),
     }
 
 @router.get("/workers", dependencies=[Depends(require_role(["admin"]))])
@@ -303,66 +302,8 @@ def get_all_workers(db: Session = Depends(get_db)):
 
 @router.get("/demo-users")
 def get_demo_users(db: Session = Depends(get_db)):
-    """Return available seeded demo accounts for the login UI."""
-    global _DEMO_CACHE
-    if _DEMO_CACHE:
-        return _DEMO_CACHE
-        
-    worker_passwords = {
-        "ravi.kumar@swiggy.in": "demo1234",
-        "arjun.raj@zomato.in": "demo1234",
-        "suresh.m@swiggy.in": "demo1234",
-        "priya.d@zomato.in": "demo1234",
-        "karthik.s@swiggy.in": "demo1234",
-    }
-    admin_passwords = {
-        "admin@digit.com": "admin123",
-        "ops@gigpulse.in": "admin123",
-    }
-
-    workers = (
-        db.query(Worker)
-        .filter(Worker.email.in_(list(worker_passwords.keys())))
-        .order_by(Worker.trust_score.desc())
-        .all()
-    )
-    admins = (
-        db.query(Admin)
-        .filter(Admin.email.in_(list(admin_passwords.keys())))
-        .order_by(Admin.id.asc())
-        .all()
-    )
-
-    _DEMO_CACHE = {
-        "workers": [
-            {
-                "label": f"{w.platform} · {w.plan.title()}",
-                "email": w.email,
-                "password": worker_passwords.get(w.email, "demo1234"),
-                "role": "worker",
-                "name": w.name,
-                "worker_id": w.id,
-                "zone": w.zone,
-                "plan": w.plan,
-                "platform": w.platform,
-            }
-            for w in workers
-        ],
-        "admins": [
-            {
-                "label": f"{a.org.split()[0]} Admin",
-                "email": a.email,
-                "password": admin_passwords.get(a.email, "admin123"),
-                "role": "admin",
-                "name": a.name,
-                "admin_id": a.id,
-                "org": a.org,
-                "designation": a.designation,
-            }
-            for a in admins
-        ],
-    }
-    return _DEMO_CACHE
+    """Return empty list for production safety."""
+    return {"workers": [], "admins": []}
 
 @router.put("/worker/{worker_id}")
 def update_worker(worker_id: str, patch: dict, db: Session = Depends(get_db)):

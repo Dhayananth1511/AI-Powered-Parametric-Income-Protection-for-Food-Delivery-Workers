@@ -16,7 +16,7 @@ router = APIRouter(prefix="/claims", tags=["claims"])
 TRIGGER_MAP = {
     "rainfall":    {"type": "rainfall",    "value": 42.0, "label": "Heavy Rainfall",  "payout_type": "hourly",   "unit": "mm"},
     "temperature": {"type": "temperature", "value": 44.5, "label": "Extreme Heat",    "payout_type": "hourly",   "unit": "°C"},
-    "aqi":         {"type": "aqi",         "value": 320,  "label": "Severe AQI",      "payout_type": "hourly",   "unit": "AQI"},
+    "aqi":         {"type": "aqi",         "value": 300,  "label": "Severe AQI",      "payout_type": "hourly",   "unit": "AQI"},
     "cyclone":     {"type": "cyclone",     "value": 1,    "label": "Cyclone Alert",   "payout_type": "full_cap", "unit": "alert"},
     "curfew":      {"type": "curfew",      "value": 1,    "label": "Curfew/Hartal",   "payout_type": "full_cap", "unit": "flag"},
 }
@@ -55,15 +55,25 @@ async def trigger_claim(req: ClaimTrigger, db: Session = Depends(get_db)):
     if not worker:
         raise HTTPException(404, "Worker not found")
 
+    if worker.policy_status != "active":
+        raise HTTPException(403, f"Claim rejected: Policy is {worker.policy_status or 'inactive'}. Please renew your coverage.")
+
     worker_dict = {
         "id": worker.id, "name": worker.name, "zone": worker.zone,
         "plan": worker.plan, "trust_score": worker.trust_score,
         "claims_total": worker.claims_total,
+        "weekly_hrs_used": float(worker.weekly_hrs_used or 0.0),
     }
 
     # Use real OWM if not simulating
     if not req.simulate and req.trigger_type == "auto":
-        weather  = await fetch_weather(worker.zone)
+        from app.ml_engine import latest_telemetry
+        lat, lon = None, None
+        if req.worker_id in latest_telemetry:
+            lat = latest_telemetry[req.worker_id].get("lat")
+            lon = latest_telemetry[req.worker_id].get("lon")
+            
+        weather  = await fetch_weather(worker.zone, lat, lon)
         triggers = check_triggers(weather)
         if not triggers:
             return {
@@ -75,7 +85,12 @@ async def trigger_claim(req: ClaimTrigger, db: Session = Depends(get_db)):
     else:
         trigger = TRIGGER_MAP.get(req.trigger_type, TRIGGER_MAP["rainfall"])
 
-    result = run_claim_pipeline(worker_dict, trigger, req.disruption_hrs)
+    result = run_claim_pipeline(worker_dict, trigger, req.disruption_hrs, worker_dict["weekly_hrs_used"])
+
+    # Explicitly set created_at from pipeline timestamp to avoid DB vs Python drift
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    created_at = datetime.fromisoformat(result["timestamp_ist"]) if "timestamp_ist" in result else datetime.now(ZoneInfo("Asia/Kolkata"))
 
     claim = Claim(
         id             = "CLM-" + uuid.uuid4().hex[:6].upper(),
@@ -91,15 +106,16 @@ async def trigger_claim(req: ClaimTrigger, db: Session = Depends(get_db)):
         notes          = result["fraud"]["decision"],
         pipeline_steps = json.dumps(result["steps"]),
         is_simulated   = req.simulate,
+        created_at     = created_at,
     )
     db.add(claim)
 
     if result["status"] in ["approved", "manual_review"]:
-        worker.sim_payouts      = (worker.sim_payouts or 0) + result["payout"]
-        worker.claims_total     = (worker.claims_total or 0) + 1
-        worker.claims_approved  = (worker.claims_approved or 0) + 1
-        worker.weekly_hrs_used  = (worker.weekly_hrs_used or 0) + req.disruption_hrs
-        worker.trust_score      = min(100, (worker.trust_score or 40) + 2)
+        worker.sim_payouts       = (worker.sim_payouts or 0) + result["payout"]
+        worker.claims_total      = (worker.claims_total or 0) + 1
+        worker.claims_approved   = (worker.claims_approved or 0) + 1
+        worker.weekly_hrs_used   = (worker.weekly_hrs_used or 0) + result.get("hrs_added", 0)
+        worker.trust_score       = min(100, (worker.trust_score or 40) + 2)
         worker.earnings_protected = (worker.earnings_protected or 0) + result["payout"]
         
         if result["status"] == "approved":
@@ -124,7 +140,14 @@ async def auto_check(worker_id: str, db: Session = Depends(get_db)):
     worker = db.query(Worker).filter(Worker.id == worker_id).first()
     if not worker:
         raise HTTPException(404, "Worker not found")
-    weather  = await fetch_weather(worker.zone)
+        
+    from app.ml_engine import latest_telemetry
+    lat, lon = None, None
+    if worker_id in latest_telemetry:
+        lat = latest_telemetry[worker_id].get("lat")
+        lon = latest_telemetry[worker_id].get("lon")
+        
+    weather  = await fetch_weather(worker.zone, lat, lon)
     triggers = check_triggers(weather)
     zone_status = get_zone_status(worker.zone)
     return {
@@ -175,27 +198,37 @@ def zone_simulate(req: ZoneSimulate, db: Session = Depends(get_db)):
     disruption = simulate_disruption(req.zone, req.trigger_type)
     trigger = disruption["trigger"]
 
-    # 2. Find all active workers in this zone
+    # 2. Find all active workers in this zone with an ACTIVE policy
     workers = db.query(Worker).filter(
         Worker.zone == req.zone,
-        Worker.is_active == True
+        Worker.is_active == True,
+        Worker.policy_status == "active"
     ).all()
 
     payout_results = []
     total_payout = 0.0
 
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    base_time = datetime.now(ZoneInfo("Asia/Kolkata"))
+
     # 3. Run claim pipeline for each worker (auto zero-touch payout)
-    for worker in workers:
+    for i, worker in enumerate(workers):
         worker_dict = {
             "id": worker.id, "name": worker.name, "zone": worker.zone,
             "plan": worker.plan, "trust_score": worker.trust_score,
             "claims_total": worker.claims_total,
+            "weekly_hrs_used": float(worker.weekly_hrs_used or 0.0),
         }
         # Default disruption hours by plan
         plan_hrs = {"starter": 2.0, "basic": 2.5, "standard": 3.0, "premium": 4.0, "elite": 5.0}
         disruption_hrs = plan_hrs.get(worker.plan, 3.0)
 
-        result = run_claim_pipeline(worker_dict, trigger, disruption_hrs)
+        result = run_claim_pipeline(worker_dict, trigger, disruption_hrs, worker_dict["weekly_hrs_used"])
+        
+        # Explicitly set created_at with slight increment so claims in a zone simulation have unique times
+        created_at = base_time + timedelta(seconds=i)
+        result["timestamp_ist"] = created_at.isoformat()
 
         claim = Claim(
             id              = "CLM-" + uuid.uuid4().hex[:6].upper(),
@@ -211,6 +244,7 @@ def zone_simulate(req: ZoneSimulate, db: Session = Depends(get_db)):
             notes           = f"Auto-triggered zone disruption: {req.zone}",
             pipeline_steps  = json.dumps(result["steps"]),
             is_simulated    = True,
+            created_at      = created_at,
         )
         db.add(claim)
 
@@ -218,7 +252,7 @@ def zone_simulate(req: ZoneSimulate, db: Session = Depends(get_db)):
             worker.sim_payouts       = (worker.sim_payouts or 0) + result["payout"]
             worker.claims_total      = (worker.claims_total or 0) + 1
             worker.claims_approved   = (worker.claims_approved or 0) + 1
-            worker.weekly_hrs_used   = (worker.weekly_hrs_used or 0) + disruption_hrs
+            worker.weekly_hrs_used   = (worker.weekly_hrs_used or 0) + result.get("hrs_added", 0)
             worker.trust_score       = min(100, (worker.trust_score or 40) + 1)
             worker.earnings_protected = (worker.earnings_protected or 0) + result["payout"]
             total_payout += result["payout"]

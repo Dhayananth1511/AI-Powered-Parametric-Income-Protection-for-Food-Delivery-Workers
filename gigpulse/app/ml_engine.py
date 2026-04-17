@@ -16,9 +16,9 @@ try:
     risk_model = joblib.load(os.path.join(MODEL_DIR, "zone_risk_model.pkl"))
     fraud_model = joblib.load(os.path.join(MODEL_DIR, "fraud_detection_model.pkl"))
     ML_MODELS_LOADED = True
-    print("✅ Real Scikit-Learn Models loaded successfully.")
+    print("Success: Real Scikit-Learn Models loaded successfully.")
 except Exception as e:
-    print(f"⚠️ Warning: Live ML models not found. Run train_models.py. Falling back to heuristic mode. ({e})")
+    print(f"! Warning: Live ML models not found. Run train_models.py. Falling back to heuristic mode. ({e})")
 # ─────────────────────────────────────────────────────────────────────────────
 # 40+ Tamil Nadu Zone Data
 # Features: flood_risk, proximity_water, elevation, aqi_history, disruption_months
@@ -321,6 +321,7 @@ def predict_disruption_probability(zone: str, hour: int = None, month: int = Non
     Predict disruption probability for next 48 hours per zone.
     Uses zone risk data + seasonal pattern + time-of-day weighting.
     Simulates XGBoost output with deterministic numpy computation.
+    Now enhanced with Live Weather aware boosting!
     """
     if hour is None:
         hour = datetime.now().hour
@@ -333,6 +334,16 @@ def predict_disruption_probability(zone: str, hour: int = None, month: int = Non
     })
 
     base_risk = compute_risk_score(zone, month)
+
+    # ── Live Weather Integration ──
+    from app.weather import get_cached_weather, check_triggers
+    cached_weather = get_cached_weather(zone)
+    live_boost = 0.0
+    active_triggers = []
+    if cached_weather:
+        active_triggers = check_triggers(cached_weather)
+        if active_triggers:
+            live_boost = 0.85  # Spike probability if currently experiencing disruption
 
     # Time-of-day weighting (monsoon evenings 6-10pm highest risk)
     time_weights = {
@@ -348,8 +359,12 @@ def predict_disruption_probability(zone: str, hour: int = None, month: int = Non
     for h_offset in range(48):
         forecast_hour = (hour + h_offset) % 24
         tw = time_weights.get(forecast_hour, 0.5)
+        
+        current_boost = live_boost if h_offset < 4 else 0.0  # Boost next 4 hours
         noise = rng.uniform(-0.08, 0.08)
-        prob = min(1.0, max(0.0, base_risk * tw + noise))
+        
+        prob = min(1.0, max(0.0, max(base_risk * tw, current_boost) + noise))
+        
         forecasts.append({
             "hour_offset": int(h_offset),
             "hour": int(forecast_hour),
@@ -359,6 +374,13 @@ def predict_disruption_probability(zone: str, hour: int = None, month: int = Non
 
     # Peak window
     peak = max(forecasts, key=lambda x: x["probability"])
+    
+    alert_msg = None
+    if active_triggers:
+        trigger_names = [t["label"] for t in active_triggers]
+        alert_msg = f"⚡ LIVE ALERT: {', '.join(trigger_names)} detected! High disruption probability for next 4 hours."
+    elif peak["probability"] > 60:
+        alert_msg = f"⚡ Storm likely around {peak['hour']:02d}:00 today. Probability: {peak['probability']}%. Your coverage is active."
 
     return {
         "zone":           zone,
@@ -366,8 +388,8 @@ def predict_disruption_probability(zone: str, hour: int = None, month: int = Non
         "forecasts":      forecasts[:24],  # 24-hr detailed
         "peak_hour":      peak["hour"],
         "peak_prob":      peak["probability"],
-        "alert":          peak["probability"] > 60,
-        "alert_message":  f"⚡ Storm likely around {peak['hour']:02d}:00 today. Probability: {peak['probability']}%. Your coverage is active." if peak["probability"] > 60 else None,
+        "alert":          peak["probability"] > 60 or len(active_triggers) > 0,
+        "alert_message":  alert_msg,
     }
 
 # ─────────────────────────────────────────────────────────────────────────────

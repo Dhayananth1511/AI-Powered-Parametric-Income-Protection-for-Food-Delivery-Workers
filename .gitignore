@@ -39,6 +39,7 @@ env/
 *.db
 *.log
 gigsecure.db
+gigpulse.db
 gigsecure.log
 gigpulse.log
 

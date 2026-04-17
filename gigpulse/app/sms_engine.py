@@ -1,12 +1,16 @@
 import os
 import logging
-from twilio.rest import Client
 
 logger = logging.getLogger(__name__)
 
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "your_account_sid_here")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "your_auth_token_here")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "+1234567890")
+
+try:
+    from twilio.rest import Client
+except ModuleNotFoundError:
+    Client = None
 
 def send_sms_notification(to_phone: str, message: str) -> bool:
     """
@@ -24,6 +28,8 @@ def send_sms_notification(to_phone: str, message: str) -> bool:
         return True
 
     try:
+        if Client is None:
+            raise ModuleNotFoundError("Twilio is not installed")
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         tw_msg = client.messages.create(
             body=message,

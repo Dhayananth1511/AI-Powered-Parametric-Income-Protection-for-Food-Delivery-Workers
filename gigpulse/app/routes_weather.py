@@ -9,10 +9,18 @@ from datetime import datetime
 router = APIRouter(prefix="/weather", tags=["weather"])
 
 @router.get("/zone/{zone}")
-async def get_weather(zone: str, db: Session = Depends(get_db)):
-    weather  = await fetch_weather(zone)
+async def get_weather(zone: str, lat: float = None, lon: float = None, db: Session = Depends(get_db)):
+    # Fallback to telemetry if not explicitly provided
+    if lat is None or lon is None:
+        from app.ml_engine import latest_telemetry
+        for t_data in latest_telemetry.values():
+            if t_data.get("zone") == zone and "lat" in t_data and "lon" in t_data:
+                lat, lon = t_data["lat"], t_data["lon"]
+                break
+                
+    weather  = await fetch_weather(zone, lat, lon)
     triggers = check_triggers(weather)
-    ndma     = fetch_ndma_alerts(zone)
+    ndma     = await fetch_ndma_alerts(zone)
     zone_st  = get_zone_status(zone)
 
     # Log to DB
@@ -64,10 +72,17 @@ async def live_demo_weather(zone: str):
 @router.get("/all-zones")
 async def get_all_zone_weather():
     from app.weather import ZONE_COORDS
-    from app.ml_engine import ZONE_DATA
+    from app.ml_engine import ZONE_DATA, latest_telemetry
     zones_summary = []
+    
     for zone in list(ZONE_COORDS.keys())[:10]:  # Top 10 for performance
-        w = await fetch_weather(zone)
+        lat, lon = None, None
+        for t_data in latest_telemetry.values():
+            if t_data.get("zone") == zone and "lat" in t_data:
+                lat, lon = t_data["lat"], t_data["lon"]
+                break
+                
+        w = await fetch_weather(zone, lat, lon)
         t = check_triggers(w)
         zones_summary.append({
             "zone":    zone,

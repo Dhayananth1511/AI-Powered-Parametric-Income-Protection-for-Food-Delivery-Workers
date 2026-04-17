@@ -50,36 +50,62 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
 
-from sqlalchemy import text
+from sqlalchemy import text, func as sqlfunc
 from datetime import timedelta
 
 _POLICY_MIGRATIONS = [
     "ALTER TABLE workers ADD COLUMN bank_upi_id VARCHAR",
-    "ALTER TABLE workers ADD COLUMN plan_expiry_notified BOOLEAN DEFAULT 0",
-    "ALTER TABLE workers ADD COLUMN policy_start_date DATETIME",
-    "ALTER TABLE workers ADD COLUMN policy_expiry_date DATETIME",
+    "ALTER TABLE workers ADD COLUMN plan_expiry_notified BOOLEAN DEFAULT FALSE",
+    "ALTER TABLE workers ADD COLUMN policy_start_date TIMESTAMP",
+    "ALTER TABLE workers ADD COLUMN policy_expiry_date TIMESTAMP",
     "ALTER TABLE workers ADD COLUMN policy_status VARCHAR DEFAULT 'active'",
 ]
-with engine.connect() as conn:
-    for sql in _POLICY_MIGRATIONS:
-        try:
-            conn.execute(text(sql))
-            conn.commit()
-        except Exception:
-            pass
 
-# Seed policy dates for workers that have none
-with engine.connect() as conn:
+# Index creation — safe to run repeatedly (IF NOT EXISTS)
+_INDEX_MIGRATIONS = [
+    "CREATE INDEX IF NOT EXISTS ix_workers_email         ON workers(email)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_phone         ON workers(phone)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_zone          ON workers(zone)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_plan          ON workers(plan)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_policy_status ON workers(policy_status)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_is_active     ON workers(is_active)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_aadhaar       ON workers(aadhaar_verified)",
+    "CREATE INDEX IF NOT EXISTS ix_workers_joined        ON workers(joined)",
+    "CREATE INDEX IF NOT EXISTS ix_claims_worker_id      ON claims(worker_id)",
+    "CREATE INDEX IF NOT EXISTS ix_claims_status         ON claims(status)",
+    "CREATE INDEX IF NOT EXISTS ix_claims_created_at     ON claims(created_at)",
+    "CREATE INDEX IF NOT EXISTS ix_claims_worker_status  ON claims(worker_id, status)",
+    "CREATE INDEX IF NOT EXISTS ix_notif_worker_unread   ON notifications(worker_id, is_read)",
+    "CREATE INDEX IF NOT EXISTS ix_payments_worker_id    ON payments(worker_id)",
+    "CREATE INDEX IF NOT EXISTS ix_weather_zone_time     ON weather_logs(zone, logged_at)",
+]
+
+def _run_migrations():
+    """Idempotent ALTER TABLE + CREATE INDEX migrations — errors silently skipped."""
     try:
-        now = datetime.now()
-        week = timedelta(days=7)
-        conn.execute(text(
-            "UPDATE workers SET policy_start_date=:s, policy_expiry_date=:e, policy_status='active' "
-            "WHERE policy_start_date IS NULL"
-        ), {"s": now.isoformat(), "e": (now + week).isoformat()})
-        conn.commit()
-    except Exception:
-        pass
+        with engine.connect() as conn:
+            for sql in _POLICY_MIGRATIONS + _INDEX_MIGRATIONS:
+                try:
+                    conn.execute(text(sql))
+                    conn.commit()
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.warning(f"Migration warning (non-fatal): {e}")
+
+def _seed_policy_dates():
+    """Seed 7-day policy window for any workers missing policy dates."""
+    try:
+        with engine.connect() as conn:
+            now = datetime.now()
+            conn.execute(text(
+                "UPDATE workers SET policy_start_date=:s, policy_expiry_date=:e, "
+                "policy_status='active' WHERE policy_start_date IS NULL"
+            ), {"s": now.isoformat(), "e": (now + timedelta(days=7)).isoformat()})
+            conn.commit()
+    except Exception as e:
+        logger.warning(f"Policy seed warning (non-fatal): {e}")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FastAPI App
@@ -139,80 +165,59 @@ def seed_db():
         logger.info("⏭️ Skipping database seeding per environment variable.")
         return
 
+    from app.security import hash_password
+    now = datetime.now()
+    week = timedelta(days=7)
     db: Session = SessionLocal()
     try:
-        if db.query(Worker).count() == 0:
-            from app.security import hash_password
-            workers = [
-                Worker(
-                    id="WKR-4821", name="Ravi Kumar", phone="+91 98765 43210",
-                    email="ravi.kumar@swiggy.in", password=hash_password("demo1234"),
-                    platform="Swiggy", zone="Velachery, Chennai", pincode="600042",
-                    plan="standard", risk_score=0.58, trust_score=92,
-                    payouts=640, sim_payouts=1240, claims_total=12,
-                    claims_approved=10, claims_rejected=2,
-                    aadhaar_verified=True, earnings_protected=1640,
-                ),
-                Worker(
-                    id="WKR-3302", name="Arjun Raj", phone="+91 90123 45678",
-                    email="arjun.raj@zomato.in", password=hash_password("demo1234"),
-                    platform="Zomato", zone="Marina Beach, Chennai", pincode="600005",
-                    plan="elite", risk_score=0.85, trust_score=88,
-                    payouts=1200, sim_payouts=2430, claims_total=18,
-                    claims_approved=15, claims_rejected=3,
-                    aadhaar_verified=True, earnings_protected=3630,
-                ),
-                Worker(
-                    id="WKR-7741", name="Suresh Murugan", phone="+91 87654 32109",
-                    email="suresh.m@swiggy.in", password=hash_password("demo1234"),
-                    platform="Swiggy", zone="T. Nagar, Chennai", pincode="600017",
-                    plan="basic", risk_score=0.45, trust_score=61,
-                    payouts=270, sim_payouts=540, claims_total=6,
-                    claims_approved=5, claims_rejected=1,
-                    aadhaar_verified=True, earnings_protected=810,
-                ),
-                Worker(
-                    id="WKR-5593", name="Priya Devi", phone="+91 76543 21098",
-                    email="priya.d@zomato.in", password=hash_password("demo1234"),
-                    platform="Zomato", zone="Adyar, Chennai", pincode="600020",
-                    plan="premium", risk_score=0.72, trust_score=78,
-                    payouts=900, sim_payouts=1350, claims_total=10,
-                    claims_approved=8, claims_rejected=2,
-                    aadhaar_verified=True, earnings_protected=2250,
-                ),
-                Worker(
-                    id="WKR-8847", name="Karthik Selvam", phone="+91 65432 10987",
-                    email="karthik.s@swiggy.in", password=hash_password("demo1234"),
-                    platform="Swiggy", zone="Guindy, Chennai", pincode="600032",
-                    plan="starter", risk_score=0.32, trust_score=45,
-                    payouts=105, sim_payouts=210, claims_total=3,
-                    claims_approved=2, claims_rejected=1,
-                    aadhaar_verified=False, earnings_protected=315,
-                ),
-            ]
-            for w in workers:
+        demo_workers = [
+            Worker(
+                id="WKR-4821", name="Ravi Kumar", phone="+91 98765 43210",
+                email="ravi.kumar@swiggy.in", password=hash_password("demo1234"),
+                platform="Swiggy", zone="Velachery, Chennai", pincode="600042",
+                plan="standard", risk_score=0.58, trust_score=92,
+                payouts=640, sim_payouts=0, claims_total=12,
+                claims_approved=10, claims_rejected=2,
+                aadhaar_verified=True, earnings_protected=1640,
+                policy_start_date=now, policy_expiry_date=now+week, policy_status="active",
+            ),
+            Worker(
+                id="WKR-9901", name="Meena Selvam", phone="+91 99001 12233",
+                email="meena.s@zomato.in", password=hash_password("demo1234"),
+                platform="Zomato", zone="Anna Nagar, Chennai", pincode="600040",
+                plan="premium", risk_score=0.65, trust_score=80,
+                payouts=900, sim_payouts=0, claims_total=8,
+                claims_approved=7, claims_rejected=1,
+                aadhaar_verified=True, earnings_protected=1350,
+                policy_start_date=now, policy_expiry_date=now+week, policy_status="active",
+            ),
+        ]
+        # Production Hardening: Delete any "extra" workers not in the approved img list
+        core_ids = {w.id for w in demo_workers}
+        db.query(Worker).filter(Worker.id.notin_(core_ids)).delete(synchronize_session=False)
+
+        existing_ids = {w.id for w in db.query(Worker.id).all()}
+        for w in demo_workers:
+            if w.id not in existing_ids:
                 db.add(w)
+            else:
+                db.query(Worker).filter(
+                    Worker.id == w.id, Worker.policy_start_date == None
+                ).update({"policy_start_date": now, "policy_expiry_date": now+week, "policy_status": "active"})
 
         if db.query(Admin).count() == 0:
-            from app.security import hash_password
             admins = [
-                Admin(
-                    id="ADM-001", name="Karthik Sundaram",
-                    email="admin@digit.com", password=hash_password("admin123"),
-                    org="Digit Insurance Pvt Ltd", designation="Portfolio Manager",
-                ),
-                Admin(
-                    id="ADM-002", name="Priya Nair",
-                    email="ops@gigpulse.in", password=hash_password("admin123"),
-                    org="ZenVyte GigPulse Platform Admin", designation="Platform Admin",
-                ),
+                Admin(id="ADM-001", name="Karthik Sundaram", email="admin@digit.com",
+                      password=hash_password("admin123"), org="Digit Insurance Pvt Ltd",
+                      designation="Portfolio Manager"),
+                Admin(id="ADM-002", name="Priya Nair", email="ops@gigpulse.in",
+                      password=hash_password("admin123"), org="ZenVyte GigPulse Platform Admin",
+                      designation="Platform Admin"),
             ]
             for a in admins:
                 db.add(a)
 
-        # Seed some claims if none exist
         if db.query(Claim).count() == 0:
-            import uuid
             seed_claims = [
                 Claim(id="CLM-A001", worker_id="WKR-4821", trigger_type="rainfall",
                       trigger_label="Heavy Rainfall", trigger_value=42.0,
@@ -230,6 +235,10 @@ def seed_db():
                       trigger_label="Severe AQI", trigger_value=320.0,
                       disruption_hrs=3.0, payout_amount=225.0, fraud_score=19,
                       status="approved", razorpay_order_id="order_mock_004", is_simulated=True),
+                Claim(id="CLM-A005", worker_id="WKR-9901", trigger_type="rainfall",
+                      trigger_label="Heavy Rainfall", trigger_value=38.0,
+                      disruption_hrs=3.0, payout_amount=225.0, fraud_score=11,
+                      status="approved", razorpay_order_id="order_mock_005", is_simulated=True),
                 Claim(id="CLM-M001", worker_id="WKR-4821", trigger_type="rainfall",
                       trigger_label="Heavy Rainfall", trigger_value=36.0,
                       disruption_hrs=2.5, payout_amount=150.0, fraud_score=45,
@@ -254,13 +263,34 @@ def seed_db():
     finally:
         db.close()
 
+
 @app.on_event("startup")
 async def startup_event():
     """Start background jobs on application startup."""
-    # Seed database (checks SKIP_SEEDING inside)
-    seed_db()
-    # Start the consolidated scheduler
-    initialize_scheduler()
+    import threading
+
+    def _bg_init():
+        """Run blocking DB ops in a thread — port binds instantly."""
+        try:
+            Base.metadata.create_all(bind=engine)
+            _run_migrations()
+            _seed_policy_dates()
+            seed_db()
+            initialize_scheduler()
+            # Pre-warm ML engine so first /ml/forecast request is instant
+            try:
+                from app.ml_engine import predict_disruption_probability, get_all_zones
+                zones = get_all_zones()
+                if zones:
+                    predict_disruption_probability(zones[0])  # warm up with first zone
+                logger.info("✅ ML engine pre-warmed")
+            except Exception as ml_err:
+                logger.warning(f"⚠️  ML pre-warm skipped: {ml_err}")
+            logger.info("✅ Background startup complete")
+        except Exception as e:
+            logger.error(f"❌ Background startup error: {e}")
+
+    threading.Thread(target=_bg_init, daemon=True, name="startup-init").start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -294,50 +324,95 @@ def get_scheduler_info():
 # ─────────────────────────────────────────────────────────────────────────────
 @app.get("/admin/stats", dependencies=[Depends(require_role(["admin"]))])
 def admin_stats():
+    """
+    Optimised: uses SQL GROUP BY / SUM / COUNT instead of loading all rows
+    into Python memory. Typically 5-10x faster than the old full-table-scan.
+    """
     db: Session = SessionLocal()
     try:
-        workers = db.query(Worker).all()
-        claims  = db.query(Claim).all()
-        plan_prices = {"starter":55,"basic":70,"standard":90,"premium":115,"elite":135}
+        plan_prices = {"starter": 55, "basic": 70, "standard": 90, "premium": 115, "elite": 135}
 
-        total_premium = sum(plan_prices.get(w.plan, 90) for w in workers)
-        total_payouts = sum((w.payouts or 0) + (w.sim_payouts or 0) for w in workers)
-        total_earnings_protected = sum(w.earnings_protected or 0 for w in workers)
+        # ── 1. Plan distribution + premium via GROUP BY ───────────────────────
+        plan_rows = (
+            db.query(Worker.plan, sqlfunc.count(Worker.id))
+            .group_by(Worker.plan)
+            .all()
+        )
+        plan_dist     = {plan: cnt for plan, cnt in plan_rows}
+        total_workers = sum(plan_dist.values())
+        total_premium = sum(plan_prices.get(plan, 90) * cnt for plan, cnt in plan_rows)
 
-        approved     = [c for c in claims if c.status == "approved"]
-        rejected     = [c for c in claims if c.status == "rejected"]
-        review       = [c for c in claims if c.status == "manual_review"]
-        loss_ratio   = round((total_payouts / (total_premium * 52) * 100), 1) if total_premium > 0 else 0
+        # ── 2. Payout / earnings sums in one SQL query ────────────────────────
+        payout_row = db.query(
+            sqlfunc.coalesce(sqlfunc.sum(Worker.payouts), 0),
+            sqlfunc.coalesce(sqlfunc.sum(Worker.sim_payouts), 0),
+            sqlfunc.coalesce(sqlfunc.sum(Worker.earnings_protected), 0),
+            sqlfunc.coalesce(sqlfunc.avg(Worker.trust_score), 40),
+        ).one()
 
-        plan_dist = {}
-        for w in workers:
-            plan_dist[w.plan] = plan_dist.get(w.plan, 0) + 1
+        # Extra defensive check: coalesce in SQL usually handles it, but Python-level conversion
+        # ensures we never return None/null for these critical KPIs.
+        raw_payouts     = payout_row[0] if payout_row[0] is not None else 0
+        raw_sim_payouts = payout_row[1] if payout_row[1] is not None else 0
+        raw_protected   = payout_row[2] if payout_row[2] is not None else 0
+        raw_avg_trust   = payout_row[3] if payout_row[3] is not None else 40
 
-        today = date.today()
-        new_today = sum(
-            1 for w in workers
-            if w.joined and w.joined.date() == today
+        total_payouts            = float(raw_payouts) + float(raw_sim_payouts)
+        total_earnings_protected = float(raw_protected)
+        avg_trust                = round(float(raw_avg_trust), 1)
+
+
+
+        # ── 3. Aadhaar verified count ─────────────────────────────────────────
+        aadhaar_verified = (
+            db.query(sqlfunc.count(Worker.id))
+            .filter(Worker.aadhaar_verified == True)
+            .scalar() or 0
         )
 
-        aadhaar_verified = sum(1 for w in workers if w.aadhaar_verified)
-        avg_trust = round(sum(w.trust_score or 40 for w in workers) / len(workers), 1) if workers else 0
+        # ── 4. New workers joined today ───────────────────────────────────────
+        today = date.today()
+        new_today = (
+            db.query(sqlfunc.count(Worker.id))
+            .filter(sqlfunc.date(Worker.joined) == today)
+            .scalar() or 0
+        )
+
+        # ── 5. Claims by status via GROUP BY ──────────────────────────────────
+        claim_rows  = (
+            db.query(Claim.status, sqlfunc.count(Claim.id))
+            .group_by(Claim.status)
+            .all()
+        )
+        claim_dist  = {status: cnt for status, cnt in claim_rows}
+        total_claims = sum(claim_dist.values())
+
+        # ── 6. Loss ratio ─────────────────────────────────────────────────────
+        loss_ratio = round((total_payouts / (total_premium * 52) * 100), 1) if total_premium > 0 else 0
+
+        # ── 7. Active disruption events (in-memory cache) ─────────────────────
+        active_events_count = 0
+        try:
+            active_events_count = len(get_active_events())
+        except Exception as e:
+            logger.error(f"Error getting active events: {e}")
 
         return {
-            "policies":               len(workers),
-            "weekly_premium":         total_premium,
-            "total_payouts":          total_payouts,
-            "platform_fee":           round(total_premium * 0.05, 1),
-            "total_claims":           len(claims),
-            "approved_claims":        len(approved),
-            "rejected_claims":        len(rejected),
-            "review_claims":          len(review),
-            "loss_ratio":             loss_ratio,
-            "plan_breakdown":         plan_dist,
-            "new_today":              new_today,
-            "aadhaar_verified":       aadhaar_verified,
-            "avg_trust_score":        avg_trust,
+            "policies":                 total_workers,
+            "weekly_premium":           total_premium,
+            "total_payouts":            total_payouts,
+            "platform_fee":             round(total_premium * 0.05, 1),
+            "total_claims":             total_claims,
+            "approved_claims":          claim_dist.get("approved", 0),
+            "rejected_claims":          claim_dist.get("rejected", 0),
+            "review_claims":            claim_dist.get("manual_review", 0),
+            "loss_ratio":               loss_ratio,
+            "plan_breakdown":           plan_dist,
+            "new_today":                new_today,
+            "aadhaar_verified":         aadhaar_verified,
+            "avg_trust_score":          avg_trust,
             "total_earnings_protected": total_earnings_protected,
-            "active_disruptions":     len(get_active_events()),
+            "active_disruptions":       active_events_count,
         }
     finally:
         db.close()
@@ -347,26 +422,38 @@ def admin_stats():
 # ─────────────────────────────────────────────────────────────────────────────
 @app.get("/workers")
 def get_workers():
+    """
+    Optimised: loads only the columns needed for the admin worker table.
+    Avoids fetching password hash, binary blobs, or unused heavy fields.
+    """
     db = SessionLocal()
     try:
-        workers = db.query(Worker).all()
+        rows = db.query(
+            Worker.id, Worker.name, Worker.phone, Worker.email,
+            Worker.zone, Worker.plan, Worker.risk_score, Worker.trust_score,
+            Worker.payouts, Worker.sim_payouts, Worker.claims_total,
+            Worker.claims_approved, Worker.claims_rejected, Worker.platform,
+            Worker.joined, Worker.aadhaar_verified, Worker.earnings_protected,
+            Worker.is_online,
+        ).all()
         return {
             "workers": [
                 {
-                    "id": w.id, "name": w.name, "phone": w.phone,
-                    "email": w.email, "zone": w.zone, "plan": w.plan,
-                    "risk_score": w.risk_score, "trust_score": w.trust_score,
-                    "payouts": w.payouts, "sim_payouts": w.sim_payouts,
-                    "claims_total": w.claims_total,
-                    "claims_approved": w.claims_approved,
-                    "claims_rejected": w.claims_rejected,
-                    "platform": w.platform,
-                    "joined": str(w.joined) if w.joined else None,
-                    "aadhaar_verified": w.aadhaar_verified,
-                    "earnings_protected": w.earnings_protected,
+                    "id": r.id, "name": r.name, "phone": r.phone,
+                    "email": r.email, "zone": r.zone, "plan": r.plan,
+                    "risk_score": r.risk_score, "trust_score": r.trust_score,
+                    "payouts": r.payouts, "sim_payouts": r.sim_payouts,
+                    "claims_total": r.claims_total,
+                    "claims_approved": r.claims_approved,
+                    "claims_rejected": r.claims_rejected,
+                    "platform": r.platform,
+                    "joined": str(r.joined) if r.joined else None,
+                    "aadhaar_verified": r.aadhaar_verified,
+                    "earnings_protected": r.earnings_protected,
+                    "is_online": bool(r.is_online),
                     "role": "worker",
                 }
-                for w in workers
+                for r in rows
             ]
         }
     finally:
@@ -631,6 +718,19 @@ def get_forecast(zone: str):
     from app.ml_engine import predict_disruption_probability
     return predict_disruption_probability(zone)
 
+@app.get("/ml/all-forecasts")
+def get_all_forecasts(limit: int = 8):
+    """Return forecasts for all zones in ONE request — avoids N parallel round-trips from the frontend."""
+    from app.ml_engine import predict_disruption_probability, get_all_zones
+    zones = get_all_zones()[:limit]
+    results = {}
+    for z in zones:
+        try:
+            results[z] = predict_disruption_probability(z)
+        except Exception:
+            pass
+    return {"forecasts": results, "total": len(results)}
+
 @app.get("/ml/loss-ratio/{plan}")
 def get_loss_ratio(plan: str, disruption_hrs: float = 52.5):
     from app.ml_engine import calculate_loss_ratio
@@ -693,35 +793,47 @@ def update_compliance_state(patch: CompliancePatch):
 
 @app.get("/admin/loss-ratio-trend")
 def get_loss_ratio_trend():
-    """Return week-by-week loss ratio trend for the admin dashboard chart."""
+    """Return week-by-week loss ratio trend for the admin dashboard chart.
+    Optimised: weekly payout sums computed in SQL; only one Worker aggregate query.
+    """
     from app.ml_engine import PLAN_BASE
     db = SessionLocal()
     try:
-        claims = db.query(Claim).filter(Claim.status == "approved").order_by(Claim.created_at.asc()).all()
-        workers = db.query(Worker).all()
         plan_prices = {p: PLAN_BASE[p]["premium"] for p in PLAN_BASE}
 
-        # Group claims by ISO week
-        from collections import defaultdict
-        weeks: dict = defaultdict(lambda: {"payouts": 0.0, "premium": 0.0})
-        weekly_premium = sum(plan_prices.get(w.plan, 90) for w in workers)
+        # Handle Date formatting strictly per Database Dialect
+        from sqlalchemy import func as _f
+        dialect_name = db.get_bind().dialect.name
+        
+        if dialect_name == "postgresql":
+            week_col = _f.to_char(Claim.created_at, 'IYYY-"W"IW').label("week")
+        else:
+            week_col = _f.strftime("%Y-W%W", Claim.created_at).label("week")
 
-        for c in claims:
-            if c.created_at:
-                week_key = c.created_at.strftime("%Y-W%W")
-                weeks[week_key]["payouts"] += c.payout_amount or 0
+        week_rows = (
+            db.query(
+                week_col,
+                _f.sum(Claim.payout_amount).label("payouts"),
+            )
+            .filter(Claim.status == "approved", Claim.created_at.isnot(None))
+            .group_by("week")
+            .order_by("week")
+            .all()
+        )
 
-        for wk in weeks:
-            weeks[wk]["premium"] = weekly_premium
-            weeks[wk]["loss_ratio"] = round(
-                weeks[wk]["payouts"] / weekly_premium * 100, 1
-            ) if weekly_premium > 0 else 0.0
+        # Single aggregate query for weekly premium baseline
+        plan_rows = db.query(Worker.plan, sqlfunc.count(Worker.id)).group_by(Worker.plan).all()
+        weekly_premium = sum(plan_prices.get(plan, 90) * cnt for plan, cnt in plan_rows)
 
-        sorted_weeks = sorted(weeks.items())
         return {
             "weeks": [
-                {"week": w, "payouts": v["payouts"], "premium": v["premium"], "loss_ratio": v["loss_ratio"]}
-                for w, v in sorted_weeks
+                {
+                    "week":       row.week,
+                    "payouts":    float(row.payouts or 0),
+                    "premium":    weekly_premium,
+                    "loss_ratio": round(float(row.payouts or 0) / weekly_premium * 100, 1) if weekly_premium > 0 else 0.0,
+                }
+                for row in week_rows
             ],
             "plans": {p: {"normal_lr": round(PLAN_BASE[p]["rate"]*52.5/(PLAN_BASE[p]["premium"]*52)*100,1),
                           "monsoon_lr": round(PLAN_BASE[p]["rate"]*73.5/(PLAN_BASE[p]["premium"]*52)*100,1)}

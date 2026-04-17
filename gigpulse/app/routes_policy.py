@@ -50,10 +50,17 @@ def create_policy(req: PolicyCreate, db: Session = Depends(get_db)):
         status          = "active",
         effective_date  = datetime.now(),
     )
-    worker.plan               = req.plan
-    worker.plan_effective_date = datetime.now()
-    worker.weekly_hrs_used    = 0.0
-    worker.weekly_reset_at    = datetime.now()
+    # Preserve hours if upgrading or within same cycle, only reset if totally new
+    if not worker.plan:
+        worker.weekly_hrs_used = 0.0
+        worker.weekly_reset_at = datetime.now()
+
+    worker.plan                = req.plan
+    worker.plan_effective_date  = datetime.now()
+    worker.policy_start_date    = datetime.now()
+    worker.policy_expiry_date   = datetime.now() + timedelta(days=7)
+    worker.policy_status        = "active"
+    worker.is_active            = True
 
     db.add(policy)
     db.commit()
@@ -197,6 +204,11 @@ def _change_plan(db, worker, new_plan: str, change_type: str) -> dict:
     )
     worker.plan = new_plan
     worker.plan_effective_date = datetime.now()
+    # Ensure policy dates are synced on worker model for eligibility checks
+    worker.policy_status = "active"
+    worker.is_active     = True
+    if not worker.policy_expiry_date or datetime.now() > worker.policy_expiry_date:
+        worker.policy_expiry_date = datetime.now() + timedelta(days=7)
 
     db.add(new_policy)
     db.commit()
@@ -230,10 +242,24 @@ def renew_policy(req: PolicyRenew, db: Session = Depends(get_db)):
     if not active:
         raise HTTPException(404, "No active policy to renew — create a new policy")
 
-    # Reset weekly hours
+    # EXTEND POLICY: 7 days from current expiry if valid, otherwise 7 days from now
+    base_date = active.end_date if active.end_date and active.end_date > datetime.now() else datetime.now()
+    if not active.end_date:
+         # Fallback to worker model if policy end_date missing
+         base_date = worker.policy_expiry_date if worker.policy_expiry_date and worker.policy_expiry_date > datetime.now() else datetime.now()
+
+    new_expiry = base_date + timedelta(days=7)
+    
     active.renewal_count = (active.renewal_count or 0) + 1
-    worker.weekly_hrs_used = 0.0
-    worker.weekly_reset_at = datetime.now()
+    active.end_date      = new_expiry # update policy record
+    
+    worker.policy_expiry_date = new_expiry
+    worker.policy_status      = "active"
+    worker.is_active          = True
+    
+    # DO NOT RESET weekly_hrs_used here anymore. Reset is Sunday only.
+    # worker.weekly_hrs_used = 0.0 
+    
     db.commit()
 
     _notify(db, req.worker_id, "🔄 Policy Renewed",

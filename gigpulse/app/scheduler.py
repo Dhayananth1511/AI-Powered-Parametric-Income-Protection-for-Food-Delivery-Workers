@@ -34,7 +34,18 @@ async def check_all_zones_concurrently():
     zones = get_all_zones()
     # Limit to a batch to avoid hammering the API on free tiers
     batch = zones[:20]
-    tasks = [fetch_weather(zone) for zone in batch]
+    
+    from app.ml_engine import latest_telemetry
+    
+    tasks = []
+    for zone in batch:
+        lat, lon = None, None
+        for t_data in latest_telemetry.values():
+            if t_data.get("zone") == zone and "lat" in t_data:
+                lat, lon = t_data["lat"], t_data["lon"]
+                break
+        tasks.append(fetch_weather(zone, lat, lon))
+        
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     disruptions_detected = 0
@@ -120,14 +131,21 @@ def job_auto_create_claims():
             workers = db.query(Worker).filter(
                 Worker.zone == zone,
                 Worker.is_active == True,
-                Worker.plan != None,
+                Worker.policy_status == "active"
             ).all()
             
             for worker in workers:
                 try:
                     # Basic auto-trigger for demo (payout based on plan)
-                    worker_dict = {"id": worker.id, "name": worker.name, "zone": worker.zone, "plan": worker.plan}
-                    result = run_claim_pipeline(worker_dict, trigger, 4.0) # assume 4hr disruption for auto-trigger
+                    worker_dict = {
+                        "id": worker.id, "name": worker.name, "zone": worker.zone, 
+                        "plan": worker.plan, "weekly_hrs_used": float(worker.weekly_hrs_used or 0.0)
+                    }
+                    result = run_claim_pipeline(worker_dict, trigger, 4.0, worker_dict["weekly_hrs_used"]) 
+                    
+                    # Force IST timestamp
+                    from datetime import datetime
+                    created_at = datetime.fromisoformat(result["timestamp_ist"]) if "timestamp_ist" in result else datetime.utcnow()
                     
                     claim = Claim(
                         id="CLM-" + uuid.uuid4().hex[:6].upper(),
@@ -138,9 +156,15 @@ def job_auto_create_claims():
                         disruption_hrs=4.0,
                         payout_amount=result.get("payout", 0),
                         status="approved",
-                        is_simulated=True
+                        is_simulated=False,
+                        created_at=created_at
                     )
                     db.add(claim)
+                    # Update worker stats
+                    worker.weekly_hrs_used = (worker.weekly_hrs_used or 0) + result.get("hrs_added", 0)
+                    worker.payouts = (worker.payouts or 0) + result.get("payout", 0)
+                    worker.earnings_protected = (worker.earnings_protected or 0) + result.get("payout", 0)
+
                     logger.info(f"✅ Auto-claim triggered: {worker.id} | ₹{result.get('payout', 0)}")
                 except Exception as e:
                     logger.error(f"Error auto-triggering claim for {worker.id}: {e}")
@@ -332,8 +356,25 @@ def job_policy_lifecycle():
         db.close()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Scheduler Initialization
+# Weekly Maintenance
 # ─────────────────────────────────────────────────────────────────────────────
+
+def job_reset_weekly_stats():
+    """Weekly Job: Reset all worker hour counters every Sunday at midnight."""
+    logger.info("🔄 Task: Resetting weekly stats for all workers...")
+    db = SessionLocal()
+    try:
+        workers = db.query(Worker).all()
+        for w in workers:
+            w.weekly_hrs_used = 0.0
+            w.plan_expiry_notified = False # reset notification flag for new week
+        db.commit()
+        logger.info(f"✅ Weekly reset complete for {len(workers)} workers")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error in job_reset_weekly_stats: {e}")
+    finally:
+        db.close()
 
 def initialize_scheduler():
     """Initialize and start background job scheduler."""
@@ -410,6 +451,15 @@ def initialize_scheduler():
             replace_existing=True
         )
         
+        # Weekly stats reset — Sunday at 11:59 PM
+        scheduler.add_job(
+            job_reset_weekly_stats,
+            CronTrigger(day_of_week='sun', hour=23, minute=59),
+            id="job_reset_weekly_stats",
+            name="Weekly Stats Reset",
+            replace_existing=True
+        )
+
         if not scheduler.running:
             scheduler.start()
             logger.info("✅ Background scheduler started")

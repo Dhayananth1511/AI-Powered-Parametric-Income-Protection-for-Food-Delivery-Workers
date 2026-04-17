@@ -227,7 +227,6 @@ def simulate_disruption(zone: str, trigger_type: str = "rainfall") -> dict:
         "trigger":   trigger,
         "simulated": True,
     }
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Get all active disruption events
 # ─────────────────────────────────────────────────────────────────────────────

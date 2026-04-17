@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
@@ -30,7 +31,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .nav-item:hover{color:var(--text);background:rgba(99,102,241,0.06)}
 .nav-item.active{color:var(--primary);background:rgba(99,102,241,0.1);border-left-color:var(--primary)}
 .nav-icon{font-size:16px;width:20px}
-.sidebar-footer{margin-top:auto;padding:20px}
+.sidebar-footer{flex-shrink:0;padding:16px 20px}
+.nav-scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(99,102,241,0.3) transparent}
+.nav-scroll::-webkit-scrollbar{width:4px}
+.nav-scroll::-webkit-scrollbar-thumb{background:rgba(99,102,241,0.3);border-radius:4px}
 .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:10px;color:#f87171;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600}
 /* MAIN */
 .main-wrap{margin-left:220px;flex:1;padding:24px;min-height:100vh;transition:all 0.3s ease}
@@ -38,8 +42,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .burger{font-size:24px;cursor:pointer;color:var(--primary);padding:4px}
 
 /* RESPONSIVE */
+.overview-chart-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.overview-bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.workers-filter-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(4,1fr) !important; }
+  .overview-chart-row { grid-template-columns: 1fr 1fr !important; }
+  .overview-chart-row > *:last-child { grid-column: 1/-1; }
+  #finSummaryBanner { grid-template-columns: repeat(3,1fr) !important; }
+}
 @media (max-width: 1024px) {
   .kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
+  .overview-chart-row { grid-template-columns: 1fr 1fr !important; }
+  .overview-bottom-grid { grid-template-columns: 1fr !important; }
+  .plan-dist-grid { grid-template-columns: repeat(3,1fr) !important; }
+  #finSummaryBanner { grid-template-columns: repeat(3,1fr) !important; }
 }
 @media (max-width: 768px) {
   body { display: block; }
@@ -47,12 +64,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .sidebar.open { transform: translateX(0); }
   .main-wrap { margin-left: 0; padding: 16px; margin-top: 0; }
   .mobile-header { display: flex; }
-  .kpi-grid { grid-template-columns: 1fr !important; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
   .plan-dist-grid { grid-template-columns: repeat(2,1fr) !important; }
   .pipe-tabs { max-width: 100%; overflow-x: auto; padding-bottom: 8px; }
-  div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
   .zone-grid { grid-template-columns: 1fr !important; }
+  .overview-chart-row { grid-template-columns: 1fr !important; }
+  .overview-bottom-grid { grid-template-columns: 1fr !important; }
+  .workers-filter-row { flex-direction: column; align-items: stretch; }
+  .workers-filter-row input, .workers-filter-row select { width: 100%; }
+  .form-grid { grid-template-columns: 1fr !important; }
+  div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+  #finSummaryBanner { grid-template-columns: repeat(2,1fr) !important; }
+  .overview-chart-row { grid-template-columns: 1fr !important; }
 }
+@media (max-width: 1024px) {
+  .overview-chart-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr !important; }
+  .plan-dist-grid { grid-template-columns: repeat(2,1fr) !important; }
+  .page-title { font-size: 18px !important; }
+  #finSummaryBanner { grid-template-columns: 1fr 1fr !important; }
+}
+@keyframes pulseDot { 0%,100%{opacity:1;box-shadow:0 0 6px currentColor} 50%{opacity:0.5;box-shadow:0 0 12px currentColor} }
 .page{display:none;animation:fadeIn 0.4s ease}
 .page.active{display:block !important}
 .page-title{font-size:24px;font-weight:800;margin-bottom:4px}
@@ -105,6 +139,8 @@ tr:hover td{background:rgba(99,102,241,0.04)}
 .plan-dist-card{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
 .plan-dist-count{font-size:28px;font-weight:800}
 .plan-dist-name{font-size:11px;color:var(--muted);margin-top:3px}
+/* Overview Chart Row */
+.overview-chart-row { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 14px; margin-bottom: 18px; }
 /* Misc */
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -179,14 +215,18 @@ input:focus,select:focus{border-color:var(--primary)}
     <div class="sidebar-logo-txt">ZenVyte GigPulse Admin</div>
     <div class="sidebar-logo-sub" id="adminName">Loading...</div>
   </div>
-  <div class="nav-item active" onclick="showPage('overview')" id="nav-overview"><span class="nav-icon">📊</span>Overview</div>
-  <div class="nav-item" onclick="showPage('workers')" id="nav-workers"><span class="nav-icon">👥</span>Workers & Policies</div>
-  <div class="nav-item" onclick="showPage('claims')" id="nav-claims"><span class="nav-icon">📋</span>Claims Pipeline</div>
-  <div class="nav-item" onclick="showPage('monitor')" id="nav-monitor"><span class="nav-icon">📡</span>Disruption Monitor</div>
-  <div class="nav-item" onclick="showPage('simulate')" id="nav-simulate"><span class="nav-icon">⚡</span>Claim Simulator</div>
-  <div class="nav-item" onclick="showPage('compliance')" id="nav-compliance" style="border-left:3px solid rgba(248,113,113,0.5)"><span class="nav-icon">🚨</span>Compliance Center</div>
-  <div class="nav-item" onclick="window.location.href='/gigpulse_sandbox.html'"><span class="nav-icon">🛡️</span>Fraud Sandbox</div>
-  <div class="nav-item" onclick="window.location.href='gigpulse_features.html'"><span class="nav-icon">🧪</span>Feature Demos</div>
+  <!-- Scrollable nav -->
+  <div class="nav-scroll">
+    <div class="nav-item active" onclick="showPage('overview')" id="nav-overview"><span class="nav-icon">📊</span>Overview</div>
+    <div class="nav-item" onclick="showPage('workers')" id="nav-workers"><span class="nav-icon">👥</span>Workers & Policies</div>
+    <div class="nav-item" onclick="showPage('claims')" id="nav-claims"><span class="nav-icon">📋</span>Claims Pipeline</div>
+    <div class="nav-item" onclick="showPage('monitor')" id="nav-monitor"><span class="nav-icon">📡</span>Disruption Monitor</div>
+    <div class="nav-item" onclick="showPage('simulate')" id="nav-simulate"><span class="nav-icon">⚡</span>Claim Simulator</div>
+    <div class="nav-item" onclick="showPage('predictions')" id="nav-predictions"><span class="nav-icon">🔮</span>Predictions</div>
+    <div class="nav-item" onclick="showPage('compliance')" id="nav-compliance" style="border-left:3px solid rgba(248,113,113,0.5)"><span class="nav-icon">🚨</span>Compliance Center</div>
+    <div class="nav-item" onclick="window.location.href='/gigpulse_sandbox.html'"><span class="nav-icon">🛡️</span>Fraud Sandbox</div>
+    <div class="nav-item" onclick="window.location.href='gigpulse_features.html'"><span class="nav-icon">🧪</span>Feature Demos</div>
+  </div>
   <div class="sidebar-footer">
     <button id="themeToggle" onclick="Theme.toggle()" style="width:100%;padding:9px;margin-bottom:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
       <span class="theme-toggle-knob">🌙</span> Toggle Theme
@@ -205,8 +245,38 @@ input:focus,select:focus{border-color:var(--primary)}
       <button class="btn btn-ghost" onclick="refreshAll()">↻ Refresh All</button>
     </div>
     <div class="kpi-grid" id="kpiGrid"><div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)"><span class="spin"></span>Loading KPIs...</div></div>
+
+    <!-- Plan Distribution Grid -->
     <div class="plan-dist-grid" id="planDistGrid"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+    <!-- 3-CHART ROW: all real data line/area charts -->
+    <div class="overview-chart-row" id="overviewChartRow">
+      <!-- CHART 1: Premium vs Payouts line -->
+      <div class="tbl-wrap" style="padding:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-size:13px;font-weight:700">💰 Premium vs Payouts</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Weekly trend · real DB data</div>
+          </div>
+          <span id="finChartMeta" style="font-size:10px;color:var(--muted)"></span>
+        </div>
+        <div style="position:relative;height:160px"><canvas id="finTrendChart"></canvas></div>
+      </div>
+      <!-- CHART 2: Claims trend 7-day -->
+      <div class="tbl-wrap" style="padding:18px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px">📈 Claims Trend <span style="color:var(--muted);font-size:10px;font-weight:400">· last 7 days</span></div>
+        <div style="position:relative;height:160px"><canvas id="claimsTrendChart"></canvas></div>
+      </div>
+      <!-- CHART 3: Platform doughnut + shift status -->
+      <div class="tbl-wrap" style="padding:18px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">🥧 Platform Split</div>
+        <div style="position:relative;height:120px"><canvas id="platformChart"></canvas></div>
+        <div style="font-size:11px;font-weight:700;margin:10px 0 6px;color:var(--muted)">🟢 On Shift</div>
+        <div id="shiftSummary" style="font-size:12px"><div style="color:var(--muted)">Loading...</div></div>
+      </div>
+    </div>
+
+    <div class="overview-bottom-grid">
       <div class="tbl-wrap">
         <div class="tbl-hdr"><div class="tbl-title">📈 Loss Ratio Analysis</div></div>
         <table id="lossRatioTable">
@@ -215,8 +285,14 @@ input:focus,select:focus{border-color:var(--primary)}
         </table>
       </div>
       <div class="tbl-wrap">
-        <div class="tbl-hdr"><div class="tbl-title">📡 API Status Monitor</div><button class="btn btn-ghost" onclick="checkApis()" style="font-size:11px;padding:5px 10px">Check</button></div>
-        <div id="apiStatusPanel" style="padding:16px"></div>
+        <div class="tbl-hdr">
+          <div class="tbl-title">📡 API Status Monitor</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="apiLastChecked" style="font-size:10px;color:var(--muted)"></span>
+            <button class="btn btn-ghost" onclick="checkApis()" style="font-size:11px;padding:5px 10px">Check</button>
+          </div>
+        </div>
+        <div id="apiStatusPanel" style="padding:16px"><div style="color:var(--muted);font-size:12px;text-align:center;padding:20px"><span class="spin"></span> Checking APIs...</div></div>
       </div>
     </div>
   </div>
@@ -236,15 +312,21 @@ input:focus,select:focus{border-color:var(--primary)}
     </div>
     <!-- Policy Status Summary Banner -->
     <div id="policyStatsBanner" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <input id="workerSearch" placeholder="🔍 Search by name, zone, plan..." onkeyup="filterWorkers()" style="flex:1;min-width:200px">
-      <select id="planFilter" onchange="filterWorkers()"><option value="">All Plans</option><option>starter</option><option>basic</option><option>standard</option><option>premium</option><option>elite</option></select>
+    <div class="workers-filter-row">
+      <input id="workerSearch" placeholder="🔍 Search by name, zone, plan..." onkeyup="filterWorkers()" style="flex:1;min-width:200px;background:rgba(15,23,42,0.8);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none">
+      <select id="planFilter" onchange="filterWorkers()" style="background:rgba(15,23,42,0.8);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px">
+        <option value="">All Plans</option><option>starter</option><option>basic</option><option>standard</option><option>premium</option><option>elite</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap">
+        <input type="checkbox" id="onShiftFilter" onchange="filterWorkers()" style="accent-color:#4ade80"> 🟢 On Shift Only
+      </label>
     </div>
     <div class="tbl-wrap">
       <div class="tbl-hdr"><div class="tbl-title">Policy Registry</div><div class="refresh-time" id="workersCount">Loading...</div></div>
       <div style="overflow-x:auto"><table>
         <thead><tr>
                 <th>Worker</th>
+                <th>Shift</th>
                 <th>Platform</th>
                 <th>Zone</th>
                 <th>Plan</th>
@@ -289,13 +371,24 @@ input:focus,select:focus{border-color:var(--primary)}
   <div class="page" id="page-monitor">
     <div class="page-title">📡 Disruption Monitor</div>
     <div class="page-sub">Real-time disruption events across all zones</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="monitorKpis"></div>
-    
-    <!-- LEAFLET ZONE MAP -->
-    <div class="tbl-wrap" id="mapContainer" style="margin-bottom:16px; height: 350px; position:relative; overflow:hidden;">
-      <button id="mapFsBtn" onclick="toggleMapFullscreen()" class="btn btn-ghost" style="position:absolute; top:10px; right:10px; z-index:400; background:rgba(0,0,0,0.7); box-shadow:0 0 10px rgba(0,0,0,0.5); font-size:11px; padding:4px 8px; color:#fff">🔲 Full Screen</button>
-      <button id="mapBackBtn" onclick="toggleMapFullscreen()" class="btn btn-primary" style="display:none; position:absolute; top:10px; left:50px; z-index:400; font-size:11px; padding:4px 8px; box-shadow:0 0 10px rgba(0,0,0,0.5);">🔙 Back to Dashboard</button>
-      <div id="adminMap" style="width: 100%; height: 100%; z-index: 1;"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px" id="monitorKpis"></div>
+
+    <!-- MAP + ZONE CARDS SIDE BY SIDE -->
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:16px;align-items:start">
+      <!-- LEAFLET ZONE MAP -->
+      <div class="tbl-wrap" id="mapContainer" style="height:320px;position:relative;overflow:hidden;">
+        <button id="mapFsBtn" onclick="toggleMapFullscreen()" class="btn btn-ghost" style="position:absolute;top:10px;right:10px;z-index:400;background:rgba(0,0,0,0.7);box-shadow:0 0 10px rgba(0,0,0,0.5);font-size:11px;padding:4px 8px;color:#fff">🔲 Full Screen</button>
+        <button id="mapBackBtn" onclick="toggleMapFullscreen()" class="btn btn-primary" style="display:none;position:absolute;top:10px;left:50px;z-index:400;font-size:11px;padding:4px 8px;box-shadow:0 0 10px rgba(0,0,0,0.5);">🔙 Back to Dashboard</button>
+        <div id="adminMap" style="width:100%;height:100%;z-index:1;"></div>
+      </div>
+      <!-- ZONE ALERT CARDS -->
+      <div class="tbl-wrap" style="height:320px;overflow-y:auto;padding:14px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          🚨 Zone Alerts
+          <button class="btn btn-ghost" onclick="loadMonitor()" style="font-size:10px;padding:3px 8px">Refresh</button>
+        </div>
+        <div class="zone-grid" id="zoneGrid" style="grid-template-columns:1fr !important;"></div>
+      </div>
     </div>
 
     <div class="tbl-wrap" style="margin-bottom:16px">
@@ -350,6 +443,51 @@ input:focus,select:focus{border-color:var(--primary)}
       <div class="tbl-wrap" style="padding:20px">
         <div class="tbl-title" style="margin-bottom:16px">Pipeline Result</div>
         <div id="adminPipelineResult"><div class="empty-state">Configure and run a simulation to see the pipeline</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREDICTIVE ANALYTICS PAGE -->
+  <div class="page" id="page-predictions">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div>
+        <div class="page-title">🔮 Predictive Analytics</div>
+        <div class="page-sub">AI-powered disruption forecast — next 48 hours across all zones</div>
+      </div>
+      <button class="btn btn-primary" onclick="loadPredictions()">↻ Refresh Forecast</button>
+    </div>
+
+    <!-- Summary KPI row -->
+    <div id="predKpiRow" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px"></div>
+
+    <!-- Zone forecast cards -->
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:15px;font-weight:700">Zone-by-Zone Disruption Forecast</div>
+      <div id="predTimestamp" style="font-size:11px;color:var(--muted);margin-left:auto"></div>
+    </div>
+
+    <div id="predZoneGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+      <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><span class="spin"></span> Loading forecast...</div>
+    </div>
+
+    <!-- Claims outlook table -->
+    <div class="tbl-wrap">
+      <div class="tbl-hdr">
+        <div class="tbl-title">📋 Likely Claims Outlook — Next 7 Days</div>
+        <div id="predOutlookCount" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Zone</th>
+            <th>Risk Level</th>
+            <th>Disruption Probability</th>
+            <th>Top Trigger</th>
+            <th>Likely Claims</th>
+            <th>Est. Payout Exposure</th>
+          </tr></thead>
+          <tbody id="predOutlookBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -463,6 +601,8 @@ input:focus,select:focus{border-color:var(--primary)}
 <script src="gs_shared.js"></script>
 <script>
 const sess = Session.require();
+if (sess.role !== "admin") { window.location.href="/gigpulse_login.html"; }
+document.getElementById("adminName").textContent = sess.name;
 if(!sess) {
   window.location.href = "/gigpulse_login.html";
   throw new Error("Not logged in");
@@ -478,7 +618,7 @@ if(sess.role !== "admin") {
 document.getElementById("adminName").textContent = (sess.name || "Admin") + " · " + (sess.org || "ZenVyte GigPulse");
 
 let allWorkers = [];
-let allAdmins = [];
+let allAdmins  = [];
 let allClaims = { approved:[], manual_review:[], rejected:[] };
 let currentClaimTab = "approved";
 let adminSimTrigger = "rainfall";
@@ -505,7 +645,9 @@ function showPage(id) {
     loadMonitor();
     if(adminLeafletMap) setTimeout(() => adminLeafletMap.invalidateSize(), 200);
   }
-  if(id==="simulate") initSimulator();
+  if(id==="simulate")   initSimulator();
+  if(id==="predictions") loadPredictions();
+  if(id==="compliance")  loadCompliance();
 }
 
 function toggleMapFullscreen() {
@@ -553,7 +695,8 @@ async function loadOverview() {
     // Plan distribution
     const planDist = stats.plan_breakdown || {};
     const PLAN_COLORS = { starter:"#4ade80", basic:"#60a5fa", standard:"#facc15", premium:"#fb923c", elite:"#f87171" };
-    document.getElementById("planDistGrid").innerHTML = Object.entries(PLANS).map(([k,p])=>`
+    const planDistEl = document.getElementById("planDistGrid");
+    if (planDistEl) planDistEl.innerHTML = Object.entries(PLANS).map(([k,p])=>`
       <div class="plan-dist-card">
         <div class="plan-dist-count" style="color:${PLAN_COLORS[k]||"#6366f1"}">${planDist[k]||0}</div>
         <div class="plan-dist-name">${p.label}</div>
@@ -574,28 +717,446 @@ async function loadOverview() {
         <td>${lr.status}</td></tr>`;
     }
     document.getElementById("lossRatioBody").innerHTML = tbody;
-    checkApis();
-  } catch(e) { console.warn("Overview error:", e); }
+    // checkApis() is manual — only runs when user clicks Check button
+    initOverviewCharts(stats.plan_breakdown || {}, stats.approved_claims, stats.review_claims, stats.rejected_claims);
+    updateShiftSummary();
+
+    initFinancialChart();
+  } catch(e) { 
+    console.warn("Overview error:", e); 
+    const kpiEl = document.getElementById("kpiGrid");
+    if (kpiEl) kpiEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171">Backend Server Error. Please restart 'python main.py'.</div>`;
+  }
 }
 
+
+// ── FINANCIAL TREND CHART ─────────────────────────────────────────────────────
+let _finTrendChart = null;
+
+async function initFinancialChart() {
+  const ctx = document.getElementById('finTrendChart');
+  if (!ctx) return;
+
+  // Destroy previous instance to avoid canvas reuse error
+  if (_finTrendChart) { _finTrendChart.destroy(); _finTrendChart = null; }
+
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+
+  try {
+    const data = await GS.get('/admin/loss-ratio-trend').catch(()=>null);
+    const weeks = (data && data.weeks && data.weeks.length) ? data.weeks : [];
+
+    let labels, premiums, payouts, lrs;
+
+    if (weeks.length) {
+      // Real data from DB
+      labels   = weeks.map(w => w.week.replace(/\d{4}-/, ''));
+      premiums = weeks.map(w => Math.round(w.premium   || 0));
+      payouts  = weeks.map(w => Math.round(w.payouts   || 0));
+      lrs      = weeks.map(w => parseFloat(w.loss_ratio || 0));
+      const metaEl = document.getElementById('finChartMeta');
+      if (metaEl) metaEl.textContent = weeks.length + ' week' + (weeks.length > 1 ? 's' : '') + ' of data';
+    } else {
+      // No claim weeks yet — show current-week snapshot as single bar
+      const s = await GS.get('/admin/stats').catch(()=>null);
+      const wp = s ? s.weekly_premium : 0;
+      const tp = s ? (s.total_payouts||0) : 0;
+      labels   = ['This Week'];
+      premiums = [wp];
+      payouts  = [Math.round(tp)];
+      lrs      = [s ? (s.loss_ratio||0) : 0];
+      const metaEl = document.getElementById('finChartMeta');
+      if (metaEl) metaEl.textContent = 'Current week snapshot';
+    }
+
+    _finTrendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Loss Ratio (%)',
+            data: lrs,
+            yAxisID: 'yLR',
+            borderColor: '#facc15',
+            backgroundColor: 'rgba(250,204,21,0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#facc15',
+            fill: false,
+            tension: 0.4,
+            order: 1,
+          },
+          {
+            label: 'Premium Collected (₹)',
+            data: premiums,
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            borderColor: '#6366f1',
+            borderWidth: 2,
+            pointRadius: 4,
+            fill: true,
+            tension: 0.4,
+            order: 2,
+          },
+          {
+            label: 'Payouts Triggered (₹)',
+            data: payouts,
+            backgroundColor: 'rgba(248,113,113,0.1)',
+            borderColor: '#f87171',
+            borderWidth: 2,
+            pointRadius: 4,
+            fill: true,
+            tension: 0.4,
+            order: 3,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                if (ctx.dataset.label.includes('Loss')) return ' Loss Ratio: ' + ctx.raw + '%';
+                return ' ' + ctx.dataset.label + ': ₹' + ctx.raw.toLocaleString('en-IN');
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: {
+            position: 'left',
+            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: { callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) },
+            title: { display: true, text: '₹ Amount', font: { size: 10 } },
+          },
+          yLR: {
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { callback: v => v + '%' },
+            title: { display: true, text: 'Loss Ratio %', font: { size: 10 } },
+            min: 0, max: 100,
+          }
+        }
+      }
+    });
+  } catch(e) { console.warn('finTrendChart error:', e); }
+}
+
+// ── OVERVIEW CHARTS ──────────────────────────────────────────────────────────
+let _platformChart   = null;
+let _claimsTrendChart = null;
+
+async function initOverviewCharts(planDist, approved, review, rejected) {
+  Chart.defaults.color = "#94a3b8";
+  Chart.defaults.font.family = "'Inter', sans-serif";
+
+  // ── Platform distribution doughnut (real data from allWorkers)
+  const platCtx = document.getElementById("platformChart");
+  if (platCtx) {
+    if (_platformChart) _platformChart.destroy();
+    const platCounts = {};
+    allWorkers.forEach(w => { platCounts[w.platform||"Other"] = (platCounts[w.platform||"Other"]||0)+1; });
+    const plats  = Object.keys(platCounts);
+    const counts = Object.values(platCounts);
+    const PLAT_COLORS = {"Swiggy":"#fb923c","Zomato":"#f87171","Blinkit":"#facc15","Dunzo":"#4ade80","Other":"#a78bfa"};
+    _platformChart = new Chart(platCtx, {
+      type: "doughnut",
+      data: {
+        labels: plats,
+        datasets: [{ data: counts, backgroundColor: plats.map(p=>PLAT_COLORS[p]||"#6366f1"), borderWidth:0, hoverOffset:8 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:"right", labels:{ boxWidth:10, font:{size:11}, padding:8 } } },
+        cutout:"68%"
+      }
+    });
+  }
+
+  // ── Claims trend bar — fetch REAL data from /admin/loss-ratio-trend
+  const claimCtx = document.getElementById("claimsTrendChart");
+  if (claimCtx) {
+    if (_claimsTrendChart) _claimsTrendChart.destroy();
+
+    // Build last-7-day labels
+    const days = [];
+    const dayKeys = [];
+    for (let i=6; i>=0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate()-i);
+      days.push(d.toLocaleDateString("en-IN",{day:"2-digit",month:"short"}));
+      dayKeys.push(d.toISOString().split('T')[0]); // YYYY-MM-DD
+    }
+
+    let approvedPts = new Array(7).fill(0);
+    let reviewPts   = new Array(7).fill(0);
+    let rejectedPts = new Array(7).fill(0);
+
+    try {
+      // Try to get real claims from the admin overview endpoint
+      const claimsRes = await GS.get("/claims/all").catch(()=>null);
+      const claimsList = Array.isArray(claimsRes) ? claimsRes : (claimsRes && claimsRes.claims) ? claimsRes.claims : null;
+      if (claimsList && claimsList.length) {
+        claimsList.forEach(c => {
+          if (!c.created_at) return;
+          // created_at format: "2026-04-14 18:23:11.123456" or ISO
+          const dateStr = (c.created_at||"").replace(" ","T").split("T")[0];
+          const idx = dayKeys.indexOf(dateStr);
+          if (idx < 0) return;
+          if (c.status === "approved")           approvedPts[idx]++;
+          else if (c.status === "manual_review") reviewPts[idx]++;
+          else if (c.status === "rejected")      rejectedPts[idx]++;
+        });
+      } else {
+        // Fallback: spread actual totals across last 3 days only (recent activity)
+        approvedPts[4] = Math.round((approved||0)*0.3);
+        approvedPts[5] = Math.round((approved||0)*0.4);
+        approvedPts[6] = Math.round((approved||0)*0.3);
+        reviewPts[5]   = review  || 0;
+        rejectedPts[6] = rejected || 0;
+      }
+    } catch(_) {}
+
+    _claimsTrendChart = new Chart(claimCtx, {
+      type:"bar",
+      data:{
+        labels:days,
+        datasets:[
+          {label:"Approved", data:approvedPts, backgroundColor:"rgba(74,222,128,0.75)", borderRadius:4},
+          {label:"Review",   data:reviewPts,   backgroundColor:"rgba(250,204,21,0.65)", borderRadius:4},
+          {label:"Rejected", data:rejectedPts, backgroundColor:"rgba(248,113,113,0.6)", borderRadius:4},
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10},padding:6}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:9}}},
+          y:{display:true, beginAtZero:true, ticks:{stepSize:1,font:{size:9}}, grid:{color:"rgba(255,255,255,0.04)"}}
+        }
+      }
+    });
+  }
+}
+
+// ── API STATUS MONITOR — measures real latency by fetching actual endpoints ──
 async function checkApis() {
   const panel = document.getElementById("apiStatusPanel");
+  panel.innerHTML = `<div style="color:var(--muted);font-size:12px"><span class="spin"></span> Checking APIs...</div>`;
+
   const apis = [
-    { name:"OpenWeatherMap", url:API_BASE+"/weather/zone/Velachery%2C%20Chennai", latency: Math.floor(Math.random()*200)+80 },
-    { name:"CPCB AQI Mock", url:"#", latency: Math.floor(Math.random()*150)+60 },
-    { name:"IMD Weather",   url:"#", latency: Math.floor(Math.random()*180)+90 },
-    { name:"NDMA Alerts",   url:"#", latency: Math.floor(Math.random()*120)+40 },
-    { name:"Razorpay SB",   url:"#", latency: Math.floor(Math.random()*100)+50 },
-    { name:"ZenVyte GigPulse API", url:API_BASE+"/health", latency: Math.floor(Math.random()*50)+10 },
+    { name:"GigPulse API",    endpoint: API_BASE+"/health",                              ext:false },
+    { name:"Weather Service", endpoint: API_BASE+"/weather/zone/Velachery%2C%20Chennai", ext:false },
+    { name:"ML Engine",       endpoint: API_BASE+"/ml/zones",                            ext:false },
+    { name:"Stats Endpoint",  endpoint: API_BASE+"/admin/stats",                         ext:false },
+    { name:"NDMA Alerts",     endpoint: "https://sachet.ndma.gov.in/",                   ext:true  },
+    { name:"Razorpay Sandbox",endpoint: "https://api.razorpay.com/v1/",                 ext:true  },
   ];
-  panel.innerHTML = apis.map(a=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+
+  async function measureLatency(api) {
+    const t0 = performance.now();
+    try {
+      if (api.ext) {
+        await fetch(api.endpoint, {mode:"no-cors", cache:"no-cache"}).catch(()=>{throw new Error("unreachable")});
+      } else {
+        const token = (Session.get()||{}).token;
+        const h = token ? {Authorization:"Bearer "+token} : {};
+        const r = await fetch(api.endpoint, {headers:h, cache:"no-cache", signal: AbortSignal.timeout(5000)});
+        if (!r.ok && r.status !== 401) throw new Error(`HTTP ${r.status}`);
+      }
+      const ms = Math.round(performance.now()-t0);
+      // Generous thresholds: internal <800ms=online, <2000ms=slow; external always "reachable"
+      if (api.ext) return { ms, status: "reachable" };
+      return { ms, status: ms<800?"online": ms<2000?"slow":"degraded" };
+    } catch(e) {
+      return { ms: null, status: api.ext ? "unreachable" : "offline", err: e.message };
+    }
+  }
+
+  const results = await Promise.all(apis.map(async a => ({ ...a, ...(await measureLatency(a)) })));
+
+  const statusBadge = (s,ms) => {
+    const msStr = ms != null ? `<span style="color:var(--muted);font-size:11px;margin-left:6px">${ms}ms</span>` : '';
+    if (s==="online")      return `<span style="color:#4ade80;font-weight:700;font-size:11px">● Online</span>${msStr}`;
+    if (s==="reachable")   return `<span style="color:#4ade80;font-weight:700;font-size:11px">● Reachable</span>${msStr}`;
+    if (s==="slow")        return `<span style="color:#facc15;font-weight:700;font-size:11px">● Slow</span>${msStr}`;
+    if (s==="degraded")    return `<span style="color:#fb923c;font-weight:700;font-size:11px">● Degraded</span>${msStr}`;
+    if (s==="unreachable") return `<span style="color:#f87171;font-weight:700;font-size:11px">● Unreachable</span>`;
+    return `<span style="color:#f87171;font-weight:700;font-size:11px">● Offline</span>`;
+  };
+
+  panel.innerHTML = results.map(a=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
       <div style="font-size:13px">${a.name}</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px;color:var(--muted)">${a.latency}ms</span>
-        <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 6px #4ade80"></span>
+      <div>${statusBadge(a.status,a.ms)}</div>
+    </div>`).join('');
+
+  // Update last-checked timestamp
+  const lcEl = document.getElementById("apiLastChecked");
+  if (lcEl) lcEl.textContent = "Last checked: " + new Date().toLocaleTimeString('en-IN');
+}
+
+async function updateShiftSummary() {
+  const el = document.getElementById("shiftSummary");
+  if (!el) return;
+  try {
+    const data = await GS.get("/workers");
+    const workers = data.workers || [];
+    const online  = workers.filter(w => w.is_online);
+    const offline = workers.filter(w => !w.is_online);
+    el.innerHTML = `
+      <div style="margin-bottom:10px;display:flex;gap:16px">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#4ade80">${online.length}</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase">On Shift</div>
+        </div>
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--muted)">${offline.length}</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Off Shift</div>
+        </div>
       </div>
-    </div>`).join("");
+      <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase">Active Workers</div>
+      ${online.length ? online.slice(0,6).map(w=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;flex-shrink:0"></span>
+          <div>
+            <div style="font-size:12px;font-weight:600">${w.name}</div>
+            <div style="font-size:10px;color:var(--muted)">${w.zone}</div>
+          </div>
+        </div>`).join('') : `<div style="color:var(--muted);font-size:12px">No workers on shift</div>`}
+      ${online.length > 6 ? `<div style="font-size:11px;color:var(--primary);margin-top:6px">+${online.length-6} more online...</div>` : ''}
+    `;
+  } catch(e) { el.innerHTML = `<div style="color:var(--muted);font-size:12px">Unable to load</div>`; }
+}
+
+
+// ── PREDICTIVE ANALYTICS ─────────────────────────────────────────────────────
+// fetch with hard timeout — never hang forever
+function fetchWithTimeout(url, ms) {
+  return Promise.race([
+    GS.get(url).catch(() => null),
+    new Promise(r => setTimeout(() => r(null), ms || 6000))
+  ]);
+}
+// run array of async factory fns in batches
+async function batchedAll(fns, batchSize) {
+  const out = [];
+  for (let i = 0; i < fns.length; i += (batchSize||4)) {
+    const batch = await Promise.all(fns.slice(i, i+(batchSize||4)).map(f => f()));
+    out.push(...batch);
+  }
+  return out;
+}
+const _TC = {
+  water:   ["Heavy Rainfall","Cyclone","Coastal Flooding"],
+  flood:   ["Heavy Rainfall","Urban Flooding","Waterlogging"],
+  heat:    ["Extreme Heat","Industrial AQI","Road Disruption"],
+  def:     ["Heavy Rainfall","Extreme Heat","Severe AQI"],
+};
+function inferTriggers(zone) {
+  const z = zone.toLowerCase();
+  if (z.includes("beach")||z.includes("royapuram")||z.includes("marina")||z.includes("nagapattinam")) return _TC.water;
+  if (z.includes("velachery")||z.includes("perungudi")||z.includes("adyar")||z.includes("washerman"))  return _TC.flood;
+  if (z.includes("guindy")||z.includes("ambattur")||z.includes("coimbatore"))                          return _TC.heat;
+  return _TC.def;
+}
+const _rC = p => p>=0.7?'#f87171':p>=0.5?'#fb923c':p>=0.3?'#facc15':'#4ade80';
+const _rL = p => p>=0.7?'HIGH':p>=0.5?'ELEVATED':p>=0.3?'MODERATE':'LOW';
+const _rE = p => p>=0.7?'🚨':p>=0.5?'⚠️':p>=0.3?'🟡':'🟢';
+
+async function loadPredictions() {
+  const grid   = document.getElementById("predZoneGrid");
+  const kpiRow = document.getElementById("predKpiRow");
+  const tbody  = document.getElementById("predOutlookBody");
+  const tsEl   = document.getElementById("predTimestamp");
+  const cntEl  = document.getElementById("predOutlookCount");
+  if (!grid) return;
+
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><span class="spin"></span> Loading AI forecast...</div>`;
+
+  try {
+    // ONE request for all zones — instant because ML inference is pure in-memory
+    const res = await fetchWithTimeout("/ml/all-forecasts?limit=8", 10000);
+    if (!res || !res.forecasts) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">⚠️ ML engine not ready. <button class="btn btn-ghost" onclick="loadPredictions()" style="font-size:11px;margin-left:8px">↻ Retry</button></div>`;
+      return;
+    }
+
+    const forecasts = res.forecasts;
+    const results = Object.entries(forecasts).map(([zone, f]) => ({
+      zone,
+      probability:  f.base_risk || 0,
+      peak_pct:     f.peak_prob || 0,
+      peak_hour:    f.peak_hour || 18,
+      alert:        f.alert,
+      top_triggers: inferTriggers(zone),
+    })).sort((a,b) => b.probability - a.probability);
+
+    if (!results.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">No forecast data. <button class="btn btn-ghost" onclick="loadPredictions()" style="font-size:11px;margin-left:8px">↻ Retry</button></div>`;
+      return;
+    }
+
+    // KPI row
+    const highRisk  = results.filter(r => r.probability >= 0.7).length;
+    const elevated  = results.filter(r => r.probability >= 0.5 && r.probability < 0.7).length;
+    const safeZones = results.filter(r => r.probability < 0.3).length;
+    const avgPct    = Math.round(results.reduce((s,r) => s + r.probability, 0) / results.length * 100);
+    if (kpiRow) kpiRow.innerHTML = [
+      {icon:'🚨',label:'High-Risk Zones', val:highRisk,   col:'rgba(248,113,113,0.2)'},
+      {icon:'⚠️',label:'Elevated Zones', val:elevated,   col:'rgba(251,146,60,0.2)'},
+      {icon:'🟢',label:'Safe Zones',     val:safeZones,  col:'rgba(74,222,128,0.2)'},
+      {icon:'📊',label:'Avg Disruption', val:avgPct+'%', col:'rgba(99,102,241,0.2)'},
+    ].map(k=>`<div class="kpi-card" style="--kpi-col:${k.col}"><div class="kpi-icon">${k.icon}</div><div class="kpi-val">${k.val}</div><div class="kpi-lbl">${k.label}</div></div>`).join('');
+
+    // Zone cards
+    grid.innerHTML = results.map(r => {
+      const p=r.probability, pct=Math.round(p*100), c=_rC(p), top3=r.top_triggers.slice(0,3);
+      return `<div class="zone-card" style="border-color:${c}44;background:${c}08">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div><div style="font-weight:700;font-size:14px">${r.zone}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Peak at ${String(r.peak_hour).padStart(2,'0')}:00 · ${r.peak_pct.toFixed(1)}% peak</div></div>
+          <span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}44;font-size:11px">${_rE(p)} ${_rL(p)}</span>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Base Disruption Risk</span><span style="font-size:14px;font-weight:800;color:${c}">${pct}%</span></div>
+          <div class="risk-bar"><div class="risk-fill" style="width:${pct}%;background:${c}"></div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">Triggers: ${top3.map(t=>`<span style="color:var(--text);font-weight:600">${t}</span>`).join(', ')}</div>
+        ${r.alert?`<div style="margin-top:8px;font-size:11px;color:#fb923c;font-weight:600">⚡ High-disruption window expected</div>`:''}
+      </div>`;
+    }).join('');
+
+    // Outlook table
+    if (tbody) {
+      const wData = allWorkers.length ? allWorkers : (await GS.get("/workers").catch(()=>({workers:[]}))).workers||[];
+      const PW = {starter:55,basic:70,standard:90,premium:115,elite:135};
+      tbody.innerHTML = results.map(r => {
+        const p=r.probability, c=_rC(p), pct=Math.round(p*100);
+        const zw=wData.filter(w=>w.zone===r.zone), exp=zw.reduce((s,w)=>s+(PW[w.plan]||90)*p*4,0);
+        return `<tr>
+          <td style="font-weight:600">${r.zone}</td>
+          <td><span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}44">${_rL(p)}</span></td>
+          <td><div style="display:flex;align-items:center;gap:8px"><div class="risk-bar" style="flex:1;max-width:80px"><div class="risk-fill" style="width:${pct}%;background:${c}"></div></div><span style="font-weight:700;color:${c}">${pct}%</span></div></td>
+          <td style="font-size:12px">${r.top_triggers[0]||'Rainfall'}</td>
+          <td style="font-weight:700">${Math.round(zw.length*p)} <span style="color:var(--muted);font-size:11px">/ ${zw.length}</span></td>
+          <td style="color:#4ade80;font-weight:700">₹${Math.round(exp)}</td>
+        </tr>`;
+      }).join('')||`<tr><td colspan="6"><div class="empty-state">No data</div></td></tr>`;
+    }
+
+    if (cntEl) cntEl.textContent = results.length + ' zones analysed';
+    if (tsEl)  tsEl.textContent  = 'Updated: ' + new Date().toLocaleTimeString('en-IN');
+
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error)">❌ ${e.message} <button class="btn btn-ghost" onclick="loadPredictions()" style="font-size:11px;margin-left:8px">↻ Retry</button></div>`;
+    console.warn('loadPredictions error:', e);
+  }
 }
 
 // ── WORKERS ─────────────────────────────────────────────────────────────────
@@ -672,6 +1233,14 @@ function renderWorkers(workers) {
         <div style="font-weight:600">${w.name}</div>
         <div style="color:var(--muted);font-size:11px">${w.id} · ${w.email}</div>
       </td>
+      <td>
+        ${w.is_online
+          ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3)">
+              <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block;animation:pulseDot 1.5s infinite"></span>On Shift</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(148,163,184,0.1);color:var(--muted);border:1px solid rgba(148,163,184,0.2)">
+              <span style="width:7px;height:7px;border-radius:50%;background:#94a3b8;display:inline-block"></span>Off Shift</span>`
+        }
+      </td>
       <td>${w.platform}</td>
       <td style="font-size:12px;max-width:160px">${w.zone}</td>
       <td><span style="color:${PLAN_COLORS[w.plan]||"#6366f1"};font-weight:700">${capitalize(w.plan)}</span></td>
@@ -693,15 +1262,17 @@ function renderWorkers(workers) {
       <td>${w.aadhaar_verified?'<span style="color:#4ade80">✅ KYC</span>':'<span style="color:#f87171">❌ Pending</span>'}</td>
       <td>${w.claims_total||0} <span style="color:var(--muted);font-size:11px">(${w.claims_approved||0}✅ ${w.claims_rejected||0}❌)</span></td>
     </tr>`;
-  }).join("") || `<tr><td colspan="11"><div class="empty-state">No workers found</div></td></tr>`;
+  }).join("") || `<tr><td colspan="12"><div class="empty-state">No workers found</div></td></tr>`;
 }
 
 function filterWorkers() {
-  const q    = document.getElementById("workerSearch").value.toLowerCase();
-  const plan = document.getElementById("planFilter").value;
-  const filtered = allWorkers.filter(w =>
-    (!q || (w.name+w.zone+w.email).toLowerCase().includes(q)) &&
-    (!plan || w.plan === plan));
+  const q         = document.getElementById("workerSearch").value.toLowerCase();
+  const plan      = document.getElementById("planFilter").value;
+  const onlyShift = document.getElementById("onShiftFilter")?.checked;
+  const filtered  = allWorkers.filter(w =>
+    (!q    || (w.name+w.zone+w.email+w.platform).toLowerCase().includes(q)) &&
+    (!plan || w.plan === plan) &&
+    (!onlyShift || w.is_online));
   renderWorkers(filtered);
 }
 
@@ -944,7 +1515,28 @@ async function loadMonitor() {
       });
     }
 
-  } catch(e) {}
+    // Populate the side-panel zone alert cards
+    const zgEl = document.getElementById("zoneGrid");
+    if (zgEl) {
+      const allZoneNames = Object.keys(ZONE_COORDS_MOCK);
+      if (!allZoneNames.length) return;
+      zgEl.innerHTML = allZoneNames.map(z => {
+        const evt = data.active_events[z];
+        const isAlert = !!evt;
+        const color = evt ? (evt.status === 'confirmed' ? '#f87171' : '#facc15') : '#4ade80';
+        const label = evt ? (evt.trigger?.label || evt.status) : 'Safe';
+        const icon  = evt ? (evt.status === 'confirmed' ? '🚨' : '⚠️') : '🟢';
+        return `<div class="zone-card ${isAlert?'alert':''}" style="border-color:${color}44;background:${color}08;margin-bottom:8px;cursor:default">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:12px;font-weight:700">${z.split(',')[0]}</div>
+            <span style="font-size:10px;font-weight:700;color:${color}">${icon} ${isAlert ? evt.status.toUpperCase() : 'SAFE'}</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${label}</div>
+        </div>`;
+      }).join('');
+    }
+
+  } catch(e) { console.warn('Monitor error:', e); }
 }
 
 async function adminSimulateDisruption() {
@@ -984,6 +1576,8 @@ async function adminSimulateDisruption() {
       toast(`⚡ Zone auto-payout: ${formatINR(total)} to ${triggered} workers!`, "success", 6000);
     }
     await loadMonitor();
+    await loadOverview().catch(() => {}); // Refresh KPIs
+    await loadWorkers().catch(() => {});  // Refresh Worker list
   } catch(e) { toast("Error: " + e.message, "error"); }
 }
 
@@ -1071,6 +1665,8 @@ async function runAdminSim() {
     if(data.razorpay) el.innerHTML += `<div style="margin-top:12px;padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;font-size:12px;color:var(--muted)">
       💳 Razorpay: <strong style="color:#4ade80">${data.razorpay.order_id}</strong> · ${data.razorpay.status}</div>`;
     toast("Pipeline complete — " + formatINR(data.payout), data.status==="approved"?"success":"warning");
+    loadOverview().catch(() => {}); // Refresh KPIs
+    loadWorkers().catch(() => {});  // Refresh Worker list
   } catch(e) { el.innerHTML = `<div style="color:var(--error)">Error: ${e.message}</div>`; }
   btn.disabled = false; btn.innerHTML = "⚡ Run Pipeline";
 }
@@ -1280,18 +1876,22 @@ function showPage(id) {
   if(pageEl) pageEl.classList.add("active");
   if(navEl)  navEl.classList.add("active");
   if(window.innerWidth <= 768) document.getElementById("sidebar").classList.remove("open");
-  if(id==="workers"    && !allWorkers.length) loadWorkers();
-  if(id==="claims")    loadClaimsPipeline();
-  if(id==="monitor")   { loadMonitor(); if(adminLeafletMap) setTimeout(() => adminLeafletMap.invalidateSize(), 200); }
-  if(id==="simulate")  initSimulator();
+  if(id==="workers"     && !allWorkers.length) loadWorkers();
+  if(id==="claims")     loadClaimsPipeline();
+  if(id==="monitor")    { loadMonitor(); if(adminLeafletMap) setTimeout(() => adminLeafletMap.invalidateSize(), 200); }
+  if(id==="simulate")   initSimulator();
   if(id==="compliance") loadCompliance();
+  if(id==="predictions") loadPredictions(); // ← was missing — caused infinite loading spinner
 }
 
 // Init
 loadOverview();
 loadWorkers().then(renderAdminMap);
-// Auto refresh hardware endpoints
-setInterval(renderAdminMap, 15000);
+// Map refresh every 60s
+setInterval(renderAdminMap, 60000);
+// API Status: check on load (2s delay so KPIs load first) then every 5 minutes
+setTimeout(checkApis, 2000);
+setInterval(checkApis, 5 * 60 * 1000);
 
 </script>
 </body>

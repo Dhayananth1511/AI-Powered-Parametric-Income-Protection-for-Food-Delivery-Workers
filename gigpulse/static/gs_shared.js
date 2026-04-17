@@ -145,9 +145,31 @@ function toast(message, type = "info", duration = 4000) {
 
 // ─── Format Helpers ───────────────────────────────────────────────────────────
 function formatINR(n)        { return "₹" + Number(n || 0).toLocaleString("en-IN"); }
-function formatDate(d)       { return d ? new Date(d).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—"; }
-function formatTime(d)       { return d ? new Date(d).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" }) : "—"; }
-function formatDateTime(d)   { return d ? `${formatDate(d)}, ${formatTime(d)}` : "—"; }
+function formatDate(d)       { 
+  if(!d) return "—";
+  const date = new Date(d);
+  return date.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }); 
+}
+function formatTime(d)       { 
+  if(!d) return "—";
+  const date = new Date(d);
+  return date.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12: true }); 
+}
+function formatDateTime(d)   { 
+  if(!d) return "—";
+  // The backend now sends ISO strings with offsets. new Date() handles these perfectly.
+  return `${formatDate(d)}, ${formatTime(d)}`; 
+}
+function formatTimeAgo(d) {
+  if(!d) return "—";
+  const date = new Date(d);
+  const now = new Date();
+  const diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return Math.floor(diff/60) + "m ago";
+  if (diff < 86400) return Math.floor(diff/3600) + "h ago";
+  return formatDate(d);
+}
 function capitalize(s)       { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; }
 function trustColor(score)   {
   if (score >= 75) return "#4ade80";
@@ -275,7 +297,8 @@ async function loadNotifications(workerId, containerEl, badgeEl) {
               <div style="flex:1;min-width:0">
                 <div style="color:#f1f5f9;font-size:13px;font-weight:600">${n.title}</div>
                 <div style="color:#94a3b8;font-size:12px;margin-top:2px;white-space:normal">${n.message}</div>
-                <div style="color:#64748b;font-size:11px;margin-top:4px">${n.time_ago}</div>
+                <div style="color:#64748b;font-size:11px;margin-top:4px">${formatTimeAgo(n.logged_at)}</div>
+
               </div>
               ${n.amount ? `<div style="color:#4ade80;font-weight:700;font-size:14px;white-space:nowrap">${formatINR(n.amount)}</div>` : ""}
             </div>

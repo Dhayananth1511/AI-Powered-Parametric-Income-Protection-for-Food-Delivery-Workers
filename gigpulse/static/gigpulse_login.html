@@ -205,70 +205,87 @@
 
       <button class="btn" id="login-btn" onclick="doLogin()">Sign In</button>
 
-      <div class="divider">Demo Direct Access</div>
-      <div class="demo-pills" id="demo-pills"></div>
+
     </div>
   </div>
 
   <div class="footer-links">
     Back to <a href="index.html">Home</a> • New? <a href="gigpulse_onboarding.html">Register</a>
   </div>
+
+  <!-- Demo Credentials Box -->
+  <div style="margin-top:20px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:18px;font-size:13px">
+    <div style="font-weight:700;color:#a78bfa;margin-bottom:10px;font-size:12px;text-transform:uppercase;letter-spacing:1px">🎯 Hackathon Demo Credentials</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px;cursor:pointer" onclick="fillAndLogin('ravi.kumar@swiggy.in','demo1234','worker')">
+        <div style="font-size:11px;color:#4ade80;font-weight:700">🛵 WORKER</div>
+        <div style="color:#f8fafc;font-weight:600;margin-top:2px">Ravi Kumar</div>
+        <div style="color:#94a3b8;font-size:11px">ravi.kumar@swiggy.in</div>
+        <div style="color:#94a3b8;font-size:11px">pw: demo1234</div>
+      </div>
+      <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px;cursor:pointer" onclick="fillAndLogin('meena.s@zomato.in','demo1234','worker')">
+        <div style="font-size:11px;color:#4ade80;font-weight:700">🛵 WORKER</div>
+        <div style="color:#f8fafc;font-weight:600;margin-top:2px">Meena Selvam</div>
+        <div style="color:#94a3b8;font-size:11px">meena.s@zomato.in</div>
+        <div style="color:#94a3b8;font-size:11px">pw: demo1234</div>
+      </div>
+      <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px;cursor:pointer" onclick="fillAndLogin('admin@digit.com','admin123','admin')">
+        <div style="font-size:11px;color:#a78bfa;font-weight:700">🏢 ADMIN</div>
+        <div style="color:#f8fafc;font-weight:600;margin-top:2px">Karthik Sundaram</div>
+        <div style="color:#94a3b8;font-size:11px">admin@digit.com</div>
+        <div style="color:#94a3b8;font-size:11px">pw: admin123</div>
+      </div>
+      <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px;cursor:pointer" onclick="fillAndLogin('ops@gigpulse.in','admin123','admin')">
+        <div style="font-size:11px;color:#a78bfa;font-weight:700">🏢 ADMIN</div>
+        <div style="color:#f8fafc;font-weight:600;margin-top:2px">Priya Nair</div>
+        <div style="color:#94a3b8;font-size:11px">ops@gigpulse.in</div>
+        <div style="color:#94a3b8;font-size:11px">pw: admin123</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#475569;text-align:center">👆 Click any card to auto-fill and login instantly</div>
+  </div>
 </div>
 
 <script src="gs_shared.js"></script>
 <script>
 let currentRole = "worker";
-let DEMOS = []; // Start empty to prevent jumping from fallback to live
+
+// Hardcoded fallback credentials — always visible even before API responds
+const DEMO_DEFAULTS = [
+  { label: "🛵 Ravi (Worker)",   email: "ravi.kumar@swiggy.in",  pass: "demo1234", role: "worker" },
+  { label: "🛵 Meena (Worker)",  email: "meena.s@zomato.in",     pass: "demo1234", role: "worker" },
+  { label: "🏢 Admin",           email: "admin@digit.com",        pass: "admin123", role: "admin"  },
+  { label: "🏢 Ops Admin",       email: "ops@gigpulse.in",        pass: "admin123", role: "admin"  },
+];
+let DEMOS = [...DEMO_DEFAULTS];
 
 function fillDemo(i) {
   const d = DEMOS[i];
   document.getElementById("email").value = d.email;
   document.getElementById("pass").value = d.pass;
   setRole(d.role);
+  toast("Credentials filled — click Sign In!", "info");
 }
 
 function renderDemoPills() {
-  const container = document.getElementById("demo-pills");
-  if (!DEMOS.length) {
-    container.innerHTML = `
-      <div style="display:flex;gap:8px;opacity:0.6">
-        <div class="pill" style="width:80px;height:28px;background:rgba(255,255,255,0.05);border:none;cursor:default"></div>
-        <div class="pill" style="width:80px;height:28px;background:rgba(255,255,255,0.05);border:none;cursor:default"></div>
-        <div class="pill" style="width:80px;height:28px;background:rgba(255,255,255,0.05);border:none;cursor:default"></div>
-      </div>`;
-    return;
-  }
-  container.innerHTML = DEMOS.map((d,i) => 
-    `<div class="pill fade-in-up" style="animation-delay:${i*0.05}s" onclick="fillDemo(${i})">${d.label}</div>`
-  ).join("");
+  // Demo pills removed for production
 }
 
 async function loadDemos() {
-  try {
-    const data = await GS.get("/auth/demo-users");
-    const merged = [...(data.workers || []), ...(data.admins || [])];
-    if (merged.length) {
-      DEMOS = merged.map((d) => ({
-        label: d.label,
-        email: d.email,
-        pass: d.password,
-        role: d.role,
-      }));
-    }
-  } catch(e) {
-    console.warn("Failed to load demo accounts.", e);
-  }
-  renderDemoPills();
+  // Demo loading removed for production
 }
-
-// Initial render with skeleton
-renderDemoPills();
-loadDemos();
 
 function setRole(role) {
   currentRole = role;
   document.getElementById("tab-worker").classList.toggle("active", role === "worker");
   document.getElementById("tab-admin").classList.toggle("active", role === "admin");
+}
+
+function fillAndLogin(email, pass, role) {
+  document.getElementById("email").value = email;
+  document.getElementById("pass").value = pass;
+  setRole(role);
+  doLogin();
 }
 
 async function doLogin() {

@@ -112,7 +112,7 @@ html[data-theme="light"] .premium-input { background: #fff; }
 .trig-card.active{border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);animation:trigPulse 1.5s ease-in-out infinite}
 @keyframes trigPulse{0%,100%{opacity:1}50%{opacity:0.7}}
 .trig-icon{font-size:22px;margin-bottom:4px}
-.trig-name{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.trig-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
 .trig-val{font-size:12px;font-weight:700;margin-top:2px}
 /* Claim Pipeline Steps */
 .pipeline{padding:12px 0}
@@ -430,6 +430,39 @@ select option{background:#0f172a}
     <div id="forecastMsg" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
   </div>
 
+  <!-- RISK & EARNINGS ANALYTICS -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📊 Risk & Earnings Analytics</div>
+      <span class="badge" id="riskBadgeLbl">Loading...</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Risk Gauge</div>
+        <div style="position:relative;height:140px"><canvas id="riskGaugeChart"></canvas></div>
+        <div id="riskGaugeLbl" style="text-align:center;font-size:11px;color:var(--muted);margin-top:4px">—</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Claims Breakdown</div>
+        <div style="position:relative;height:140px"><canvas id="claimsBreakdownChart"></canvas></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px">
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#6366f1" id="analEarned">₹0</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px">Protected</div>
+      </div>
+      <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#4ade80" id="analApproved">0</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px">Approved</div>
+      </div>
+      <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.15);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#f87171" id="analTrust">40</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px">Trust Score</div>
+      </div>
+    </div>
+  </div>
+
   <!-- CLAIMS HISTORY -->
   <div class="card">
     <div class="card-hdr">
@@ -501,8 +534,8 @@ async function loadWorker() {
     document.getElementById("heroSub").textContent = `Zone: ${data.zone || "Not Assigned"} · ₹${fallbackRate}/hr coverage active`;
     document.getElementById("zoneLabel").textContent = data.zone || "---";
     
-    // UI shift updates
-    if(typeof updateShiftBtnUI === 'function') updateShiftBtnUI();
+    // Restore shift state from DB (fixes logout→login showing Off even when On)
+    if (typeof updateShiftBtnUI === 'function') updateShiftBtnUI();
     
     if (document.getElementById("platformBadge") && data.platform) {
       const platIcons = {"Swiggy":"🧡","Zomato":"🍅","Dunzo":"🔵","Blinkit":"🟡"};
@@ -568,7 +601,7 @@ async function loadZoneStatus() {
     const source = data.weather.source || "mock";
     document.getElementById("tv-rainfall").textContent = rain.toFixed(1) + " mm";
     document.getElementById("tv-temp").textContent = temp.toFixed(1) + "°C";
-    document.getElementById("tv-aqi").textContent = "AQI " + aqi;
+    document.getElementById("tv-aqi").textContent = aqi + " AQI";
     
     const sb = document.getElementById("zoneSourceBadge");
     if(source.toLowerCase().includes("mock") || source === "System Fallback") {
@@ -898,6 +931,7 @@ async function runClaimSim() {
     // Refresh claims list
     await loadWorker();
     await loadClaims();
+    if(typeof initCharts === 'function') initCharts();
   } catch(e) { toast("Claim error: " + e.message, "error"); }
   btn.disabled = false; btn.innerHTML = "⚡ Run Auto-Claim Pipeline";
 }
@@ -1093,8 +1127,95 @@ async function cancelPolicy() {
 
 // ── Charting Logic (Chart.js) ───────────────────────────────────────────────
 function initCharts() {
+  Chart.defaults.color = "#94a3b8";
+  Chart.defaults.font.family = "'Inter', sans-serif";
   setupEarningsChart();
+  setupRiskCharts();
   initWorkerMap((workerData||sess).zone);
+}
+
+function setupRiskCharts() {
+  const wd = workerData || sess;
+  const riskScore = parseFloat(wd.risk_score || 0.5);
+  const riskPct   = Math.round(riskScore * 100);
+  const riskCol   = riskScore >= 0.6 ? '#f87171' : riskScore >= 0.4 ? '#facc15' : '#4ade80';
+  const riskTxt   = riskScore >= 0.6 ? 'HIGH RISK' : riskScore >= 0.4 ? 'MODERATE' : 'LOW RISK';
+
+  // Update badge label
+  const badge = document.getElementById("riskBadgeLbl");
+  if (badge) { badge.textContent = riskTxt; badge.style.background = riskCol + '22'; badge.style.color = riskCol; }
+
+  // Risk gauge doughnut
+  const gaugeCtx = document.getElementById("riskGaugeChart");
+  if (gaugeCtx) {
+    new Chart(gaugeCtx, {
+      type: "doughnut",
+      data: {
+        datasets: [{
+          data: [riskPct, 100 - riskPct],
+          backgroundColor: [riskCol, 'rgba(255,255,255,0.05)'],
+          borderWidth: 0,
+          hoverOffset: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        rotation: -90, circumference: 180,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+        },
+        cutout: "72%",
+      },
+      plugins: [{
+        id: 'centerText',
+        beforeDraw(chart) {
+          const {ctx, chartArea:{top,width,height}} = chart;
+          ctx.save();
+          ctx.font = 'bold 20px Inter, sans-serif';
+          ctx.fillStyle = riskCol;
+          ctx.textAlign = 'center';
+          ctx.fillText(riskPct + '%', width/2, top + height * 0.88);
+          ctx.restore();
+        }
+      }]
+    });
+    const lbl = document.getElementById("riskGaugeLbl");
+    if (lbl) lbl.textContent = `Zone: ${wd.zone || '—'} · ML Risk Score`;
+  }
+
+  // Claims breakdown bar
+  const clCtx = document.getElementById("claimsBreakdownChart");
+  if (clCtx) {
+    const approved = wd.claims_approved || 0;
+    const rejected = wd.claims_rejected || 0;
+    const review   = (wd.claims_total || 0) - approved - rejected;
+    new Chart(clCtx, {
+      type: "bar",
+      data: {
+        labels: ["Approved", "Review", "Rejected"],
+        datasets: [{
+          data: [approved, Math.max(0, review), rejected],
+          backgroundColor: ["rgba(74,222,128,0.7)","rgba(250,204,21,0.6)","rgba(248,113,113,0.5)"],
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.raw} claims` } } },
+        scales: { x: { grid: { display: false } }, y: { display: false, beginAtZero: true } }
+      }
+    });
+  }
+
+  // Summary stats
+  const ep = parseFloat(wd.earnings_protected || 0) || parseFloat(wd.payouts || 0) + parseFloat(wd.sim_payouts || 0);
+  const eEl = document.getElementById("analEarned");
+  const aEl = document.getElementById("analApproved");
+  const tEl = document.getElementById("analTrust");
+  if (eEl) eEl.textContent = "₹" + Math.round(ep).toLocaleString("en-IN");
+  if (aEl) aEl.textContent = wd.claims_approved || 0;
+  if (tEl) tEl.textContent = wd.trust_score || 40;
 }
 
 async function setupEarningsChart() {
