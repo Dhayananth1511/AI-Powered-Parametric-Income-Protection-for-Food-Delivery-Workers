@@ -4,6 +4,7 @@ import joblib
 from typing import Dict, List
 from datetime import datetime
 from geopy.distance import geodesic
+from app.compliance import get_premium_cap
 from app.weather import ZONE_COORDS
 
 # Real-time worker telemetry data cache
@@ -109,7 +110,7 @@ def compute_risk_score(zone: str, month: int = 6) -> float:
         score = (pred_class * 0.2) + 0.1 
         monsoon_boost = 0.15 if month in [6, 7, 8, 9] else 0.0
         # Incorporate original data elements to keep smooth UI visuals
-        return round(min(score + monsoon_boost, 1.0), 3)
+        return float(round(min(score + monsoon_boost, 1.0), 3))
 
     monsoon_boost = 0.15 if month in [6, 7, 8, 9] else 0.0
     score = (
@@ -120,7 +121,7 @@ def compute_risk_score(zone: str, month: int = 6) -> float:
         (data.get("disruption_months", 6) / 12.0) * 0.15 +
         monsoon_boost
     )
-    return round(min(score, 1.0), 3)
+    return float(round(min(score, 1.0), 3))
 
 def recommend_plan(risk_score: float) -> str:
     if risk_score < 0.25:   return "starter"
@@ -171,6 +172,11 @@ def calculate_dynamic_premium(zone: str, plan: str, month: int = None,
     seasonal = 5 if month in [6, 7, 8, 9] else -2
 
     final = max(base + zone_adjustment + aqi_surcharge - trust_discount + seasonal, base - 15)
+
+    # NEW: Compliance Premium Cap Enforcement
+    prem_cap = get_premium_cap()
+    if prem_cap is not None and final > prem_cap:
+        final = float(prem_cap)
 
     return {
         "base_premium":    base,

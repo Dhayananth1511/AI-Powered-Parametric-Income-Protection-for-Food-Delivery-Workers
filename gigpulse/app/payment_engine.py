@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from typing import Dict, Optional, Tuple
 from dotenv import load_dotenv
 from app.database import SessionLocal, engine, Base
-from app.models import Payment, PaymentEvent, Claim, Worker
+from app.models import Payment, PaymentEvent, Claim, Worker, Policy
 import logging
 
 load_dotenv()
@@ -99,16 +99,23 @@ class PaymentEngine:
                 }
 
             # Check for duplicate/existing payment (idempotency)
-            existing = db.query(Payment).filter(
-                Payment.claim_id == claim_id,
+            query = db.query(Payment).filter(
+                Payment.worker_id == worker_id,
                 Payment.status.in_(["pending", "created", "confirmed", "success"])
-            ).first()
+            )
+            if claim_id:
+                query = query.filter(Payment.claim_id == claim_id)
+            else:
+                # For renewals, use the idempotency key logic or check recent pending renewals
+                query = query.filter(Payment.claim_id == None, Payment.created_at >= datetime.now().replace(hour=0, minute=0, second=0))
+
+            existing = query.first()
             
             if existing:
-                logger.info(f"⚠️  Payment already exists for claim {claim_id}: {existing.id}")
+                logger.info(f"⚠️  Payment already exists: {existing.id}")
                 return {
                     "success": False,
-                    "error": "Payment already exists for this claim",
+                    "error": "Active payment order already exists",
                     "payment_id": existing.id,
                     "status": existing.status
                 }
@@ -118,7 +125,7 @@ class PaymentEngine:
             # Create Razorpay order (or mock if not configured)
             if self.client:
                 rzp_order = self._create_razorpay_order(
-                    amount_paise, claim_id, worker_id
+                    amount_paise, claim_id, worker_id, idempotency_key
                 )
                 if not rzp_order:
                     return {
@@ -173,25 +180,28 @@ class PaymentEngine:
         finally:
             db.close()
     
-    def _create_razorpay_order(self, amount_paise: int, claim_id: str, 
-                               worker_id: str) -> Optional[Dict]:
+    def _create_razorpay_order(self, amount_paise: int, claim_id: Optional[str], 
+                               worker_id: str, idempotency_key: str = None) -> Optional[Dict]:
         """Create actual Razorpay order via API."""
         try:
+            # Razorpay receipt must be unique and <= 40 chars
+            receipt = f"gsec_{claim_id}" if claim_id else (idempotency_key[:40] if idempotency_key else f"ren_{worker_id}_{uuid.uuid4().hex[:8]}")
+            
             order_data = {
                 "amount": amount_paise,
                 "currency": "INR",
-                "receipt": f"gsec_{claim_id}",
-                "partial_pay": False,
+                "receipt": receipt,
                 "notes": {
-                    "claim_id": claim_id,
+                    "claim_id": claim_id or "renewal",
                     "worker_id": worker_id,
                     "platform": "gigpulse",
                 }
             }
+            logger.info(f"📡 Sending request to Razorpay: {order_data}")
             rzp_order = self.client.order.create(order_data)
             return rzp_order
         except Exception as e:
-            logger.error(f"Razorpay API error: {e}")
+            logger.error(f"❌ Razorpay API error: {str(e)}")
             return None
     
     # ─────────────────────────────────────────────────────────────────────────
@@ -298,23 +308,51 @@ class PaymentEngine:
                 "status": "confirmed"
             })
             
-            # Update Claim status
-            claim = db.query(Claim).filter(Claim.id == payment.claim_id).first()
-            if claim:
-                claim.status = "approved"
-                if not hasattr(claim, 'payout_status'):
-                    claim.razorpay_payment_id = razorpay_payment_id
-                db.commit()
+            # ── Action ────────────────────────────────────────────────────────
+            if payment.claim_id:
+                # Update Claim status
+                claim = db.query(Claim).filter(Claim.id == payment.claim_id).first()
+                if claim:
+                    claim.status = "approved"
+                    if not hasattr(claim, 'payout_status'):
+                        claim.razorpay_payment_id = razorpay_payment_id
+                    db.commit()
+                logger.info(f"✅ Claim payment authorized: {payment.id} | ₹{payment.amount_rupees}")
+            else:
+                # It's a POLICY RENEWAL
+                worker = db.query(Worker).filter(Worker.id == payment.worker_id).first()
+                if worker:
+                    from datetime import timedelta
+                    
+                    # 1. Update Worker model for fast state checks
+                    old_expiry = worker.policy_expiry_date or datetime.now()
+                    new_expiry = old_expiry + timedelta(days=7)
+                    worker.policy_expiry_date = new_expiry
+                    worker.policy_status = "active"
+                    worker.is_active = True
+                    
+                    # 2. Create permanent Policy history record for the audit trail
+                    new_policy = Policy(
+                        id = "POL-" + uuid.uuid4().hex[:6].upper(),
+                        worker_id = worker.id,
+                        plan = worker.plan or "standard",
+                        premium = payment.amount_rupees,
+                        status = "active",
+                        start_date = old_expiry,
+                        end_date = new_expiry,
+                        renewal_count = 0 # Will be updated if we want to track sequence
+                    )
+                    db.add(new_policy)
+                    db.commit()
+                    logger.info(f"✅ Policy renewal record created: {new_policy.id} | Worker: {payment.worker_id}")
             
-            logger.info(f"✅ Payment authorized: {payment.id} | ₹{amount/100:.2f}")
-            
-            # Send notification (will implement in routes_notifications.py)
-            self._send_payout_notification(payment.worker_id, payment.amount_rupees)
+            # Send notification
+            self._send_payout_notification(db, payment.worker_id, payment.amount_rupees)
             
             return {
                 "status": "success",
                 "payment_id": payment.id,
-                "message": "Payment received and claim approved"
+                "message": "Payment received and processed successfully"
             }
         
         except Exception as e:
@@ -479,12 +517,12 @@ class PaymentEngine:
         except Exception as e:
             logger.error(f"Failed to log payment event: {e}")
     
-    def _send_payout_notification(self, worker_id: str, amount_rupees: float):
-        """Send payout notification to worker."""
-        db = SessionLocal()
+    def _send_payout_notification(self, db, worker_id: str, amount_rupees: float):
+        """Send payout notification to worker via multiple channels."""
         try:
             from app.models import NotificationLog
             
+            # 1. In-App Notification
             notif = NotificationLog(
                 id=f"NTF-{uuid.uuid4().hex[:8].upper()}",
                 worker_id=worker_id,
@@ -496,11 +534,23 @@ class PaymentEngine:
             )
             db.add(notif)
             db.commit()
-            logger.info(f"📧 Notification sent to {worker_id}")
+
+            # 2. External Notifications (Free Channels)
+            worker = db.query(Worker).filter(Worker.id == worker_id).first()
+            if worker:
+                from app.sms_engine import (
+                    send_sms_notification, send_whatsapp_notification,
+                    send_telegram_notification, send_free_whatsapp_notification
+                )
+                msg = f"ZenVyte GigPulse: Payout of ₹{amount_rupees:.2f} credited to your UPI account."
+                send_sms_notification(worker.phone, msg)
+                send_whatsapp_notification(worker.phone, msg)
+                send_telegram_notification(msg)
+                send_free_whatsapp_notification(msg)
+
+            logger.info(f"📧 All Notifications sent to {worker_id}")
         except Exception as e:
             logger.error(f"Failed to send payout notification: {e}")
-        finally:
-            db.close()
 
     def _reset_test_state(self):
         """Clear payment tables between tests while preserving worker and claim data."""

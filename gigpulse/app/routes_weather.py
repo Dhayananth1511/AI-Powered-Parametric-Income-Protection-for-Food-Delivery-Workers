@@ -18,9 +18,14 @@ async def get_weather(zone: str, lat: float = None, lon: float = None, db: Sessi
                 lat, lon = t_data["lat"], t_data["lon"]
                 break
                 
-    weather  = await fetch_weather(zone, lat, lon)
+    # Fetch weather and alerts in parallel for speed
+    import asyncio
+    weather_task = fetch_weather(zone, lat, lon)
+    ndma_task    = fetch_ndma_alerts(zone)
+    
+    weather, ndma = await asyncio.gather(weather_task, ndma_task)
+    
     triggers = check_triggers(weather)
-    ndma     = await fetch_ndma_alerts(zone)
     zone_st  = get_zone_status(zone)
 
     # Log to DB

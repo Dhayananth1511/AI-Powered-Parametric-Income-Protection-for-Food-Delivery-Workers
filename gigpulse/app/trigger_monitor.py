@@ -13,7 +13,8 @@ import asyncio, uuid
 # ─────────────────────────────────────────────────────────────────────────────
 _ZONE_STATE: Dict[str, dict] = {}
 
-CONFIRMATION_MINUTES = 20   # 15–30 min window (20 for demo)
+# CONFIRMATION_MINUTES = 20   # 15–30 min window (20 for production)
+CONFIRMATION_MINUTES = 1    # 1 min window (for LIVE DEMO responsiveness)
 
 def _db():
     return SessionLocal()

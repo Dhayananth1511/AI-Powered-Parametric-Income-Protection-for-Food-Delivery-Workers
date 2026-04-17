@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models import Worker, Policy, NotificationLog
 from app.ml_engine import calculate_dynamic_premium, PLAN_ORDER
+from app.compliance import is_policy_freeze
 from datetime import datetime, timedelta
 import uuid
 
@@ -29,6 +30,9 @@ def create_policy(req: PolicyCreate, db: Session = Depends(get_db)):
     worker = db.query(Worker).filter(Worker.id == req.worker_id).first()
     if not worker:
         raise HTTPException(404, "Worker not found")
+
+    if is_policy_freeze():
+        raise HTTPException(403, "Regulatory Defense: New policy creation is currently frozen by the regulator due to market conditions.")
 
     month   = datetime.now().month
     premium = calculate_dynamic_premium(worker.zone, req.plan, month, worker.trust_score or 40)

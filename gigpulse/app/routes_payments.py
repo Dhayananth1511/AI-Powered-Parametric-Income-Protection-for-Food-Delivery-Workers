@@ -8,9 +8,11 @@ from fastapi.responses import JSONResponse
 import json
 import logging
 from app.payment_engine import payment_engine
-from app.database import SessionLocal
-from app.models import Payment, Claim
+from app.database import SessionLocal, get_db
+from app.models import Payment, Claim, Worker, Policy
+from app.ml_engine import calculate_dynamic_premium
 from datetime import datetime
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,43 @@ async def create_payment_order(claim_id: str, body: dict = None):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+@router.post("/policy/renewal/order")
+async def create_renewal_order(body: dict, db: SessionLocal = Depends(get_db)):
+    """
+    Create Razorpay order for a policy renewal.
+    Request: { "worker_id": str }
+    """
+    worker_id = body.get("worker_id")
+    if not worker_id:
+        raise HTTPException(status_code=400, detail="Worker ID required")
+    
+    worker = db.query(Worker).filter(Worker.id == worker_id).first()
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+        
+    # Calculate premium
+    month = datetime.now().month
+    premium_data = calculate_dynamic_premium(worker.zone, worker.plan, month, worker.trust_score or 40)
+    amount_rupees = premium_data["final_premium"]
+    
+    # Create order via payment engine
+    # We use a special idempotency key for renewals (per worker, per week-ish)
+    idempotency_key = f"REN-{worker_id}-{datetime.now().strftime('%Y-%m-%d')}"
+    
+    result = payment_engine.create_order(
+        claim_id=None, # It's a renewal, not a claim
+        amount_rupees=amount_rupees,
+        worker_id=worker_id,
+        idempotency_key=idempotency_key
+    )
+    
+    # Add extra metadata for the frontend
+    if result["success"]:
+        result["plan"] = worker.plan
+        result["premium_detail"] = premium_data
+        
+    return JSONResponse(result)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Razorpay Webhook Handler

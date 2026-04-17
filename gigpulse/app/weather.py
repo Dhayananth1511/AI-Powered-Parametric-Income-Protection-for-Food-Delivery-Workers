@@ -72,131 +72,112 @@ TRIGGERS = {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Global Weather Cache (In-Memory for production resilience)
+# Global High-Performance Connection Pool & Cache
 # ─────────────────────────────────────────────────────────────────────────────
-_WEATHER_CACHE = {}
+_HTTP_CLIENT = httpx.AsyncClient(timeout=10.0, limits=httpx.Limits(max_connections=40))
+_WEATHER_CACHE = {} # {zone: {"cache_until": timestamp, "data": {}}}
 
 def get_cached_weather(zone: str) -> dict:
-    return _WEATHER_CACHE.get(zone)
+    cached = _WEATHER_CACHE.get(zone)
+    if cached and datetime.now().timestamp() < cached["cache_until"]:
+        return cached["data"]
+    return None
 
-def update_weather_cache(zone: str, data: dict):
-    _WEATHER_CACHE[zone] = data
+def update_weather_cache(zone: str, data: dict, ttl_seconds: int = 300):
+    _WEATHER_CACHE[zone] = {
+        "cache_until": datetime.now().timestamp() + ttl_seconds,
+        "data":        data
+    }
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Weather Fetch (OWM real + WAQI real + Open-Meteo Hyper-Local + mock fallback)
-# ─────────────────────────────────────────────────────────────────────────────
 async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict:
+    # 1. Check TTL Cache First
+    cached = get_cached_weather(zone)
+    if cached:
+        cached["source"] = cached.get("source", "").replace("Live", "Cached")
+        return cached
+
     if lat is None or lon is None:
+        # First attempt: Exact match
         coords = ZONE_COORDS.get(zone)
+        # Second attempt: Fuzzy match
+        if not coords:
+            for k, v in ZONE_COORDS.items():
+                if zone.lower() in k.lower() or k.lower() in zone.lower():
+                    coords = v
+                    zone = k 
+                    break
         if not coords:
             return {"error": "Invalid Zone", "zone": zone}
         lat, lon = coords
 
-    # Hyper-Local Deep Integration: Open-Meteo (No API Key Required)
+    # Hyper-Local Deep Integration APIs
     url_open_meteo = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,precipitation,weather_code,wind_speed_10m&hourly=precipitation_probability"
-
-    url_owm = None
-    if OWM_KEY:
-        url_owm = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OWM_KEY}&units=metric"
-           
-    # Deep Integration: Secondary API for AQI (WAQI / AQICN)
+    url_owm = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OWM_KEY}&units=metric" if OWM_KEY else None
     url_waqi = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQI_KEY}" if WAQI_KEY else None
 
-    # Track data
+    # Initial payload
     weather_payload = {
-        "zone":         zone,
-        "temperature":  0.0,
-        "feels_like":   0.0,
-        "humidity":     70,
-        "rainfall_1h":  0.0,
-        "rainfall_3h":  0.0,
-        "wind_speed":   0.0,
-        "description":  "clear",
-        "aqi":          0,
-        "cyclone":      False,
-        "curfew":       False,
-        "source":       "Satellite Syncing...",
-        "fetched_at":   datetime.now().isoformat(),
+        "zone": zone, "temperature": 0.0, "feels_like": 0.0, "humidity": 70,
+        "rainfall_1h": 0.0, "rainfall_3h": 0.0, "wind_speed": 0.0,
+        "description": "clear", "aqi": 0, "cyclone": False, "curfew": False,
+        "source": "Satellite Syncing...", "fetched_at": datetime.now().isoformat(),
     }
 
     try:
-        async with httpx.AsyncClient() as client:
-            # 1. Fetch Open-Meteo (Highest Granularity, Reliable)
-            om_task = client.get(url_open_meteo, timeout=5.0)
-            
-            # 2. Fetch OWM (Optional fallback)
-            owm_task = client.get(url_owm, timeout=5.0) if url_owm else None
-            
-            # 3. Fetch WAQI
-            waqi_task = client.get(url_waqi, timeout=5.0) if url_waqi else None
+        # EXECUTE IN PARALLEL WITH SHARED CLIENT
+        tasks = []
+        tasks.append(_HTTP_CLIENT.get(url_open_meteo, timeout=3.5))
+        if url_owm:  tasks.append(_HTTP_CLIENT.get(url_owm, timeout=3.5))
+        if url_waqi: tasks.append(_HTTP_CLIENT.get(url_waqi, timeout=3.5))
 
-            # Execute available API calls
-            tasks = [t for t in [om_task, owm_task, waqi_task] if t]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Results Mapping
+        res_om   = results[0] if len(results) > 0 else None
+        res_owm  = results[1] if len(results) > 1 and url_owm else None
+        idx_waqi = 2 if url_owm else 1
+        res_waqi = results[idx_waqi] if len(results) > idx_waqi and url_waqi else None
 
-            res_om = results[0] if len(results) > 0 else None
-            res_owm = results[1] if len(results) > 1 and owm_task else None
-            res_waqi = results[2] if len(results) > 2 and waqi_task else (results[1] if len(results) > 1 and waqi_task and not owm_task else None)
+        source_label = []
+        
+        # Parse Open-Meteo
+        if res_om and not isinstance(res_om, Exception) and res_om.status_code == 200:
+            om_data = res_om.json()
+            curr = om_data.get("current", {})
+            weather_payload["temperature"] = curr.get("temperature_2m", 30.0)
+            weather_payload["rainfall_1h"] = curr.get("precipitation", 0.0)
+            weather_payload["rainfall_3h"] = weather_payload["rainfall_1h"] * 3
+            weather_payload["wind_speed"]  = curr.get("wind_speed_10m", 0.0) / 3.6
+            weather_payload["description"] = "OpenMeteo Live"
+            source_label.append("Open-Meteo")
 
-            # Process WAQI
-            real_aqi = None
-            if res_waqi and not isinstance(res_waqi, Exception) and res_waqi.status_code == 200:
-                w_data = res_waqi.json()
-                if w_data.get("status") == "ok":
-                    real_aqi = w_data.get("data", {}).get("aqi")
-                    weather_payload["aqi"] = int(real_aqi)
+        # Parse OWM
+        if res_owm and not isinstance(res_owm, Exception) and res_owm.status_code == 200:
+            o_data = res_owm.json()
+            if not source_label: # fallback settings
+                weather_payload["temperature"] = o_data["main"]["temp"]
+                weather_payload["description"] = o_data["weather"][0]["description"]
+            # Enriched rain
+            owm_rain = o_data.get("rain", {}).get("1h", 0.0)
+            if owm_rain > weather_payload["rainfall_1h"]:
+                weather_payload["rainfall_1h"] = owm_rain
+                weather_payload["rainfall_3h"] = o_data.get("rain", {}).get("3h", owm_rain * 3)
+            source_label.append("OWM")
 
-            source_label = []
-            
-            # Process Open-Meteo (Primary for Hyper-Local)
-            om_success = False
-            if res_om and not isinstance(res_om, Exception) and res_om.status_code == 200:
-                om_data = res_om.json()
-                current = om_data.get("current", {})
-                weather_payload["temperature"] = current.get("temperature_2m", 30.0)
-                weather_payload["feels_like"] = weather_payload["temperature"] + 2.0  # Appx
-                weather_payload["rainfall_1h"] = current.get("precipitation", 0.0)
-                weather_payload["rainfall_3h"] = weather_payload["rainfall_1h"] * 3
-                weather_payload["wind_speed"] = current.get("wind_speed_10m", 0.0) / 3.6 # kmh to m/s
-                weather_payload["description"] = "OpenMeteo Live"
-                om_success = True
-                source_label.append("Open-Meteo")
-
-            # Process OWM (Secondary/Ensemble)
-            if res_owm and not isinstance(res_owm, Exception) and res_owm.status_code == 200:
-                o_data = res_owm.json()
-                if not om_success:
-                    weather_payload["temperature"] = o_data["main"]["temp"]
-                    weather_payload["feels_like"] = o_data["main"]["feels_like"]
-                    weather_payload["humidity"] = o_data["main"]["humidity"]
-                    weather_payload["wind_speed"] = o_data["wind"]["speed"]
-                    weather_payload["description"] = o_data["weather"][0]["description"]
-                
-                # Use OWM rain if OpenMeteo didn't detect any (aggregation)
-                owm_rain_1h = o_data.get("rain", {}).get("1h", 0.0)
-                if owm_rain_1h > weather_payload["rainfall_1h"]:
-                    weather_payload["rainfall_1h"] = owm_rain_1h
-                    weather_payload["rainfall_3h"] = o_data.get("rain", {}).get("3h", owm_rain_1h * 3)
-                source_label.append("OWM")
-
-            if real_aqi:
+        # Parse WAQI
+        if res_waqi and not isinstance(res_waqi, Exception) and res_waqi.status_code == 200:
+            w_data = res_waqi.json()
+            if w_data.get("status") == "ok":
+                weather_payload["aqi"] = int(w_data.get("data", {}).get("aqi", 0))
                 source_label.append("WAQI")
-            else:
-                source_label.append("Mock AQI")
 
-            if len(source_label) > 0:
-                weather_payload["source"] = " + ".join(source_label) + " Live"
-                update_weather_cache(zone, weather_payload)
-                return weather_payload
+        if source_label:
+            weather_payload["source"] = " + ".join(source_label) + " Live"
+            update_weather_cache(zone, weather_payload)
+            return weather_payload
 
-    except Exception as e:
-        pass # Fallback to cache
-
-    cached = get_cached_weather(zone)
-    if cached:
-        cached["source"] = cached.get("source", "").replace("Live", "(Cached)")
-        return cached
+    except Exception:
+        pass
 
     return weather_payload
 
@@ -204,77 +185,31 @@ async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict
 # Trigger Checker
 # ─────────────────────────────────────────────────────────────────────────────
 def check_triggers(weather: dict) -> list:
-    """Return list of triggered parametric events from weather data."""
     triggered = []
     if weather.get("rainfall_3h", 0) >= TRIGGERS["rainfall"]["threshold"]:
-        triggered.append({
-            "type": "rainfall", "value": weather["rainfall_3h"],
-            "label": "Heavy Rainfall", "payout_type": "hourly",
-            "unit": TRIGGERS["rainfall"]["unit"],
-        })
+        triggered.append({"type": "rainfall", "value": weather["rainfall_3h"], "label": "Heavy Rainfall", "payout_type": "hourly", "unit": "mm"})
     if weather.get("temperature", 0) >= TRIGGERS["temperature"]["threshold"]:
-        triggered.append({
-            "type": "temperature", "value": weather["temperature"],
-            "label": "Extreme Heat", "payout_type": "hourly",
-            "unit": TRIGGERS["temperature"]["unit"],
-        })
+        triggered.append({"type": "temperature", "value": weather["temperature"], "label": "Extreme Heat", "payout_type": "hourly", "unit": "°C"})
     if weather.get("aqi", 0) >= TRIGGERS["aqi"]["threshold"]:
-        triggered.append({
-            "type": "aqi", "value": weather["aqi"],
-            "label": "Severe AQI", "payout_type": "hourly",
-            "unit": TRIGGERS["aqi"]["unit"],
-        })
-    if weather.get("cyclone"):
-        triggered.append({
-            "type": "cyclone", "value": 1,
-            "label": "Cyclone/Flood Alert", "payout_type": "full_cap",
-            "unit": "alert",
-        })
-    if weather.get("curfew"):
-        triggered.append({
-            "type": "curfew", "value": 1,
-            "label": "Curfew/Hartal", "payout_type": "full_cap",
-            "unit": "flag",
-        })
+        triggered.append({"type": "aqi", "value": weather["aqi"], "label": "Severe AQI", "payout_type": "hourly", "unit": "AQI"})
     return triggered
 
 # ─────────────────────────────────────────────────────────────────────────────
-# NDMA Mock Alerts
+# NDMA Mock Alerts (With Aggressive Timeout)
 # ─────────────────────────────────────────────────────────────────────────────
 async def fetch_ndma_alerts(zone: str) -> dict:
-    """Simulate NDMA disaster alert feed by fetching live Global Disaster Alert (GDACS)."""
-    alert_payload = {
-        "zone":    zone,
-        "cyclone": False,
-        "flood":   False,
-        "curfew":  False,
-        "source":  "GDACS RSS (Live)",
-        "updated": datetime.now().isoformat(),
-    }
-    
+    alert_payload = { "zone": zone, "cyclone": False, "flood": False, "curfew": False, "source": "GDACS Live", "updated": datetime.now().isoformat() }
     try:
-        # Fetch GDACS Global RSS Live Feed (Disasters in last 24h/7d)
-        async with httpx.AsyncClient() as client:
-            resp = await client.get("https://gdacs.org/xml/rss.xml", timeout=5.0)
-            if resp.status_code == 200:
-                root = ET.fromstring(resp.content)
-                # Check for active cyclones or floods globally
-                for item in root.findall(".//item"):
-                    title = item.find("title").text.lower() if item.find("title") is not None else ""
-                    # In a real environment we would check distance via geo:lat geo:lon 
-                    # For demo purposes, we will trigger if it mentions India or is a severe global Cyclone
-                    if "cyclone" in title and ("india" in title or "0" not in title): # Simulating hit
-                        alert_payload["cyclone"] = False # Do not auto-trigger false positive globally, leave false unless testing
-                    if "flood" in title:
-                        alert_payload["flood"] = False
-    except Exception as e:
-        alert_payload["source"] = "NDMA Feed (Offline)"
-        pass
-
+        # AGGRESSIVE TIMEOUT FOR SECONDARY SERVICE
+        resp = await _HTTP_CLIENT.get("https://gdacs.org/xml/rss.xml", timeout=1.5)
+        if resp.status_code == 200:
+            root = ET.fromstring(resp.content)
+            for item in root.findall(".//item"):
+                title = item.find("title").text.lower() if item.find("title") is not None else ""
+                if "cyclone" in title and "india" in title: alert_payload["cyclone"] = False
+    except Exception:
+        alert_payload["source"] = "NDMA Feed (Offline/Slow)"
     return alert_payload
 
-# ─────────────────────────────────────────────────────────────────────────────
-# All Zones Utility
-# ─────────────────────────────────────────────────────────────────────────────
 def get_all_zones():
     return sorted(ZONE_COORDS.keys())

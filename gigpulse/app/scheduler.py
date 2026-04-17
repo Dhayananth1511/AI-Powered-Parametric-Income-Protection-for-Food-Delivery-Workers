@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import logging
 from app.database import SessionLocal
 from app.models import Claim, DisruptionEvent, Payment, Worker, NotificationLog
-from app.trigger_monitor import get_zone_status, confirm_disruption, _ZONE_STATE, get_active_events
+from app.trigger_monitor import get_zone_status, confirm_disruption, _ZONE_STATE, get_active_events, CONFIRMATION_MINUTES
 from app.payment_engine import payment_engine
 import uuid
 import json
@@ -99,10 +99,9 @@ def job_confirm_disruptions():
                 conf_start = state.get("confirmation_start")
                 if conf_start:
                     elapsed = (datetime.now() - conf_start).total_seconds() / 60
-                    if elapsed >= 20:  # Confirmation window complete
+                    if elapsed >= CONFIRMATION_MINUTES:  # Confirmation window complete
                         logger.info(f"✅ Confirming disruption for {zone}")
-                        state["status"] = "confirmed"
-                        state["confirmation_end"] = datetime.now()
+                        confirm_disruption(zone)
                         confirmed += 1
         
         logger.info(f"✅ Disruption confirmation check: {confirmed} confirmed")
@@ -116,7 +115,7 @@ def job_auto_create_claims():
     db = SessionLocal()
     try:
         from app.claims import run_claim_pipeline
-        active_disruptions = get_active_events()
+        active_disruptions = [d for d in get_active_events() if d["status"] == "confirmed"]
         
         if not active_disruptions:
             return
@@ -379,10 +378,10 @@ def job_reset_weekly_stats():
 def initialize_scheduler():
     """Initialize and start background job scheduler."""
     try:
-        # Check zone disruptions every 15 minutes
+        # Check zone disruptions every 2 minutes (DEMO SPEED)
         scheduler.add_job(
             job_check_zone_disruptions,
-            IntervalTrigger(minutes=15),
+            IntervalTrigger(minutes=2),
             id="job_check_zone_disruptions",
             name="Check Zone Disruptions",
             replace_existing=True
@@ -391,16 +390,16 @@ def initialize_scheduler():
         # Confirm disruptions every 10 minutes
         scheduler.add_job(
             job_confirm_disruptions,
-            IntervalTrigger(minutes=10),
+            IntervalTrigger(minutes=2),
             id="job_confirm_disruptions",
             name="Confirm Disruptions",
             replace_existing=True
         )
         
-        # Auto-create claims when disruption confirmed (every 10 minutes)
+        # Auto-create claims when disruption confirmed (every 2 minutes)
         scheduler.add_job(
             job_auto_create_claims,
-            IntervalTrigger(minutes=10),
+            IntervalTrigger(minutes=2),
             id="job_auto_create_claims",
             name="Auto-Create Claims",
             replace_existing=True

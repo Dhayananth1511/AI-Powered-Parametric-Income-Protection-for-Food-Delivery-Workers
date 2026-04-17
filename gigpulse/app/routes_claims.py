@@ -119,11 +119,15 @@ async def trigger_claim(req: ClaimTrigger, db: Session = Depends(get_db)):
         worker.earnings_protected = (worker.earnings_protected or 0) + result["payout"]
         
         if result["status"] == "approved":
-            from app.sms_engine import send_sms_notification
-            send_sms_notification(
-                to_phone=worker.phone,
-                message=f"ZenVyte GigPulse: Claim for {trigger['label']} Auto-Approved! ₹{result['payout']} has been credited."
+            from app.sms_engine import (
+                send_sms_notification, send_whatsapp_notification,
+                send_telegram_notification, send_free_whatsapp_notification
             )
+            msg = f"ZenVyte GigPulse: Claim Approved! ₹{result['payout']} Credited."
+            send_sms_notification(to_phone=worker.phone, message=msg)
+            send_whatsapp_notification(to_phone=worker.phone, message=msg)
+            send_telegram_notification(message=msg)
+            send_free_whatsapp_notification(message=msg)
             
     elif result["status"] == "rejected":
         worker.claims_rejected  = (worker.claims_rejected or 0) + 1
@@ -276,11 +280,14 @@ def zone_simulate(req: ZoneSimulate, db: Session = Depends(get_db)):
             )
             db.add(notif)
             
-            from app.sms_engine import send_sms_notification
-            send_sms_notification(
-                to_phone=worker.phone,
-                message=notif_msg
+            from app.sms_engine import (
+                send_sms_notification, send_whatsapp_notification,
+                send_telegram_notification, send_free_whatsapp_notification
             )
+            send_sms_notification(to_phone=worker.phone, message=notif_msg)
+            send_whatsapp_notification(to_phone=worker.phone, message=notif_msg)
+            send_telegram_notification(message=notif_msg)
+            send_free_whatsapp_notification(message=notif_msg)
             
         elif result["status"] == "manual_review":
             notif = NotificationLog(

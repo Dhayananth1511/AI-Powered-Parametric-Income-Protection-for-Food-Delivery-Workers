@@ -267,7 +267,16 @@ footer{
   .footer-top{grid-template-columns:1fr 1fr}
   .section{padding:70px 32px}
   nav{padding:0 20px}
-  .nav-links{display:none}
+  .nav-links{
+    position:absolute; top:var(--nav-h); left:0; right:0;
+    background:rgba(2,6,23,0.95); backdrop-filter:blur(20px);
+    flex-direction:column; padding:20px;
+    border-bottom:1px solid var(--border); box-shadow:var(--shadow);
+    display:none;
+  }
+  html[data-theme="light"] .nav-links{background:rgba(240,244,255,0.95)}
+  .nav-links.active{display:flex}
+  .hamburger{display:block !important; background:none; border:none; color:var(--text); font-size:24px; cursor:pointer; margin-left:10px}
   .logo-badge{display:none}
 }
 @media(max-width:600px){
@@ -335,6 +344,7 @@ footer{
         <button class="btn-nav btn-cta" onclick="window.location.href='gigpulse_onboarding.html'">Get Protected →</button>
       </div>
     </div>
+    <button class="hamburger" id="mobileMenuBtn" style="display:none">☰</button>
   </div>
 </nav>
 
@@ -593,7 +603,7 @@ footer{
       <p class="testi-text">"The AQI was 350 for 3 days straight and none of us could work. I got ₹1,200 automatically. No app submission, no waiting on call centre. Just money in my wallet."</p>
       <div class="testi-author">
         <div class="testi-avatar">🏍️</div>
-        <div><div class="testi-name">Arjun Raj</div><div class="testi-role">Zomato Partner · Marina Beach</div></div>
+        <div><div class="testi-name">Meena Selvam</div><div class="testi-role">Zomato Partner · Marina Beach</div></div>
       </div>
     </div>
     <div class="testi-card">
@@ -693,6 +703,19 @@ function goToDashboard() {
   if (!s) { window.location.href = 'gigpulse_login.html'; return; }
   window.location.href = s.role === 'admin' ? 'gigpulse_admin.html' : 'gigpulse_worker.html';
 }
+
+// ── Mobile Menu ───────────────────────────────────────────────────────────────
+document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
+  document.querySelector('.nav-links').classList.toggle('active');
+});
+
+// Close mobile menu when a link is clicked
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.remove('active');
+  });
+});
+
 
 // ── Scroll Nav Effect ─────────────────────────────────────────────────────────
 window.addEventListener('scroll', () => {

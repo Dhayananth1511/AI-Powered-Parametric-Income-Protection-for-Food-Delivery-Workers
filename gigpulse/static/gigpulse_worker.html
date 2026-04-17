@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
@@ -57,12 +58,12 @@ html[data-theme="light"] .premium-input { background: #fff; }
   .nav-btn-ghost { display: none !important; }
   .nav-logo { font-size: 15px; }
   .stats-grid { grid-template-columns: 1fr !important; }
-  .hero { padding: 24px 20px; text-align: center; }
-  .hero-badge { position: static; margin-bottom: 12px; display: block; font-size: 48px; }
+  .hero { padding: 24px 20px; text-align: left; }
+  .hero-badge { position: absolute !important; right: -10px !important; top: -10px !important; font-size: 100px !important; opacity: 0.1 !important; margin: 0; }
   .mobile-nav { display: grid; }
   .main { padding: 16px 16px 110px; }
-  .plan-sel { grid-template-columns: repeat(3,1fr) !important; }
-  .triggers-grid { grid-template-columns: repeat(3,1fr) !important; }
+  .plan-sel { grid-template-columns: repeat(2,1fr) !important; }
+  .triggers-grid { grid-template-columns: repeat(2,1fr) !important; }
   .btn-primary { width: 100%; }
 }
 
@@ -476,7 +477,7 @@ select option{background:#0f172a}
   <div class="card">
     <div class="card-hdr">
       <div class="card-title">📜 Policy History</div>
-      <button class="btn btn-primary btn-sm" onclick="openCheckoutModal()">🔄 Renew Policy</button>
+      <button class="btn btn-primary btn-sm" id="historyRenewBtn" onclick="openCheckoutModal()" style="display:none">🔄 Renew Policy</button>
     </div>
     <div id="policyHistory"><div class="empty-state">Loading...</div></div>
   </div>
@@ -604,7 +605,9 @@ async function loadZoneStatus() {
     document.getElementById("tv-aqi").textContent = aqi + " AQI";
     
     const sb = document.getElementById("zoneSourceBadge");
-    if(source.toLowerCase().includes("mock") || source === "System Fallback") {
+    const isMock = source.toLowerCase().includes("mock") || source.includes("Syncing") || source === "System Fallback";
+    
+    if(isMock) {
       sb.textContent = "🧪 Mocked Data";
       sb.style.background = "rgba(250,204,21,0.1)";
       sb.style.color = "var(--warn)";
@@ -730,11 +733,25 @@ async function loadPolicy() {
         ${alert}
       </div>` : "";
 
-    // Renew button if expired or expiring
-    const renewBtnHtml = (!isCovered || pStatus==="expiring_soon" || pStatus==="grace_period") ? `
-      <button class="btn btn-success" style="width:100%;margin-top:12px;font-size:13px" onclick="selfRenewPolicy('${workerId}')">
+    // Renew button: Visible but shaded if active, normal if expiring/expired
+    const isRenewEligible = (!isCovered || pStatus==="expiring_soon" || pStatus==="grace_period");
+    const btnStyle = isRenewEligible ? "" : "opacity:0.6;filter:grayscale(1);cursor:not-allowed";
+    const btnAction = isRenewEligible ? `selfRenewPolicy('${workerId}')` : `toast('Your policy is already active! Coverage remains for ${daysLeft} days.', 'info')`;
+    
+    const renewBtnHtml = `
+      <button class="btn btn-success" style="width:100%;margin-top:12px;font-size:13px;${btnStyle}" onclick="${btnAction}">
         🔄 Renew Policy — ₹${lcData?.weekly_premium || plan.premium}/week
-      </button>` : "";
+      </button>`;
+    
+    // Update the history section renew button too - always visible but shaded if active
+    const histBtn = document.getElementById("historyRenewBtn");
+    if(histBtn) {
+      histBtn.style.display = "inline-block";
+      histBtn.style.opacity = isRenewEligible ? "1" : "0.5";
+      histBtn.style.filter = isRenewEligible ? "none" : "grayscale(1)";
+      histBtn.style.cursor = isRenewEligible ? "pointer" : "not-allowed";
+      histBtn.onclick = isRenewEligible ? () => openCheckoutModal() : () => toast('Policy is already active!', 'info');
+    }
 
     el.innerHTML = `
       <div style="background:${sm.bg};border:1px solid ${sm.color}33;border-radius:14px;padding:16px">
@@ -885,7 +902,7 @@ function updatePayoutPreview() {
   const payout = meta.label.includes("Cyclone") || meta.label.includes("Curfew")
     ? plan.cap
     : Math.min(hrs, plan.maxHrs) * plan.rate;
-  const el = document.getElementById("payoutPreview");
+    const el = document.getElementById("payoutPreview");
   if(el) el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div><div style="font-weight:600">${meta.icon} ${meta.label}</div>
@@ -988,55 +1005,98 @@ async function confirmPlanChange() {
 // ── Policy Actions & Realistic Checkout ────────────────────────────────────
 let checkoutTargetPlan = null;
 
-function openCheckoutModal(planId = null) {
-  const planKey = planId || (workerData||sess).plan || "standard";
-  const p = PLANS[planKey];
-  checkoutTargetPlan = planKey;
-  
-  const base = p.premium;
-  const fee = base * 0.05;
-  const gst = (base + fee) * 0.18;
-  const total = base + fee + gst;
-  
-  document.getElementById("coPlanName").textContent = capitalize(planKey);
-  document.getElementById("coBase").textContent = formatINR(base);
-  document.getElementById("coFee").textContent = formatINR(fee.toFixed(2));
-  document.getElementById("coGst").textContent = formatINR(gst.toFixed(2));
-  document.getElementById("coTotal").textContent = formatINR(Math.round(total));
-  
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
-  document.getElementById("coValidUntil").textContent = `Valid until ${nextWeek.toLocaleDateString('en-IN', {weekday:'short', month:'short', day:'numeric'})}`;
-  
-  // Close standard plan modal if open
-  closeModal('planModal');
-  openModal('checkoutModal');
+function selfRenewPolicy(wid) {
+  openCheckoutModal();
 }
 
-async function executeCheckout() {
-  const btn = document.getElementById("coBtn");
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Processing Payment...';
-  try {
-    // Artificial Razorpay delay
-    await new Promise(r => setTimeout(r, 1200));
-    
-    if (checkoutTargetPlan !== (workerData||sess).plan) {
-      await GS.post("/policy/upgrade", { worker_id: (workerData||sess).id, new_plan: checkoutTargetPlan });
-    } else {
-      await GS.post("/policy/renew", { worker_id: (workerData||sess).id });
-    }
-    
-    closeModal('checkoutModal');
-    toast("💳 Payment successful! Policy Active.", "success", 5000);
-    
-    btn.disabled = false; btn.innerHTML = '🔒 Pay securely';
-    await loadPolicy();
-    await loadWorker();
-    await loadPolicyHistory();
-  } catch(e) { 
-    toast(e.message, "error"); 
-    btn.disabled = false; btn.innerHTML = '🔒 Pay securely';
+let checkoutData = null;
+
+async function openCheckoutModal(plan) {
+  // If plan is provided, we are upgrading. Otherwise renewing.
+  const targetPlan = plan || (workerData||sess).plan;
+  const btn = event?.target || document.getElementById('coBtn');
+  const originalHtml = btn?.innerHTML;
+  
+  if (btn && btn.id !== 'coBtn') {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Loading...';
   }
+  
+  try {
+    // 1. Create order for renewal or upgrade
+    const res = await GS.post("/api/claims/policy/renewal/order", { 
+      worker_id: (workerData||sess).id || (workerData||sess).worker_id 
+    });
+    
+    if (!res.success) throw new Error(res.error || "Failed to initiate payment");
+    
+    checkoutData = res;
+    
+    // 2. Populate Modal
+    document.getElementById("coPlanName").textContent = res.plan.charAt(0).toUpperCase() + res.plan.slice(1);
+    document.getElementById("coBase").textContent = "₹" + res.premium_detail.base_premium;
+    document.getElementById("coFee").textContent = "₹" + (res.premium_detail.zone_adjustment || 0);
+    document.getElementById("coGst").textContent = "₹" + (res.premium_detail.trust_discount || 0);
+    document.getElementById("coTotal").textContent = "₹" + res.amount_rupees;
+    document.getElementById("coValidUntil").textContent = "Coverage for 7 days";
+    
+    closeModal('planModal');
+    openModal('checkoutModal');
+  } catch(e) {
+    toast(e.message, "error");
+  } finally {
+    if (btn && btn.id !== 'coBtn') {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+function executeCheckout() {
+  if (!checkoutData || !checkoutData.razorpay_order_id) {
+    toast("Order session expired. Please restart.", "error");
+    return;
+  }
+
+  const options = {
+    "key": "rzp_test_SZIP95kZzRi2dT", // Hardcoded test key or from checkoutData.checkout_url
+    "amount": checkoutData.amount_rupees * 100,
+    "currency": "INR",
+    "name": "ZenVyte GigPulse",
+    "description": `Premium Payment - ${checkoutData.plan} Plan`,
+    "image": "favicon.svg",
+    "order_id": checkoutData.razorpay_order_id,
+    "handler": async function (response) {
+      const btn = document.getElementById("coBtn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Activating...';
+      
+      try {
+        // Confirm with server
+        await GS.post("/policy/renew", { 
+           worker_id: (workerData||sess).id || (workerData||sess).worker_id 
+        });
+        
+        toast("🛡️ Payment Successful! Your policy is now active.", "success", 5000);
+        closeModal('checkoutModal');
+        await loadPolicy();
+        await loadWorker();
+      } catch(e) {
+        toast("Manual verification required. Please check notifications.", "warning");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔒 Pay securely';
+      }
+    },
+    "prefill": {
+      "name": (workerData||sess).name,
+      "email": (workerData||sess).email
+    },
+    "theme": { "color": "#6366f1" }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.open();
 }
 
 async function confirmPlanChange() {
@@ -1126,6 +1186,10 @@ async function cancelPolicy() {
 }
 
 // ── Charting Logic (Chart.js) ───────────────────────────────────────────────
+let earningsChartInst = null;
+let riskGaugeChartInst = null;
+let claimsBreakdownChartInst = null;
+
 function initCharts() {
   Chart.defaults.color = "#94a3b8";
   Chart.defaults.font.family = "'Inter', sans-serif";
@@ -1148,7 +1212,8 @@ function setupRiskCharts() {
   // Risk gauge doughnut
   const gaugeCtx = document.getElementById("riskGaugeChart");
   if (gaugeCtx) {
-    new Chart(gaugeCtx, {
+    if(riskGaugeChartInst) riskGaugeChartInst.destroy();
+    riskGaugeChartInst = new Chart(gaugeCtx, {
       type: "doughnut",
       data: {
         datasets: [{
@@ -1187,10 +1252,11 @@ function setupRiskCharts() {
   // Claims breakdown bar
   const clCtx = document.getElementById("claimsBreakdownChart");
   if (clCtx) {
+    if(claimsBreakdownChartInst) claimsBreakdownChartInst.destroy();
     const approved = wd.claims_approved || 0;
     const rejected = wd.claims_rejected || 0;
     const review   = (wd.claims_total || 0) - approved - rejected;
-    new Chart(clCtx, {
+    claimsBreakdownChartInst = new Chart(clCtx, {
       type: "bar",
       data: {
         labels: ["Approved", "Review", "Rejected"],
@@ -1253,7 +1319,8 @@ async function setupEarningsChart() {
   Chart.defaults.color = "#94a3b8";
   Chart.defaults.font.family = "'Inter', sans-serif";
   
-  new Chart(ctx, {
+  if(earningsChartInst) earningsChartInst.destroy();
+  earningsChartInst = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,

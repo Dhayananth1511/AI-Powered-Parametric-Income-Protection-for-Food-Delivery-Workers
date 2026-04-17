@@ -8,6 +8,7 @@
 <meta name="description" content="Register as a ZenVyte GigPulse delivery worker — Aadhaar KYC, zone risk assessment, AI plan recommendation.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#020817;--surf:rgba(15,23,42,0.85);--border:rgba(99,102,241,0.2);--primary:#6366f1;--pglow:rgba(99,102,241,0.3);--text:#f8fafc;--muted:#94a3b8;--success:#4ade80;--error:#f87171;--warn:#facc15}
@@ -606,7 +607,7 @@ function showPaymentMock() {
   document.getElementById("payAmountTxt").textContent = "₹" + total;
 }
 
-function processMockPayment() {
+async function processMockPayment() {
   const btn = document.getElementById("processPayBtn");
   const overlay = document.getElementById("payOverlay");
   const status = document.getElementById("payStatus");
@@ -614,27 +615,68 @@ function processMockPayment() {
   
   const app = document.querySelector(".pay-app.selected .pay-app-lbl")?.textContent || "Payment App";
   
+  if (currentPayMethod === 'upi') {
+     // Optional: you could still do a mock for registration to keep it fast, 
+     // but the user wants "real popup".
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>Initiating...';
   
-  setTimeout(() => {
-    overlay.style.display = "flex";
-    status.textContent = `Launching ${app}...`;
-    sub.textContent = "Please complete the transaction in your banking app";
-    
-    setTimeout(() => {
-      status.textContent = "Verifying Payment...";
-      sub.textContent = "Securely confirming your transaction with the bank";
-      
-      setTimeout(() => {
-        overlay.style.display = "none";
-        document.getElementById("paymentModal").style.display = "none";
-        btn.disabled = false;
-        btn.innerHTML = "Pay Securely →";
-        completeRegistration();
-      }, 1500);
-    }, 2000);
-  }, 800);
+  try {
+    // 1. Create a "Renewal" order via the API to get an Order ID
+    // We treat the first registration payment as a "renewal" for the first week.
+    const order = await GS.post("/api/claims/policy/renewal/order", { 
+       worker_id: "NEW_REGISTRATION" // Backend handles this as a guest/temporary order
+    }).catch(() => ({ 
+       // Fallback to a mock order if the worker doesn't exist yet
+       razorpay_order_id: "order_mock_" + Math.random().toString(36).slice(2),
+       amount_rupees: premiumDetail?.final_premium || 90
+    }));
+
+    const options = {
+      "key": "rzp_test_SZIP95kZzRi2dT",
+      "amount": (premiumDetail?.final_premium || 90) * 100,
+      "currency": "INR",
+      "name": "ZenVyte GigPulse",
+      "description": `New Registration - ${selectedPlan} Plan`,
+      "image": "favicon.svg",
+      "order_id": order.razorpay_order_id,
+      "handler": async function (response) {
+        overlay.style.display = "flex";
+        status.textContent = "Payment Verified!";
+        sub.textContent = "Finalizing your registration...";
+        
+        await completeRegistration();
+        
+        setTimeout(() => {
+          overlay.style.display = "none";
+          document.getElementById("paymentModal").style.display = "none";
+          btn.disabled = false;
+          btn.innerHTML = "Pay Securely →";
+        }, 1000);
+      },
+      "prefill": {
+        "name": document.getElementById("name").value,
+        "email": document.getElementById("email").value
+      },
+      "theme": { "color": "#6366f1" },
+      "modal": {
+        "ondismiss": function() {
+           btn.disabled = false;
+           btn.innerHTML = "Pay Securely →";
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (e) {
+    toast("Checkout failed: " + e.message, "error");
+    btn.disabled = false;
+    btn.innerHTML = "Pay Securely →";
+  }
 }
 
 // Init

@@ -221,7 +221,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id                  = Column(String, primary_key=True, default=lambda: gen_id("PAY-"))
-    claim_id            = Column(String, nullable=False)
+    claim_id            = Column(String, nullable=True)
     worker_id           = Column(String, nullable=False)
 
     # Razorpay identifiers

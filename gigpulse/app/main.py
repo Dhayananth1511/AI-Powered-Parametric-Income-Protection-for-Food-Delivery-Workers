@@ -59,6 +59,7 @@ _POLICY_MIGRATIONS = [
     "ALTER TABLE workers ADD COLUMN policy_start_date TIMESTAMP",
     "ALTER TABLE workers ADD COLUMN policy_expiry_date TIMESTAMP",
     "ALTER TABLE workers ADD COLUMN policy_status VARCHAR DEFAULT 'active'",
+    "ALTER TABLE payments ALTER COLUMN claim_id DROP NOT NULL",
 ]
 
 # Index creation — safe to run repeatedly (IF NOT EXISTS)
@@ -171,41 +172,8 @@ def seed_db():
     week = timedelta(days=7)
     db: Session = SessionLocal()
     try:
-        demo_workers = [
-            Worker(
-                id="WKR-4821", name="Ravi Kumar", phone="+91 98765 43210",
-                email="ravi.kumar@swiggy.in", password=hash_password("demo1234"),
-                platform="Swiggy", zone="Velachery, Chennai", pincode="600042",
-                plan="standard", risk_score=0.58, trust_score=92,
-                payouts=640, sim_payouts=0, claims_total=12,
-                claims_approved=10, claims_rejected=2,
-                aadhaar_verified=True, earnings_protected=1640,
-                policy_start_date=now, policy_expiry_date=now+week, policy_status="active",
-            ),
-            Worker(
-                id="WKR-9901", name="Meena Selvam", phone="+91 99001 12233",
-                email="meena.s@zomato.in", password=hash_password("demo1234"),
-                platform="Zomato", zone="Anna Nagar, Chennai", pincode="600040",
-                plan="premium", risk_score=0.65, trust_score=80,
-                payouts=900, sim_payouts=0, claims_total=8,
-                claims_approved=7, claims_rejected=1,
-                aadhaar_verified=True, earnings_protected=1350,
-                policy_start_date=now, policy_expiry_date=now+week, policy_status="active",
-            ),
-        ]
-        # Production Hardening: Delete any "extra" workers not in the approved img list
-        core_ids = {w.id for w in demo_workers}
-        db.query(Worker).filter(Worker.id.notin_(core_ids)).delete(synchronize_session=False)
-
-        existing_ids = {w.id for w in db.query(Worker.id).all()}
-        for w in demo_workers:
-            if w.id not in existing_ids:
-                db.add(w)
-            else:
-                db.query(Worker).filter(
-                    Worker.id == w.id, Worker.policy_start_date == None
-                ).update({"policy_start_date": now, "policy_expiry_date": now+week, "policy_status": "active"})
-
+        # Production Demo Hardened: No hardcoded mock claims or workers here.
+        # Use reset_db.py for seeding the official demo state.
         if db.query(Admin).count() == 0:
             admins = [
                 Admin(id="ADM-001", name="Karthik Sundaram", email="admin@digit.com",
@@ -217,44 +185,6 @@ def seed_db():
             ]
             for a in admins:
                 db.add(a)
-
-        if db.query(Claim).count() == 0:
-            seed_claims = [
-                Claim(id="CLM-A001", worker_id="WKR-4821", trigger_type="rainfall",
-                      trigger_label="Heavy Rainfall", trigger_value=42.0,
-                      disruption_hrs=5.0, payout_amount=300.0, fraud_score=14,
-                      status="approved", razorpay_order_id="order_mock_001", is_simulated=True),
-                Claim(id="CLM-A002", worker_id="WKR-3302", trigger_type="cyclone",
-                      trigger_label="Cyclone Alert", trigger_value=1.0,
-                      disruption_hrs=7.0, payout_amount=630.0, fraud_score=8,
-                      status="approved", razorpay_order_id="order_mock_002", is_simulated=True),
-                Claim(id="CLM-A003", worker_id="WKR-7741", trigger_type="temperature",
-                      trigger_label="Extreme Heat", trigger_value=44.5,
-                      disruption_hrs=4.0, payout_amount=180.0, fraud_score=22,
-                      status="approved", razorpay_order_id="order_mock_003", is_simulated=True),
-                Claim(id="CLM-A004", worker_id="WKR-5593", trigger_type="aqi",
-                      trigger_label="Severe AQI", trigger_value=320.0,
-                      disruption_hrs=3.0, payout_amount=225.0, fraud_score=19,
-                      status="approved", razorpay_order_id="order_mock_004", is_simulated=True),
-                Claim(id="CLM-A005", worker_id="WKR-9901", trigger_type="rainfall",
-                      trigger_label="Heavy Rainfall", trigger_value=38.0,
-                      disruption_hrs=3.0, payout_amount=225.0, fraud_score=11,
-                      status="approved", razorpay_order_id="order_mock_005", is_simulated=True),
-                Claim(id="CLM-M001", worker_id="WKR-4821", trigger_type="rainfall",
-                      trigger_label="Heavy Rainfall", trigger_value=36.0,
-                      disruption_hrs=2.5, payout_amount=150.0, fraud_score=45,
-                      status="manual_review", razorpay_order_id="", is_simulated=True),
-                Claim(id="CLM-M002", worker_id="WKR-8847", trigger_type="temperature",
-                      trigger_label="Extreme Heat", trigger_value=43.5,
-                      disruption_hrs=2.0, payout_amount=70.0, fraud_score=52,
-                      status="manual_review", razorpay_order_id="", is_simulated=True),
-                Claim(id="CLM-R001", worker_id="WKR-7741", trigger_type="rainfall",
-                      trigger_label="Heavy Rainfall", trigger_value=38.0,
-                      disruption_hrs=3.0, payout_amount=0.0, fraud_score=82,
-                      status="rejected", razorpay_order_id="", is_simulated=True),
-            ]
-            for c in seed_claims:
-                db.add(c)
 
         db.commit()
         logger.info("✅ Database seeded successfully")
@@ -741,17 +671,8 @@ def get_loss_ratio(plan: str, disruption_hrs: float = 52.5):
 # Phase 3: Compliance Center — Market Crash Defense
 # ─────────────────────────────────────────────────────────────────────────────
 
-# In-memory compliance state (survives process restarts via seeding below)
-_COMPLIANCE_STATE = {
-    "market_crash_active": False,
-    "new_premium_cap":     None,   # e.g. 90 rupees if regulator forces a cap
-    "new_payout_cap":      None,   # e.g. 300 rupees
-    "sabotage_shield":     False,  # unlockable DC purchase
-    "freeze_new_policies": False,
-    "emergency_reserve_pct": 5.0,  # % of premiums held in reserve
-    "compliance_notes":    [],
-    "last_updated":        None,
-}
+# Compliance state is now managed by app.compliance module to prevent circular imports
+from app.compliance import get_compliance_state, update_compliance_state, is_market_crash, is_policy_freeze
 
 from pydantic import BaseModel as _BM
 class CompliancePatch(_BM):
@@ -764,33 +685,14 @@ class CompliancePatch(_BM):
     note: str = None
 
 @app.get("/admin/compliance")
-def get_compliance_state():
+def get_compl_state():
     """Get the current Phase 3 compliance / market crash state."""
-    return _COMPLIANCE_STATE
+    return get_compliance_state()
 
 @app.post("/admin/compliance")
-def update_compliance_state(patch: CompliancePatch):
+def update_compl_state(patch: CompliancePatch):
     """Update compliance parameters in real-time (Market Crash response)."""
-    if patch.market_crash_active is not None:
-        _COMPLIANCE_STATE["market_crash_active"] = patch.market_crash_active
-    if patch.new_premium_cap is not None:
-        _COMPLIANCE_STATE["new_premium_cap"] = patch.new_premium_cap
-    if patch.new_payout_cap is not None:
-        _COMPLIANCE_STATE["new_payout_cap"] = patch.new_payout_cap
-    if patch.sabotage_shield is not None:
-        _COMPLIANCE_STATE["sabotage_shield"] = patch.sabotage_shield
-    if patch.freeze_new_policies is not None:
-        _COMPLIANCE_STATE["freeze_new_policies"] = patch.freeze_new_policies
-    if patch.emergency_reserve_pct is not None:
-        _COMPLIANCE_STATE["emergency_reserve_pct"] = patch.emergency_reserve_pct
-    if patch.note:
-        _COMPLIANCE_STATE["compliance_notes"].append({
-            "text": patch.note,
-            "at": datetime.now().isoformat()
-        })
-    _COMPLIANCE_STATE["last_updated"] = datetime.now().isoformat()
-    logger.info(f"🚨 Compliance state updated: crash={_COMPLIANCE_STATE['market_crash_active']}")
-    return {"success": True, "state": _COMPLIANCE_STATE}
+    return {"success": True, "state": update_compliance_state(patch.dict())}
 
 @app.get("/admin/loss-ratio-trend")
 def get_loss_ratio_trend():

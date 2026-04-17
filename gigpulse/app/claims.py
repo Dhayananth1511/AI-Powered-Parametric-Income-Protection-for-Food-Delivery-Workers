@@ -4,6 +4,8 @@ from app.database import SessionLocal
 import os, uuid, json
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from app.trigger_monitor import CONFIRMATION_MINUTES
+from app.compliance import is_market_crash, get_payout_cap
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,10 +25,16 @@ def calculate_payout(plan: str, disruption_hrs: float, current_weekly_hrs: float
     hrs_to_pay = min(disruption_hrs, remaining_hrs)
     payout = round(hrs_to_pay * meta["rate"], 2)
     
+    # NEW: Compliance Payout Cap Enforcement
+    comp_cap = get_payout_cap()
+    if comp_cap is not None and payout > comp_cap:
+        payout = float(comp_cap)
+        # Note: we don't adjust hrs_added here, just the final money
+    
     return {
         "payout": payout,
         "hrs_added": hrs_to_pay,
-        "is_capped": hrs_to_pay < disruption_hrs
+        "is_capped": hrs_to_pay < disruption_hrs or (comp_cap is not None and payout == float(comp_cap))
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -174,7 +182,18 @@ def run_claim_pipeline(worker: dict, trigger: dict, disruption_hrs: float = 2.5,
             icon       = "💰",
         )
 
-    final_status = "manual_review" if fraud["decision"] == "MANUAL_REVIEW" else "approved"
+    # Final Status Determination (ML + Compliance)
+    if is_market_crash():
+        final_status = "manual_review"
+        steps.append({
+            "step": 7,
+            "label": "Regulatory Defense Active",
+            "detail": "Market Crash Mode detected. Claim pushed to manual review for liquidity protection.",
+            "status": "warning",
+            "icon": "🛡️",
+        })
+    else:
+        final_status = "manual_review" if fraud["decision"] == "MANUAL_REVIEW" else "approved"
 
     return {
         "status":         final_status,
@@ -188,4 +207,4 @@ def run_claim_pipeline(worker: dict, trigger: dict, disruption_hrs: float = 2.5,
         "timestamp_ist":  local_now.isoformat(),
     }
 
-CONFIRMATION_MINUTES_DISPLAY = "20 minutes"
+CONFIRMATION_MINUTES_DISPLAY = f"{CONFIRMATION_MINUTES} minutes"

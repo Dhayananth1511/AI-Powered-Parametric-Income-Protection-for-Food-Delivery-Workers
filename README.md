@@ -921,12 +921,7 @@ In production, ZenVyte GigPulse integrates with a licensed IRDAI insurance partn
 <br>
 **Team:** ZenVyte
 <br>
-**Members:**
 · Dhayananth N *(Lead)*
-· Mowlieswaran G
-· Arun Kumar S
-· Karthick V
-· Hardik Muthusamy
 <br>
 **Problem:** AI-Powered Insurance for India's Gig Economy
 <br>
