@@ -458,7 +458,7 @@ function initGigPulseBot() {
         // Strip out the prompt text if HD free model returns it by mistake
         let finalTxt = res.response;
         if(finalTxt.includes("<|assistant|>")) {
-            finalTxt = finalTxt.split("<|assistant|>").pop().strip();
+            finalTxt = finalTxt.split("<|assistant|>").pop().trim();
         }
         addMsg(finalTxt, "bot");
       } else {

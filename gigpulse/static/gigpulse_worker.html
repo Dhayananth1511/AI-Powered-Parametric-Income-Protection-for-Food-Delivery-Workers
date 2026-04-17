@@ -1058,9 +1058,32 @@ function executeCheckout() {
     return;
   }
 
+  // Handle Mock Mode
+  if (checkoutData.razorpay_order_id.startsWith("order_mock_")) {
+    const btn = document.getElementById("coBtn");
+    if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Activating...'; }
+    
+    setTimeout(async () => {
+      try {
+        await GS.post("/policy/renew", { 
+           worker_id: (workerData||sess).id || (workerData||sess).worker_id 
+        });
+        toast("🛡️ Mock Payment Successful! Your policy is now active.", "success", 5000);
+        closeModal('checkoutModal');
+        await loadPolicy();
+        await loadWorker();
+      } catch(e) {
+        toast("Manual verification required. Please check notifications.", "warning");
+      } finally {
+        if(btn) { btn.disabled = false; btn.innerHTML = '🔒 Pay securely'; }
+      }
+    }, 1000);
+    return;
+  }
+
   const options = {
-    "key": "rzp_test_SZIP95kZzRi2dT", // Hardcoded test key or from checkoutData.checkout_url
-    "amount": checkoutData.amount_rupees * 100,
+    "key": checkoutData.key_id || "rzp_test_SZIP95kZzRi2dT",
+    "amount": Math.round(checkoutData.amount_rupees * 100),
     "currency": "INR",
     "name": "ZenVyte GigPulse",
     "description": `Premium Payment - ${checkoutData.plan} Plan`,

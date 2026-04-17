@@ -118,6 +118,10 @@ async def create_renewal_order(body: dict, db: SessionLocal = Depends(get_db)):
     if result["success"]:
         result["plan"] = worker.plan
         result["premium_detail"] = premium_data
+        # Expose Razorpay key so the frontend never needs to hardcode it
+        result["key_id"] = payment_engine.key_id or ""
+        # Convenience alias used by executeCheckout()
+        result["razorpay_order_id"] = result.get("razorpay_order_id", "")
         
     return JSONResponse(result)
 
