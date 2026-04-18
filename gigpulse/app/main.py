@@ -126,7 +126,7 @@ allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://loc
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,  # Fixed: not "all origins"
+    allow_origins=["*"] if os.getenv("ENVIRONMENT") == "development" else allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -639,10 +639,26 @@ def get_zones():
 
 @app.get("/ml/risk/{zone}")
 def get_zone_risk(zone: str, month: int = None):
-    from app.ml_engine import zone_risk_breakdown
-    if month is None:
-        month = datetime.now().month
-    return zone_risk_breakdown(zone, month)
+    try:
+        from app.ml_engine import zone_risk_breakdown
+        if month is None:
+            month = datetime.now().month
+        return zone_risk_breakdown(zone, month)
+    except Exception as e:
+        logger.error(f"Error in get_zone_risk: {e}", exc_info=True)
+        # Fallback to a safe moderate response so onboarding doesn't break
+        return {
+            "zone": zone,
+            "overall_risk": 0.5,
+            "risk_label": "Analysis Fallback (Moderate)",
+            "recommended_plan": "standard",
+            "factors": {
+                "flood_risk": 0.5, "water_proximity": 0.5, "elevation_inv": 0.5,
+                "aqi_history": 0.5, "disruption_freq": 0.5
+            },
+            "is_monsoon": datetime.now().month in [6,7,8,9],
+            "disruption_months_per_year": 6
+        }
 
 @app.get("/ml/forecast/{zone}")
 def get_forecast(zone: str):

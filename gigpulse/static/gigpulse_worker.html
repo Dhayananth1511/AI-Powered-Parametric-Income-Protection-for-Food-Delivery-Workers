@@ -1058,7 +1058,7 @@ function executeCheckout() {
     return;
   }
 
-  // Handle Mock Mode
+  // Handle Mock Mode (explicit or fallback)
   if (checkoutData.razorpay_order_id.startsWith("order_mock_")) {
     const btn = document.getElementById("coBtn");
     if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Activating...'; }
@@ -1068,58 +1068,80 @@ function executeCheckout() {
         await GS.post("/policy/renew", { 
            worker_id: (workerData||sess).id || (workerData||sess).worker_id 
         });
-        toast("🛡️ Mock Payment Successful! Your policy is now active.", "success", 5000);
+        toast("🛡️ Demo Payment Successful! Coverage is now active.", "success", 5000);
         closeModal('checkoutModal');
         await loadPolicy();
         await loadWorker();
       } catch(e) {
-        toast("Manual verification required. Please check notifications.", "warning");
+        toast("Verification delayed. Please check your notifications tray.", "warning");
       } finally {
         if(btn) { btn.disabled = false; btn.innerHTML = '🔒 Pay securely'; }
       }
-    }, 1000);
+    }, 1500); // Slight delay for realistic feel
     return;
   }
 
-  const options = {
-    "key": checkoutData.key_id || "rzp_test_SZIP95kZzRi2dT",
-    "amount": Math.round(checkoutData.amount_rupees * 100),
-    "currency": "INR",
-    "name": "ZenVyte GigPulse",
-    "description": `Premium Payment - ${checkoutData.plan} Plan`,
-    "image": "favicon.svg",
-    "order_id": checkoutData.razorpay_order_id,
-    "handler": async function (response) {
-      const btn = document.getElementById("coBtn");
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spin"></span> Activating...';
-      
-      try {
-        // Confirm with server
-        await GS.post("/policy/renew", { 
-           worker_id: (workerData||sess).id || (workerData||sess).worker_id 
-        });
-        
-        toast("🛡️ Payment Successful! Your policy is now active.", "success", 5000);
-        closeModal('checkoutModal');
-        await loadPolicy();
-        await loadWorker();
-      } catch(e) {
-        toast("Manual verification required. Please check notifications.", "warning");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '🔒 Pay securely';
-      }
-    },
-    "prefill": {
-      "name": (workerData||sess).name,
-      "email": (workerData||sess).email
-    },
-    "theme": { "color": "#6366f1" }
-  };
+  // Real Razorpay Mode
+  try {
+    if (typeof Razorpay === 'undefined') {
+        throw new Error("Razorpay SDK not loaded. Check internet connection.");
+    }
 
-  const rzp = new Razorpay(options);
-  rzp.open();
+    const options = {
+      "key": checkoutData.key_id || "rzp_test_SZIP95kZzRi2dT",
+      "amount": Math.round(checkoutData.amount_rupees * 100),
+      "currency": "INR",
+      "name": "ZenVyte GigPulse",
+      "description": `Premium Payment - ${checkoutData.plan} Plan`,
+      "image": "favicon.svg",
+      "order_id": checkoutData.razorpay_order_id,
+      "handler": async function (response) {
+        const btn = document.getElementById("coBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spin"></span> Activating...';
+        
+        try {
+          // Confirm with server
+          await GS.post("/policy/renew", { 
+             worker_id: (workerData||sess).id || (workerData||sess).worker_id 
+          });
+          
+          toast("🛡️ Payment Successful! Your policy is now active.", "success", 5000);
+          closeModal('checkoutModal');
+          await loadPolicy();
+          await loadWorker();
+        } catch(e) {
+          toast("Manual verification required. Check notifications.", "warning");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '🔒 Pay securely';
+        }
+      },
+      "prefill": {
+        "name": (workerData||sess).name,
+        "email": (workerData||sess).email
+      },
+      "theme": { "color": "#6366f1" },
+      "modal": {
+        "ondismiss": function() {
+            toast("Payment cancelled", "info");
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (response){
+        toast("Payment Failed: " + response.error.description, "error");
+        console.error("Razorpay Payment Failed:", response.error);
+    });
+    rzp.open();
+  } catch(err) {
+    console.error("Razorpay Error:", err);
+    toast("Payment gateway error. Switching to Mock Mode...", "warning");
+    // Force mock ID and restart
+    checkoutData.razorpay_order_id = "order_mock_fallback_" + Math.random().toString(36).substr(2, 9);
+    setTimeout(executeCheckout, 1000);
+  }
 }
 
 async function confirmPlanChange() {

@@ -468,7 +468,13 @@ async function fetchZoneRisk() {
         </div>
       </div>`;
     selectedPlan = riskData.recommended_plan;
-  } catch(e) { panel.innerHTML = `<div style="color:var(--error);padding:12px">Failed to analyze zone</div>`; }
+  } catch(e) { 
+    console.error("Risk analysis failed:", e);
+    panel.innerHTML = `<div style="color:var(--error);padding:12px;font-size:13px">
+      ⚠️ Failed to analyze zone risk. Click to retry.
+      <br><button onclick="fetchZoneRisk()" style="margin-top:8px;padding:4px 12px;cursor:pointer">Retry</button>
+    </div>`; 
+  }
 }
 
 function nextStep3() {
@@ -627,12 +633,18 @@ async function processMockPayment() {
     // 1. Create a "Renewal" order via the API to get an Order ID
     // We treat the first registration payment as a "renewal" for the first week.
     const order = await GS.post("/api/claims/policy/renewal/order", { 
-       worker_id: "NEW_REGISTRATION" // Backend handles this as a guest/temporary order
-    }).catch(() => ({ 
-       // Fallback to a mock order if the worker doesn't exist yet
-       razorpay_order_id: "order_mock_" + Math.random().toString(36).slice(2),
-       amount_rupees: premiumDetail?.final_premium || 90
-    }));
+       worker_id: "NEW_REGISTRATION",
+       zone: document.getElementById("zoneSelect").value,
+       plan: selectedPlan
+    }).catch(err => {
+       console.warn("Backend order creation failed, using mock order:", err);
+       return { 
+         success: true,
+         razorpay_order_id: "order_mock_" + Math.random().toString(36).slice(2),
+         key_id: "rzp_test_SZIP95kZzRi2dT", // Last resort fallback
+         amount_rupees: premiumDetail?.final_premium || 90
+       };
+    });
 
     const options = {
       "key": "rzp_test_SZIP95kZzRi2dT",

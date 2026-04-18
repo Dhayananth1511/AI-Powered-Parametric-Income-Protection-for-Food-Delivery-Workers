@@ -95,17 +95,29 @@ async def create_renewal_order(body: dict, db: SessionLocal = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Worker ID required")
     
     worker = db.query(Worker).filter(Worker.id == worker_id).first()
-    if not worker:
+    
+    # NEW: Support for guest/onboarding registration orders
+    if not worker and worker_id != "NEW_REGISTRATION":
         raise HTTPException(status_code=404, detail="Worker not found")
         
+    if worker_id == "NEW_REGISTRATION":
+        # Standard defaults for a new registration guest
+        zone = body.get("zone", "Velachery, Chennai")
+        plan = body.get("plan", "standard")
+        trust_score = 40
+    else:
+        zone = worker.zone
+        plan = worker.plan
+        trust_score = worker.trust_score or 40
+
     # Calculate premium
     month = datetime.now().month
-    premium_data = calculate_dynamic_premium(worker.zone, worker.plan, month, worker.trust_score or 40)
+    premium_data = calculate_dynamic_premium(zone, plan, month, trust_score)
     amount_rupees = premium_data["final_premium"]
     
     # Create order via payment engine
     # We use a special idempotency key for renewals (per worker, per week-ish)
-    idempotency_key = f"REN-{worker_id}-{datetime.now().strftime('%Y-%m-%d')}"
+    idempotency_key = f"REN-{worker_id}-{datetime.now().strftime('%Y-%m-%d-%H%M')}"
     
     result = payment_engine.create_order(
         claim_id=None, # It's a renewal, not a claim
@@ -116,7 +128,7 @@ async def create_renewal_order(body: dict, db: SessionLocal = Depends(get_db)):
     
     # Add extra metadata for the frontend
     if result["success"]:
-        result["plan"] = worker.plan
+        result["plan"] = plan
         result["premium_detail"] = premium_data
         # Expose Razorpay key so the frontend never needs to hardcode it
         result["key_id"] = payment_engine.key_id or ""
