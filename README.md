@@ -715,6 +715,7 @@ twilio · python-multipart
 - **7 Live KPIs** — Policies · Weekly premium · Total payouts · Platform fee · Claims · Loss ratio · New today
 - **Claims Pipeline** — Auto-Approved · Manual Review (approve/reject) · Auto-Rejected
 - **Compliance Center** — Market Crash toggle, premium/payout cap, freeze controls, audit log
+- **Fraud Sandbox** — Interactive stress-test tool for the 6-signal AI detection engine
 - **Loss Ratio Trend** — Monthly bar chart
 - **Fraud Heatmap** — Zone-level fraud score visualization
 - **API Status Console** — Live latency for OWM, WAQI, NDMA with source label
