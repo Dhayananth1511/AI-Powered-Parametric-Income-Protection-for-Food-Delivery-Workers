@@ -750,6 +750,8 @@ twilio · python-multipart
 | ✅ Interactive God-View map dashboards — Leaflet + hexagon micro-zones | Live |
 | ✅ Predictive disruption alert engine — 48 hr zone forecast | Live |
 | ✅ Worker shift state (online/offline) — real-time telemetry | Live |
+| ✅ 24/7 Availability — Uptime monitoring to prevent Render free-tier sleep | Live |
+| ✅ GitHub Action 'Keep Alive' — automated ping every 10 minutes | Live |
 
 ---
 
