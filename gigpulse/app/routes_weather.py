@@ -14,7 +14,8 @@ async def get_weather(zone: str, lat: float = None, lon: float = None, db: Sessi
     if lat is None or lon is None:
         from app.ml_engine import latest_telemetry
         for t_data in latest_telemetry.values():
-            if t_data.get("zone") == zone and "lat" in t_data and "lon" in t_data:
+            t_zone = t_data.get("zone", "")
+            if t_zone.lower().strip() == zone.lower().strip() and "lat" in t_data and "lon" in t_data:
                 lat, lon = t_data["lat"], t_data["lon"]
                 break
                 

@@ -605,7 +605,7 @@ async function loadZoneStatus() {
     document.getElementById("tv-aqi").textContent = aqi + " AQI";
     
     const sb = document.getElementById("zoneSourceBadge");
-    const isMock = source.toLowerCase().includes("mock") || source.includes("Syncing") || source === "System Fallback";
+    const isMock = source.toLowerCase().includes("mock") || source.toLowerCase().includes("simulate") || source === "System Fallback";
     
     if(isMock) {
       sb.textContent = "🧪 Mocked Data";

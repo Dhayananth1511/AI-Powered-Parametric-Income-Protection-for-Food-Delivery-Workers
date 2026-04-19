@@ -126,12 +126,22 @@ async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict
     url_owm = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OWM_KEY}&units=metric" if OWM_KEY else None
     url_waqi = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQI_KEY}" if WAQI_KEY else None
 
+    # Standardized higher timeouts for production reliability (especially on Render)
+    TIMEOUT_SEC = 7.5
+
     try:
         # EXECUTE IN PARALLEL WITH SHARED CLIENT
         tasks = []
-        tasks.append(_HTTP_CLIENT.get(url_open_meteo, timeout=3.5))
-        if url_owm:  tasks.append(_HTTP_CLIENT.get(url_owm, timeout=3.5))
-        if url_waqi: tasks.append(_HTTP_CLIENT.get(url_waqi, timeout=3.5))
+        tasks.append(_HTTP_CLIENT.get(url_open_meteo, timeout=TIMEOUT_SEC))
+        if url_owm:  
+            tasks.append(_HTTP_CLIENT.get(url_owm, timeout=TIMEOUT_SEC))
+        else:
+            print("[Weather] Skipping OWM: No API Key")
+            
+        if url_waqi: 
+            tasks.append(_HTTP_CLIENT.get(url_waqi, timeout=TIMEOUT_SEC))
+        else:
+            print("[Weather] Skipping WAQI: No API Key")
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
@@ -140,6 +150,18 @@ async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict
         res_owm  = results[1] if len(results) > 1 and url_owm else None
         idx_waqi = 2 if url_owm else 1
         res_waqi = results[idx_waqi] if len(results) > idx_waqi and url_waqi else None
+
+        # Log individual failures for debugging (especially on Render)
+        if isinstance(res_om, Exception): print(f"[Weather] Open-Meteo ERROR: {res_om}")
+        elif res_om and res_om.status_code != 200: print(f"[Weather] Open-Meteo FAILED: {res_om.status_code}")
+
+        if url_owm:
+            if isinstance(res_owm, Exception): print(f"[Weather] OWM ERROR: {res_owm}")
+            elif res_owm and res_owm.status_code != 200: print(f"[Weather] OWM FAILED: {res_owm.status_code}")
+
+        if url_waqi:
+            if isinstance(res_waqi, Exception): print(f"[Weather] WAQI ERROR: {res_waqi}")
+            elif res_waqi and res_waqi.status_code != 200: print(f"[Weather] WAQI FAILED: {res_waqi.status_code}")
 
         source_label = []
         
