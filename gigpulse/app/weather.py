@@ -135,6 +135,7 @@ async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict
     # Standardized higher timeouts for production reliability (especially on Render)
     TIMEOUT_SEC = 7.5
 
+    try:
         # ─────────────────────────────────────────────────────────────
         # STAGGERED REQUESTS: Prevents burst rate-limiting (429)
         # especially on Open-Meteo which dislikes concurrent threads.
