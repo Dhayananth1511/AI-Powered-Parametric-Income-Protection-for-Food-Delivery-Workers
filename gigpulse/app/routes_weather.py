@@ -111,3 +111,14 @@ def get_weather_logs(limit: int = 20, db: Session = Depends(get_db)):
         }
         for l in logs
     ]
+
+@router.get("/debug")
+async def debug_weather():
+    """Diagnostic check for system health and API keys."""
+    from app.weather import get_api_status
+    from app.scheduler import get_scheduler_status
+    return {
+        "api_status":       get_api_status(),
+        "scheduler_status": get_scheduler_status(),
+        "datetime_utc":     datetime.utcnow().isoformat(),
+    }

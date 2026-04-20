@@ -21,25 +21,43 @@ logger = logging.getLogger(__name__)
 # Global scheduler instance
 scheduler = BackgroundScheduler()
 
+# Rotating batch state for weather polling
+_ZONE_BATCH_INDEX = 0
+_BATCH_SIZE = 15
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Scheduled Tasks
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def check_all_zones_concurrently():
-    """Fetch weather for all zones and feed trigger data into trigger_monitor."""
+    """Fetch weather for all zones in rotating batches to avoid rate limits."""
     from app.weather import get_all_zones, fetch_weather, check_triggers
     from app.trigger_monitor import start_confirmation_window, get_zone_status, _ZONE_STATE
     import asyncio
+    global _ZONE_BATCH_INDEX
 
-    zones = get_all_zones()
-    # Limit to a batch to avoid hammering the API on free tiers
-    batch = zones[:20]
+    all_zones = get_all_zones()
+    total_zones = len(all_zones)
+    
+    # Select next batch to rotate through all zones
+    start_idx = _ZONE_BATCH_INDEX % total_zones
+    end_idx = start_idx + _BATCH_SIZE
+    
+    if end_idx > total_zones:
+        batch = all_zones[start_idx:] + all_zones[:(end_idx % total_zones)]
+    else:
+        batch = all_zones[start_idx:end_idx]
+        
+    _ZONE_BATCH_INDEX = (_ZONE_BATCH_INDEX + _BATCH_SIZE) % total_zones
+    
+    logger.info(f"🔄 Polling Batch [{start_idx}:{end_idx % total_zones}] — {len(batch)} zones")
     
     from app.ml_engine import latest_telemetry
     
     tasks = []
     for zone in batch:
         lat, lon = None, None
+        # Try to find recent GPS for this zone to improve accuracy
         for t_data in latest_telemetry.values():
             if t_data.get("zone") == zone and "lat" in t_data:
                 lat, lon = t_data["lat"], t_data["lon"]

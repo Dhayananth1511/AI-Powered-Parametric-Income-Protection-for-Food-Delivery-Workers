@@ -217,6 +217,17 @@ async def startup_event():
                 logger.info("✅ ML engine pre-warmed")
             except Exception as ml_err:
                 logger.warning(f"⚠️  ML pre-warm skipped: {ml_err}")
+            # API Key Health Check
+            try:
+                from app.weather import get_api_status
+                status = get_api_status()
+                if status["owm_key_present"]:
+                    logger.info(f"✅ OpenWeatherMap API: Key Loaded ({status['owm_key_masked']})")
+                else:
+                    logger.warning("⚠️  OpenWeatherMap API: Key MISSING or Default. Live weather will be disabled.")
+            except Exception as api_err:
+                logger.warning(f"⚠️  API status check failed: {api_err}")
+
             logger.info("✅ Background startup complete")
         except Exception as e:
             logger.error(f"❌ Background startup error: {e}")

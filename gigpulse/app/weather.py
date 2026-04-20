@@ -74,7 +74,13 @@ TRIGGERS = {
 # ─────────────────────────────────────────────────────────────────────────────
 # Global High-Performance Connection Pool & Cache
 # ─────────────────────────────────────────────────────────────────────────────
-_HTTP_CLIENT = httpx.AsyncClient(timeout=10.0, limits=httpx.Limits(max_connections=40))
+# Enhanced for Render: Proper connection aging and robust timeouts
+_HTTP_CLIENT = httpx.AsyncClient(
+    timeout=httpx.Timeout(10.0, connect=5.0),
+    limits=httpx.Limits(max_connections=40, max_keepalive_connections=20),
+    follow_redirects=True,
+    headers={"User-Agent": "ZenVyte-GigPulse/2.1.0"}
+)
 _WEATHER_CACHE = {} # {zone: {"cache_until": timestamp, "data": {}}}
 
 def get_cached_weather(zone: str) -> dict:
@@ -151,17 +157,23 @@ async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict
         idx_waqi = 2 if url_owm else 1
         res_waqi = results[idx_waqi] if len(results) > idx_waqi and url_waqi else None
 
-        # Log individual failures for debugging (especially on Render)
-        if isinstance(res_om, Exception): print(f"[Weather] Open-Meteo ERROR: {res_om}")
-        elif res_om and res_om.status_code != 200: print(f"[Weather] Open-Meteo FAILED: {res_om.status_code}")
+        # Log individual failures with EXACT exception types for Render debugging
+        if isinstance(res_om, Exception):
+            print(f"[Weather] Open-Meteo ERROR: {type(res_om).__name__}: {res_om}")
+        elif res_om and res_om.status_code != 200:
+            print(f"[Weather] Open-Meteo FAILED: {res_om.status_code}")
 
         if url_owm:
-            if isinstance(res_owm, Exception): print(f"[Weather] OWM ERROR: {res_owm}")
-            elif res_owm and res_owm.status_code != 200: print(f"[Weather] OWM FAILED: {res_owm.status_code}")
+            if isinstance(res_owm, Exception):
+                print(f"[Weather] OWM ERROR: {type(res_owm).__name__}: {res_owm}")
+            elif res_owm and res_owm.status_code != 200:
+                print(f"[Weather] OWM FAILED: {res_owm.status_code} {res_owm.text[:100]}")
 
         if url_waqi:
-            if isinstance(res_waqi, Exception): print(f"[Weather] WAQI ERROR: {res_waqi}")
-            elif res_waqi and res_waqi.status_code != 200: print(f"[Weather] WAQI FAILED: {res_waqi.status_code}")
+            if isinstance(res_waqi, Exception):
+                print(f"[Weather] WAQI ERROR: {type(res_waqi).__name__}: {res_waqi}")
+            elif res_waqi and res_waqi.status_code != 200:
+                print(f"[Weather] WAQI FAILED: {res_waqi.status_code}")
 
         source_label = []
         
@@ -238,3 +250,14 @@ async def fetch_ndma_alerts(zone: str) -> dict:
 
 def get_all_zones():
     return sorted(ZONE_COORDS.keys())
+
+def get_api_status():
+    """Diagnostic check for environment keys."""
+    def mask(k): return f"{k[:4]}****{k[-4:]}" if len(k) > 10 else "MISSING/SHORT"
+    return {
+        "owm_key_present": bool(OWM_KEY and "your_" not in OWM_KEY),
+        "owm_key_masked":  mask(OWM_KEY),
+        "waqi_key_present": bool(WAQI_KEY and "your_" not in WAQI_KEY),
+        "cache_size":      len(_WEATHER_CACHE),
+        "timestamp":       datetime.now().isoformat()
+    }
