@@ -135,19 +135,20 @@ async def fetch_weather(zone: str, lat: float = None, lon: float = None) -> dict
     # Standardized higher timeouts for production reliability (especially on Render)
     TIMEOUT_SEC = 7.5
 
-    try:
-        # EXECUTE IN PARALLEL WITH SHARED CLIENT
+        # ─────────────────────────────────────────────────────────────
+        # STAGGERED REQUESTS: Prevents burst rate-limiting (429)
+        # especially on Open-Meteo which dislikes concurrent threads.
+        # ─────────────────────────────────────────────────────────────
+        stagger_delay = random.uniform(0.1, 1.2)
+        await asyncio.sleep(stagger_delay)
+
         tasks = []
         tasks.append(_HTTP_CLIENT.get(url_open_meteo, timeout=TIMEOUT_SEC))
         if url_owm:  
             tasks.append(_HTTP_CLIENT.get(url_owm, timeout=TIMEOUT_SEC))
-        else:
-            print("[Weather] Skipping OWM: No API Key")
-            
+        
         if url_waqi: 
             tasks.append(_HTTP_CLIENT.get(url_waqi, timeout=TIMEOUT_SEC))
-        else:
-            print("[Weather] Skipping WAQI: No API Key")
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
